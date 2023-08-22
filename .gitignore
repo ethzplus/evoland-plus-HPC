@@ -1,2 +1,6 @@
+# Quarto
+FutureEiGuide/.quarto/
+FutureEiGuide/_book/
+
 # IDE
 .idea/
