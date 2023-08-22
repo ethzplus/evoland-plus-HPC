@@ -1,0 +1,32 @@
+project:
+  type: book
+
+book:
+  title: "Future-EI"
+  author: "Carlson Büth and Benjamin Black"
+  date: "9/22/2023"
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - summary.qmd
+    - references.qmd
+  # favicon: images/favicon.png
+  repo-url: https://github.com/cbueth/Future-EI
+  issue-url: https://github.com/cbueth/Future-EI/issues/new/choose
+  repo-actions: [edit, issue, source]
+  repo-subdir: FutureEiGuide
+  authority: Planning of Landscape and Urban Systems – PLUS (ETH Zurich)
+  language: en
+  license: MIT License
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+  pdf:
+    documentclass: scrreprt
+
+execute:
+  freeze: auto
+

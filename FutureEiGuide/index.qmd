@@ -1,0 +1,9 @@
+# Preface {.unnumbered}
+
+Guide for the Future-EI pipeline.
+
+To explore future ecosystem services and nature contributions to people (NCP)
+in the context of climate scenarios, Future-EI (future ecological infrastructure)
+the [land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH),
+state-of-the-art [species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM),
+and NCP calculations.
