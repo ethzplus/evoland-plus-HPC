@@ -24,7 +24,7 @@ jobs:
         with:
           path: FutureEiGuide
           target: gh-pages
-          GITHUB_EMAIL: ${{ secrets.GITHUB_EMAIL }}
-          GITHUB_USERNAME: ${{ secrets.GITHUB_USERNAME }}
+          GITHUB_EMAIL: ${{ github.actor }}@users.noreply.github.com
+          GITHUB_USERNAME: ${{ github.actor }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
