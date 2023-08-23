@@ -1,0 +1,54 @@
+# Overview
+
+Coupling the three models, we need to define how they depend on each other.
+The following diagram shows the dependencies between the models.
+
+```{mermaid}
+flowchart TD
+  LULCC[LULCC: Land Use Simulation] --> Focal(Focal LULC<br>prep.)
+  LULCC --> NSDM[N-SDM: Biodiversity Estimation]
+  Focal --> NSDM
+  LULCC --> NCPs[NCPs: Nature Contributions to People Estimation]
+  NSDM --> NCPs
+  NSDM --> AggSp(Species Maps Aggregation)
+  NCPs --> AggNCPs(NCP Clustering)
+```
+[//]: # (is Estimation the correct term here?)
+
+From this structure, a clear order of execution can be derived.
+For each of them there is a short description of the model.
+
+[//]: # (Describe each model in a few sentences and what is does in this context)
+## LULCC: Land Use Simulation
+The [land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
+[@black2023;@black] simulates the land use change in Switzerland from 2010 to 2060...
+
+LULCC depends on [`R`](https://www.r-project.org/), CRAN packages and
+[`Dinamica EGO`](https://dinamicaego.com).
+
+## N-SDM: Species Distribution Modelling
+The [species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM) [@adde2023]
+uses multiple approaches to determine species distribution maps for Switzerland...
+
+It mainly uses `Base-R`. As N-SDM is built to be used with HPCs (high performance
+computers) , with `bash` scripts `SLURM` is used to submit jobs.
+
+## NCPs: Nature Contributions to People
+A range of NCPs are then estimated from the previous models outputs [@kuelling]...
+
+Additionally to `R` and CRAN packages,
+[`InVEST`](https://naturalcapitalproject.stanford.edu/software/invest) is used via
+the `Python` modules [`natcap.invest`](https://pypi.org/project/natcap.invest/).
+
+Focal...
+
+[//]: # (Later - check if architecture still true)
+The job of the Future-EI pipeline is to glue all pieces together for use on HPCs.
+For this, a batch job written in `bash` manages multiple climate scenarios
+and other parameters, while keeping track of the intermediate results.
+Such big batch job can be broken down onto steps from the diagram above, and
+parallelization through tasks with several cpus.
+As each step is different in requirements and execution, resources must be
+allocated accordingly.
+The most computationally expensive step is the N-SDM model.
+Further details will be given in the following sections.

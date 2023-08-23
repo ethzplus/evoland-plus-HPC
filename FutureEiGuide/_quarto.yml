@@ -8,6 +8,9 @@ book:
   chapters:
     - index.qmd
     - intro.qmd
+    - part: Pipeline Structure
+      chapters:
+        - technical/structure.qmd
     - summary.qmd
     - references.qmd
   # favicon: images/favicon.png
