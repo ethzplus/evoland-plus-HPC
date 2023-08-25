@@ -10,26 +10,25 @@ state-of-the-art
 [species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM),
 and NCP calculations.
 
-The repository is threefold:
+The repository contains the following:
 
-1. R package `FutureEI` that couples the three models using scripts for each
-   step of the workflow.
-2. HPC scripts to run the workflow with SLURM.
-3. Guide for the preparation and use of Future-EI.
+1. Guide for the preparation and use of Future-EI in the
+   [`FutureEiGuide`](FutureEiGuide) folder.
+2. SLURM batch jobs as `bash` scripts. Find code in the [`src`](src) folder.
 
 It specifically does not include the data and models used to run the workflow,
 but an example is provided in the guide.
 
 ## Setup
 
-For the setup of Future-EI, please refer to the guide.
+For the setup of Future-EI, please refer to
+the [setup guide](https://cbueth.github.io/Future-EI/setup).
 
 ### Dependencies
 
-The dependencies of Future-EI are listed in the `requirements.txt` file. One can
-install the dependencies of N-SDM and LULCC-CH manually, or use the
-conda environment file `environment.yml` to create a conda environment with
-all the dependencies.
+For every step in the Future-EI pipeline, dependencies might differ.
+Each step has its environment activated and in each step ([`steps`](src/steps)).
+...
 
 ## Acknowledgements
 
