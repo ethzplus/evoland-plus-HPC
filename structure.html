@@ -6,10 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Carlson Büth and Benjamin Black">
-<meta name="dcterms.date" content="2023-09-22">
 
-<title>Future-EI</title>
+<title>Future-EI - 2&nbsp; Overview</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -51,7 +49,8 @@ div.csl-indent {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./intro.html" rel="next">
+<link href="./pipeline.html" rel="next">
+<link href="./intro.html" rel="prev">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -81,6 +80,9 @@ div.csl-indent {
     "search-label": "Search"
   }
 }</script>
+<script src="site_libs/quarto-diagram/mermaid.min.js"></script>
+<script src="site_libs/quarto-diagram/mermaid-init.js"></script>
+<link href="site_libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
 
 </head>
@@ -94,7 +96,7 @@ div.csl-indent {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Preface</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./structure.html"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Overview</span></a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -124,7 +126,7 @@ div.csl-indent {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link active">
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Preface</span></a>
   </div>
 </li>
@@ -136,7 +138,7 @@ div.csl-indent {
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./structure.html" class="sidebar-item-text sidebar-link">
+  <a href="./structure.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Overview</span></span></a>
   </div>
 </li>
@@ -174,35 +176,25 @@ div.csl-indent {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#preface" id="toc-preface" class="nav-link active" data-scroll-target="#preface">Preface</a></li>
+  <li><a href="#lulcc-land-use-simulation" id="toc-lulcc-land-use-simulation" class="nav-link active" data-scroll-target="#lulcc-land-use-simulation"><span class="header-section-number">2.1</span> LULCC: Land Use Simulation</a></li>
+  <li><a href="#n-sdm-species-distribution-modelling" id="toc-n-sdm-species-distribution-modelling" class="nav-link" data-scroll-target="#n-sdm-species-distribution-modelling"><span class="header-section-number">2.2</span> N-SDM: Species Distribution Modelling</a></li>
+  <li><a href="#ncps-nature-contributions-to-people" id="toc-ncps-nature-contributions-to-people" class="nav-link" data-scroll-target="#ncps-nature-contributions-to-people"><span class="header-section-number">2.3</span> NCPs: Nature Contributions to People</a></li>
   </ul>
-<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/cbueth/Future-EI/edit/main/FutureEiGuide/index.qmd" class="toc-action">Edit this page</a></p><p><a href="https://github.com/cbueth/Future-EI/issues/new" class="toc-action">Report an issue</a></p><p><a href="https://github.com/cbueth/Future-EI/blob/main/FutureEiGuide/index.qmd" class="toc-action">View source</a></p></div></div></nav>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/cbueth/Future-EI/edit/main/FutureEiGuide/structure.qmd" class="toc-action">Edit this page</a></p><p><a href="https://github.com/cbueth/Future-EI/issues/new" class="toc-action">Report an issue</a></p><p><a href="https://github.com/cbueth/Future-EI/blob/main/FutureEiGuide/structure.qmd" class="toc-action">View source</a></p></div></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Future-EI</h1>
+<h1 class="title"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Overview</span></h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Carlson Büth and Benjamin Black </p>
-          </div>
-  </div>
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">September 22, 2023</p>
-    </div>
-  </div>
   
     
   </div>
@@ -210,9 +202,44 @@ div.csl-indent {
 
 </header>
 
-<section id="preface" class="level1 unnumbered">
-<h1 class="unnumbered">Preface</h1>
-<p>This is a guide and reference book for the Future-EI pipeline. To explore future ecosystem services and nature contributions to people (NCP) in the context of climate scenarios, Future-EI (future ecological infrastructure) couples the <a href="https://github.com/blenback/LULCC-CH">land use land cover change (LULCC) model for Switzerland</a> <span class="citation" data-cites="black2023 black">(<a href="references.html#ref-black2023" role="doc-biblioref">Black et al. 2023</a>, <a href="references.html#ref-black" role="doc-biblioref">n.d.</a>)</span>, state-of-the-art <a href="https://github.com/N-SDM/N-SDM">species distribution modelling (N-SDM)</a> <span class="citation" data-cites="adde2023">(<a href="references.html#ref-adde2023" role="doc-biblioref">Adde et al. 2023</a>)</span>, and NCP calculations <span class="citation" data-cites="kuelling">(<a href="references.html#ref-kuelling" role="doc-biblioref">Kuelling and Adde, n.d.</a>)</span>.</p>
+<p>Coupling the three models, we need to define how they depend on each other. <a href="#fig-pipeline">Figure&nbsp;<span>2.1</span></a> shows the dependencies between the models.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-pipeline" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<div>
+<pre class="mermaid mermaid-js" data-label="fig-pipeline">flowchart TD
+  LULCC[LULCC: Land Use Simulation] --&gt; Focal(Focal LULC&lt;br&gt;prep.)
+  LULCC --&gt; NSDM[N-SDM: Biodiversity Estimation]
+  Focal --&gt; NSDM
+  LULCC --&gt; NCPs[NCPs: Nature Contributions to People Estimation]
+  NSDM --&gt; NCPs
+  NSDM --&gt; AggSp(Species Maps Aggregation)
+  NCPs --&gt; AggNCPs(NCP Clustering)
+</pre>
+</div>
+<figcaption class="figure-caption">Figure&nbsp;2.1: Pipeline Overview</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>From this structure, a clear order of execution can be derived. For each of them there is a short description of the model.</p>
+<section id="lulcc-land-use-simulation" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="lulcc-land-use-simulation"><span class="header-section-number">2.1</span> LULCC: Land Use Simulation</h2>
+<p>The <a href="https://github.com/blenback/LULCC-CH">land use land cover change (LULCC) model for Switzerland</a> <span class="citation" data-cites="black2023 black">(<a href="references.html#ref-black2023" role="doc-biblioref">Black et al. 2023</a>, <a href="references.html#ref-black" role="doc-biblioref">n.d.</a>)</span> simulates the land use change in Switzerland from 2010 to 2060…</p>
+<p>LULCC depends on <a href="https://www.r-project.org/"><code>R</code></a>, CRAN packages and <a href="https://dinamicaego.com"><code>Dinamica EGO</code></a>.</p>
+</section>
+<section id="n-sdm-species-distribution-modelling" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="n-sdm-species-distribution-modelling"><span class="header-section-number">2.2</span> N-SDM: Species Distribution Modelling</h2>
+<p>The <a href="https://github.com/N-SDM/N-SDM">species distribution modelling (N-SDM)</a> <span class="citation" data-cites="adde2023">(<a href="references.html#ref-adde2023" role="doc-biblioref">Adde et al. 2023</a>)</span> uses multiple approaches to determine species distribution maps for Switzerland…</p>
+<p>It mainly uses <code>Base-R</code>. As N-SDM is built to be used with HPCs (high performance computers) , with <code>bash</code> scripts <code>SLURM</code> is used to submit jobs.</p>
+</section>
+<section id="ncps-nature-contributions-to-people" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="ncps-nature-contributions-to-people"><span class="header-section-number">2.3</span> NCPs: Nature Contributions to People</h2>
+<p>A range of NCPs are then estimated from the previous models outputs <span class="citation" data-cites="kuelling">(<a href="references.html#ref-kuelling" role="doc-biblioref">Kuelling and Adde, n.d.</a>)</span>…</p>
+<p>Additionally to <code>R</code> and CRAN packages, <a href="https://naturalcapitalproject.stanford.edu/software/invest"><code>InVEST</code></a> is used via the <code>Python</code> modules <a href="https://pypi.org/project/natcap.invest/"><code>natcap.invest</code></a>.</p>
+<p>Focal…</p>
+<p>The job of the Future-EI pipeline is to glue all pieces together for use on HPCs. For this, a batch job written in <code>bash</code> manages multiple climate scenarios and other parameters, while keeping track of the intermediate results. Such big batch job can be broken down onto steps from the diagram above, and parallelization through tasks with several cpus. As each step is different in requirements and execution, resources must be allocated accordingly. The most computationally expensive step is the N-SDM model. Further details will be given in the following sections.</p>
 
 
 <div id="refs" class="references csl-bib-body hanging-indent" role="list" style="display: none">
@@ -467,10 +494,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
+      <a href="./intro.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span>
+      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./intro.html" class="pagination-link">
-        <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./pipeline.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Pipeline</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

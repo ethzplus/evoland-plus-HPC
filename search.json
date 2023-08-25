@@ -14,30 +14,44 @@
     "text": "This is a book created from markdown and executable code.\n\nMayer, Rabe, and Grêt-Regamey (2023), Black et al. (2023), Adde et al. (2023)\n\n\n\n\n\nAdde, Antoine, Pierre-Louis Rey, Philipp Brun, Nathan Külling, Fabian Fopp, Florian Altermatt, Olivier Broennimann, et al. 2023. “N-SDM : A High-Performance Computing Pipeline for Nested Species Distribution Modelling.” Ecography 2023 (6): e06540. https://doi.org/10.1111/ecog.06540.\n\n\nBlack, Benjamin, Maarten J. Van Strien, Antoine Adde, and Adrienne Grêt-Regamey. 2023. “Re-Considering the Status Quo: Improving Calibration of Land Use Change Models Through Validation of Transition Potential Predictions.” Environmental Modelling & Software 159 (January): 105574. https://doi.org/10.1016/j.envsoft.2022.105574.\n\n\nMayer, Paula, Sven-Erik Rabe, and Adrienne Grêt-Regamey. 2023. “Operationalizing the Nature Futures Framework for Ecological Infrastructure.” Sustainability Science, July. https://doi.org/10.1007/s11625-023-01380-7."
   },
   {
-    "objectID": "technical/structure.html#lulcc-land-use-simulation",
-    "href": "technical/structure.html#lulcc-land-use-simulation",
+    "objectID": "structure.html#lulcc-land-use-simulation",
+    "href": "structure.html#lulcc-land-use-simulation",
     "title": "2  Overview",
     "section": "2.1 LULCC: Land Use Simulation",
     "text": "2.1 LULCC: Land Use Simulation\nThe land use land cover change (LULCC) model for Switzerland (Black et al. 2023, n.d.) simulates the land use change in Switzerland from 2010 to 2060…\nLULCC depends on R, CRAN packages and Dinamica EGO."
   },
   {
-    "objectID": "technical/structure.html#n-sdm-species-distribution-modelling",
-    "href": "technical/structure.html#n-sdm-species-distribution-modelling",
+    "objectID": "structure.html#n-sdm-species-distribution-modelling",
+    "href": "structure.html#n-sdm-species-distribution-modelling",
     "title": "2  Overview",
     "section": "2.2 N-SDM: Species Distribution Modelling",
     "text": "2.2 N-SDM: Species Distribution Modelling\nThe species distribution modelling (N-SDM) (Adde et al. 2023) uses multiple approaches to determine species distribution maps for Switzerland…\nIt mainly uses Base-R. As N-SDM is built to be used with HPCs (high performance computers) , with bash scripts SLURM is used to submit jobs."
   },
   {
-    "objectID": "technical/structure.html#ncps-nature-contributions-to-people",
-    "href": "technical/structure.html#ncps-nature-contributions-to-people",
+    "objectID": "structure.html#ncps-nature-contributions-to-people",
+    "href": "structure.html#ncps-nature-contributions-to-people",
     "title": "2  Overview",
     "section": "2.3 NCPs: Nature Contributions to People",
     "text": "2.3 NCPs: Nature Contributions to People\nA range of NCPs are then estimated from the previous models outputs (Kuelling and Adde, n.d.)…\nAdditionally to R and CRAN packages, InVEST is used via the Python modules natcap.invest.\nFocal…\nThe job of the Future-EI pipeline is to glue all pieces together for use on HPCs. For this, a batch job written in bash manages multiple climate scenarios and other parameters, while keeping track of the intermediate results. Such big batch job can be broken down onto steps from the diagram above, and parallelization through tasks with several cpus. As each step is different in requirements and execution, resources must be allocated accordingly. The most computationally expensive step is the N-SDM model. Further details will be given in the following sections.\n\n\n\n\nAdde, Antoine, Pierre-Louis Rey, Philipp Brun, Nathan Külling, Fabian Fopp, Florian Altermatt, Olivier Broennimann, et al. 2023. “N-SDM : A High-Performance Computing Pipeline for Nested Species Distribution Modelling.” Ecography 2023 (6): e06540. https://doi.org/10.1111/ecog.06540.\n\n\nBlack, Benjamin, Antoine Adde, Olivier Broennimann, Daniel Farinotti, Antoine Guisan, Nathan Külling, Manuel Kurmann, et al. n.d. “Broadening the Horizon in Land Use Change Modelling: Normative Scenarios for Nature Positive Futures.”\n\n\nBlack, Benjamin, Maarten J. Van Strien, Antoine Adde, and Adrienne Grêt-Regamey. 2023. “Re-Considering the Status Quo: Improving Calibration of Land Use Change Models Through Validation of Transition Potential Predictions.” Environmental Modelling & Software 159 (January): 105574. https://doi.org/10.1016/j.envsoft.2022.105574.\n\n\nKuelling, Nathan, and Antoine Adde. n.d. “NCP Calculation Paper.”"
   },
   {
+    "objectID": "pipeline.html",
+    "href": "pipeline.html",
+    "title": "3  Pipeline",
+    "section": "",
+    "text": "The pipeline consists out of a SLURM batch job as structured in Figure 2.1. To refresh: a SLURM batch job consists out of one or more steps, each consisting out of one or more tasks, which of each can use one or more CPU cores."
+  },
+  {
+    "objectID": "setup.html",
+    "href": "setup.html",
+    "title": "4  Setup",
+    "section": "",
+    "text": "To set up Future-EI for usage, you need to clone this repository, install the models used in the (pipeline?), and configure the local paths for inputs and parameters.\n…"
+  },
+  {
     "objectID": "summary.html",
     "href": "summary.html",
-    "title": "3  Summary",
+    "title": "5  Summary",
     "section": "",
     "text": "In summary, this book has no content whatsoever."
   },
