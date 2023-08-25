@@ -1,9 +1,11 @@
 # Overview
 
 Coupling the three models, we need to define how they depend on each other.
-The following diagram shows the dependencies between the models.
+@fig-pipeline shows the dependencies between the models.
 
 ```{mermaid}
+%%| label: fig-pipeline
+%%| fig-cap: "Pipeline Overview"
 flowchart TD
   LULCC[LULCC: Land Use Simulation] --> Focal(Focal LULC<br>prep.)
   LULCC --> NSDM[N-SDM: Biodiversity Estimation]

@@ -91,7 +91,7 @@ r-landscapemetrics
 # r-parallel
 # r-bfsMaps # https://github.com/AndriSignorell/bfsMaps/
 # r-zen4R https://cran.r-project.org/web/packages/zen4R/vignettes/zen4R.html#install_guide
-# r-grid
+# r-grid   # R-base
 # r-slackr
 
 # ----------------------------------------

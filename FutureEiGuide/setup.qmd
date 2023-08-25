@@ -1,0 +1,6 @@
+# Setup
+
+To set up Future-EI for usage, you need to clone this repository, install the
+models used in the @pipeline, and configure the local paths for inputs and parameters.
+
+...
