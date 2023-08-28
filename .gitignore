@@ -4,3 +4,7 @@ FutureEiGuide/_book/
 
 # IDE
 .idea/
+
+# R
+*.Rhistory
+*.Rprofile
