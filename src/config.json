@@ -1,0 +1,10 @@
+{
+  "bash_variables": {
+    "DINAMICA_EGO_DIR": "~/dinamica-ego",
+    "DINAMICA_EGO_APP": "~/dinamica-ego/DinamicaEGO-740-Ubuntu-LTN.AppImage",
+    "FUTURE_EI_LOG_LEVEL": "debug"
+  },
+  "LULCC": {
+    "LULCC_DIR": "~/LULCC"
+  }
+}

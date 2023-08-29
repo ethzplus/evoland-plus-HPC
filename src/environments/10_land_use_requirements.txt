@@ -1,0 +1,32 @@
+r-base
+# r-stats
+r-data.table
+r-raster
+r-tidyverse
+r-plyr
+r-readr
+r-sjmisc
+r-terra
+r-rgdal
+r-rgeos
+r-future.apply
+r-future
+r-future.callr
+r-stringr
+r-stringi
+r-readxl
+r-rlist
+r-rstatix
+r-openxlsx
+r-sp
+r-xlsx
+r-callr
+r-gdata
+r-randomForest
+r-caret
+r-rcppprogress  # for r-dinamica
+# Not all are available in conda-forge (commented out)
+# https://stackoverflow.com/questions/34705917/how-to-install-r-packages-that-are-not-available-in-r-essentials
+# r-dinamica=1.0.4 from https://dinamicaego.com/dinamica/dokuwiki/doku.php?id=external_communication
+# r-zen4R https://cran.r-project.org/web/packages/zen4R/vignettes/zen4R.html#install_guide
+# r-grid   R-base

@@ -1,6 +1,44 @@
 # Setup
 
 To set up Future-EI for usage, you need to clone this repository, install the
-models used in the @pipeline, and configure the local paths for inputs and parameters.
+models used in @fig-pipeline, and configure the local paths for inputs and parameters.
+For the `bash` script, environment variables are set in the
+[`src/config.json` file](https://github.com/cbueth/Future-EI/tree/main/src/config.json).
 
-...
+## Micromamba/Conda
+
+For some pipeline steps, we use conda environments.
+For this, we recommend using [`micromamba`](https://mamba.readthedocs.io/en/latest/),
+it does the same thing as [`conda`](https://docs.conda.io/projects/conda/en/stable/),
+but resolves dependencies much faster, with the flexibility of
+[`miniconda`](https://docs.conda.io/en/latest/miniconda.html) (only command line
+interface, no GUI).
+Find the installation instructions
+[here](https://mamba.readthedocs.io/en/latest/micromamba-installation.html).
+Using `conda`, the commands work the same, only `micromamba` needs to be replaced by
+`conda`.
+The given scripts identify the installed package manager, as can be found in
+[`src/bash_functions.sh`](https://github.com/cbueth/Future-EI/tree/main/src/bash_functions.sh).
+
+## Dinamica EGO
+
+Dinamica EGO is available on [the project website](https://dinamicaego.com/dinamica-7/).
+To download the app image via console, use the following command:
+
+```bash
+wget https://dinamicaego.com/nui_download/1792/ -O dinamica-ego.AppImage
+```
+For a full description of the environments, see the environments:
+
+## Environments
+
+For the steps in the pipeline, different environments and modules are required.
+These are collected in the folder
+[`src/environments`](https://github.com/cbueth/Future-EI/tree/main/src/environments).
+For each, there are scripts to reproduce our used environment.
+To make all bash scripts in the source executable, give them the permission as
+follows:
+
+```bash
+chmod +x src/*.sh
+```
