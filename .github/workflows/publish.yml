@@ -1,7 +1,10 @@
 on:
   workflow_dispatch:
   push:
-    branches: main
+    paths:
+      - "FutureEiGuide/**"
+    branches:
+      - main
 
 name: Quarto Publish
 
