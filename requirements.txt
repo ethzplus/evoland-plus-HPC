@@ -2,9 +2,10 @@
 # R
 # ----------------------------------------
 r-base
+# r-stats # included in base
 
 # ----------------------------------------
-# N-SDM
+# N-SDM -  to be updated
 # ----------------------------------------
 # r-base=4.0.5
 # load via SLURM module system
@@ -26,73 +27,38 @@ r-base
 # https://dinamicaego.com/dinamica-7/
 
 # https://dinamicaego.com/dinamica/dokuwiki/lib/exe/fetch.php?media=dinamica_1.0.4.tar.gz
-# R-packkages - CRAN/conda-forge
-r-data.table
-r-raster
-r-tidyverse
-r-SDMTools
-r-tiff
-r-igraph
-r-readr
-r-foreach
-r-testthat
-r-sjmisc
-r-tictoc
-r-terra
-r-pbapply
-r-rgdal
-r-rgeos
-r-rjstat
-r-future.apply
-r-future
-r-stringr
-r-stringi
-r-readxl
-r-rlist
-r-rstatix
-r-openxlsx
-r-pxR
-r-rvest
-r-viridis
-r-sp
-r-jsonlite
-r-httr
-r-xlsx
-r-callr
-r-gdata
-r-landscapemetrics
-r-randomForest
-r-RRF
-r-future.callr
-r-ghibli
-r-ggpattern
-r-butcher
-r-ROCR
-r-ecospat
-r-caret
-r-gridExtra
-r-extrafont
-r-ggpubr
-r-ggstatsplot
-r-PMCMRplus
-r-reshape2
-r-ggsignif
-r-ggthemes
-r-ggside
-r-gridtext
-r-rstudioapi
-r-landscapemetrics
+# R-packages - CRAN/conda-forge
+# r-data.table
+# r-raster
+# r-tidyverse
+# r-plyr
+# r-readr
+# r-sjmisc
+# r-terra
+# r-rgdal
+# r-rgeos
+# r-future.apply
+# r-future
+# r-future.callr
+# r-stringr
+# r-stringi
+# r-readxl
+# r-rlist
+# r-rstatix
+# r-openxlsx
+# r-sp
+# r-xlsx
+# r-callr
+# r-gdata
+# r-randomForest
+# r-caret
 
 # Not all are available in conda-forge (commented out)
 # https://stackoverflow.com/questions/34705917/how-to-install-r-packages-that-are-not-available-in-r-essentials
 
 # r-dinamica=1.0.4 # from https://dinamicaego.com/dinamica/dokuwiki/doku.php?id=external_communication
-# r-doParallelr-sf
-# r-parallel
-# r-bfsMaps # https://github.com/AndriSignorell/bfsMaps/
 # r-zen4R https://cran.r-project.org/web/packages/zen4R/vignettes/zen4R.html#install_guide
 # r-grid   # R-base
-# r-slackr
 
 # ----------------------------------------
 # Documentation
