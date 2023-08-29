@@ -1,7 +1,7 @@
 [//]: # (R lifecycle batch)
-[//]: # (Linting shell check - only updates if repo public)
+[//]: # (Linting shell check)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![ShellCheck: bash](https://img.shields.io/github/actions/workflow/status/cbueth/Future-EI/lint.yml?branch=main&label=ShellCheck)](https://github.com/cbueth/Future-EI/actions/workflows/lint.yml)
+[![ShellCheck: bash](https://github.com/cbueth/Future-EI/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint.yml)
 
 
 # About Future-EI
