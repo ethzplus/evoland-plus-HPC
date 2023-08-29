@@ -42,11 +42,25 @@
     "text": "The pipeline consists out of a SLURM batch job as structured in Figure 2.1. To refresh: a SLURM batch job consists out of one or more steps, each consisting out of one or more tasks, which of each can use one or more CPU cores."
   },
   {
-    "objectID": "setup.html",
-    "href": "setup.html",
+    "objectID": "setup.html#micromambaconda",
+    "href": "setup.html#micromambaconda",
     "title": "4  Setup",
-    "section": "",
-    "text": "To set up Future-EI for usage, you need to clone this repository, install the models used in the (pipeline?), and configure the local paths for inputs and parameters.\n…"
+    "section": "4.1 Micromamba/Conda",
+    "text": "4.1 Micromamba/Conda\nFor some pipeline steps, we use conda environments. For this, we recommend using micromamba, it does the same thing as conda, but resolves dependencies much faster, with the flexibility of miniconda (only command line interface, no GUI). Find the installation instructions here. Using conda, the commands work the same, only micromamba needs to be replaced by conda. The given scripts identify the installed package manager, as can be found in src/bash_functions.sh."
+  },
+  {
+    "objectID": "setup.html#dinamica-ego",
+    "href": "setup.html#dinamica-ego",
+    "title": "4  Setup",
+    "section": "4.2 Dinamica EGO",
+    "text": "4.2 Dinamica EGO\nDinamica EGO is available on the project website. To download the app image via console, use the following command:\nwget https://dinamicaego.com/nui_download/1792/ -O dinamica-ego.AppImage\nFor a full description of the environments, see the environments:"
+  },
+  {
+    "objectID": "setup.html#environments",
+    "href": "setup.html#environments",
+    "title": "4  Setup",
+    "section": "4.3 Environments",
+    "text": "4.3 Environments\nFor the steps in the pipeline, different environments and modules are required. These are collected in the folder src/environments. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:\nchmod +x src/*.sh"
   },
   {
     "objectID": "summary.html",

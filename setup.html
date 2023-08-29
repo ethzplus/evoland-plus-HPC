@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -150,7 +184,15 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#micromambaconda" id="toc-micromambaconda" class="nav-link active" data-scroll-target="#micromambaconda"><span class="header-section-number">4.1</span> Micromamba/Conda</a></li>
+  <li><a href="#dinamica-ego" id="toc-dinamica-ego" class="nav-link" data-scroll-target="#dinamica-ego"><span class="header-section-number">4.2</span> Dinamica EGO</a></li>
+  <li><a href="#environments" id="toc-environments" class="nav-link" data-scroll-target="#environments"><span class="header-section-number">4.3</span> Environments</a></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/cbueth/Future-EI/edit/main/FutureEiGuide/setup.qmd" class="toc-action">Edit this page</a></p><p><a href="https://github.com/cbueth/Future-EI/issues/new" class="toc-action">Report an issue</a></p><p><a href="https://github.com/cbueth/Future-EI/blob/main/FutureEiGuide/setup.qmd" class="toc-action">View source</a></p></div></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -172,10 +214,24 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>To set up Future-EI for usage, you need to clone this repository, install the models used in the <span class="citation" data-cites="pipeline">(<a href="references.html#ref-pipeline" role="doc-biblioref"><strong>pipeline?</strong></a>)</span>, and configure the local paths for inputs and parameters.</p>
-<p>…</p>
+<p>To set up Future-EI for usage, you need to clone this repository, install the models used in <a href="structure.html#fig-pipeline">Figure&nbsp;<span>2.1</span></a>, and configure the local paths for inputs and parameters. For the <code>bash</code> script, environment variables are set in the <a href="https://github.com/cbueth/Future-EI/tree/main/src/config.json"><code>src/config.json</code> file</a>.</p>
+<section id="micromambaconda" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="micromambaconda"><span class="header-section-number">4.1</span> Micromamba/Conda</h2>
+<p>For some pipeline steps, we use conda environments. For this, we recommend using <a href="https://mamba.readthedocs.io/en/latest/"><code>micromamba</code></a>, it does the same thing as <a href="https://docs.conda.io/projects/conda/en/stable/"><code>conda</code></a>, but resolves dependencies much faster, with the flexibility of <a href="https://docs.conda.io/en/latest/miniconda.html"><code>miniconda</code></a> (only command line interface, no GUI). Find the installation instructions <a href="https://mamba.readthedocs.io/en/latest/micromamba-installation.html">here</a>. Using <code>conda</code>, the commands work the same, only <code>micromamba</code> needs to be replaced by <code>conda</code>. The given scripts identify the installed package manager, as can be found in <a href="https://github.com/cbueth/Future-EI/tree/main/src/bash_functions.sh"><code>src/bash_functions.sh</code></a>.</p>
+</section>
+<section id="dinamica-ego" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="dinamica-ego"><span class="header-section-number">4.2</span> Dinamica EGO</h2>
+<p>Dinamica EGO is available on <a href="https://dinamicaego.com/dinamica-7/">the project website</a>. To download the app image via console, use the following command:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://dinamicaego.com/nui_download/1792/ <span class="at">-O</span> dinamica-ego.AppImage</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For a full description of the environments, see the environments:</p>
+</section>
+<section id="environments" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="environments"><span class="header-section-number">4.3</span> Environments</h2>
+<p>For the steps in the pipeline, different environments and modules are required. These are collected in the folder <a href="https://github.com/cbueth/Future-EI/tree/main/src/environments"><code>src/environments</code></a>. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x src/<span class="pp">*</span>.sh</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -427,4 +483,4 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 
 
 
-<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/cbueth/Future-EI/edit/main/FutureEiGuide/setup.qmd" class="toc-action">Edit this page</a></p><p><a href="https://github.com/cbueth/Future-EI/issues/new" class="toc-action">Report an issue</a></p><p><a href="https://github.com/cbueth/Future-EI/blob/main/FutureEiGuide/setup.qmd" class="toc-action">View source</a></p></div></div></div></div></footer></body></html>
+</body></html>
