@@ -40,5 +40,5 @@ To make all bash scripts in the source executable, give them the permission as
 follows:
 
 ```bash
-chmod +x src/*.sh
+chmod +x src/**.sh
 ```
