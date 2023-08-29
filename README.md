@@ -1,7 +1,9 @@
-[//]: # (R lifecycle batch)
+[//]: # (Documentation: link to gh-pages)
 [//]: # (Linting shell check)
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[//]: # (R lifecycle batch)
+[![Docs: Guide](https://img.shields.io/badge/docs-guide-blue.svg)](https://cbueth.de/Future-EI/)
 [![ShellCheck: bash](https://github.com/cbueth/Future-EI/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint.yml)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
 
 # About Future-EI
