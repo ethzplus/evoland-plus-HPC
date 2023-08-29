@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Define a log file
-LOG_FILE="my_log.txt"
-
 # Define ANSI color codes
 COLOR_RESET='\033[0m'      # Reset
 COLOR_DEBUG='\033[0;34m'   # Blue
@@ -24,7 +21,7 @@ level_to_number() {
   esac
 }
 
-FUTURE_EI_LOG_LEVEL_NUMBER=$(level_to_number $FUTURE_EI_LOG_LEVEL)
+FUTURE_EI_LOG_LEVEL_NUMBER=$(level_to_number "$FUTURE_EI_LOG_LEVEL")
 
 # Custom logging function
 # log <level> <message>
@@ -33,12 +30,12 @@ log() {
   timestamp=$(date +"%Y-%m-%d %H:%M:%S")
   local log_message="[$timestamp] [$HOST] $2"
   # message level is lower than log level, leave function
-  if [[ $(level_to_number $1) -lt $FUTURE_EI_LOG_LEVEL_NUMBER ]]; then
+  if [[ $(level_to_number "$1") -lt $FUTURE_EI_LOG_LEVEL_NUMBER ]]; then
     return
   fi
 
   # Check if a log level is provided (e.g., debug, info, warning, error)
-  if [[ ! -z "$1" ]]; then
+  if [[ -n "$1" ]]; then
     case "$1" in
       "debug") log_message="${COLOR_DEBUG}$log_message${COLOR_RESET}" ;;
       "info") log_message="${COLOR_INFO}$log_message${COLOR_RESET}" ;;

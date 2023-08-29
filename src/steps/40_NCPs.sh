@@ -1,1 +1,2 @@
+#!/bin/bash
 # Iterate over NCPs and time steps - parallelize one of them

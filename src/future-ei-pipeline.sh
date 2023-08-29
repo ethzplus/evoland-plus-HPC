@@ -4,13 +4,12 @@
 # ------------------
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $SCRIPT_DIR/bash_common.sh
+source "$SCRIPT_DIR"/bash_common.sh
 
 # Script Variables
 # ----------------
 TMP_DIR=$TMPDIR/$SLURM_JOB_ID        # Temporary directory
 KEEP_TMP=0                           # Keep temporary files (0: no, 1: yes) for debug
-LOG_DIR=~/logs                       # Log directory
 
 # Slurm
 # -----
@@ -31,9 +30,9 @@ LOG_DIR=~/logs                       # Log directory
 ## SBATCH --array=1-4%2
 
 # Log file
-# SBATCH --output=$LOG_DIR/future-ei-%j.out
+# SBATCH --output=~/logs/future-ei-%j.out
 # Error file
-# SBATCH --error=$LOG_DIR/future-ei-%j.err
+# SBATCH --error=~/logs/future-ei-%j.err
 # Email notifications
 # SBATCH --mail-type=ALL,TIME_LIMIT_90
 # SBATCH --mail-user=<email>
@@ -49,7 +48,7 @@ LOG_DIR=~/logs                       # Log directory
 log info "Starting Future EI Pipeline"
 log info "Job ID: $SLURM_JOB_ID"
 log info "Job Name: $SLURM_JOB_NAME"
-if [ ! -z "$SLURM_ARRAY_JOB_ID" ]; then
+if [ -n "$SLURM_ARRAY_JOB_ID" ]; then
     log info "Job Array ID: $SLURM_ARRAY_JOB_ID"
     log info "Job Array Index: $SLURM_ARRAY_TASK_ID"
 fi
@@ -57,15 +56,15 @@ log info "Number of Nodes: $SLURM_JOB_NUM_NODES"
 log info "Number of Tasks per Node: $SLURM_TASKS_PER_NODE"
 log info "Temporary Directory: $TMP_DIR"
 
-srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE hostname
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" hostname
 
 # Preparation
 # -----------
 # Make temporary directories - one for every node
-srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE mkdir -p $TMP_DIR
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" mkdir -p "$TMP_DIR"
 # Preparation script
 log info "Running Preparation - 00_Preparation.sh"
-srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE steps/00_Preparation.sh
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/00_Preparation.sh
 
 # ______________________________________________________________________________________
 
@@ -73,12 +72,12 @@ srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE steps/0
 # 01_LULCC - LULCC
 # ----------------
 log info "Running LULCC - 01_LULCC.sh"
-srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE steps/01_LULCC.sh
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/01_LULCC.sh
 
 # 20_FocalPrep - Focal LULC Preparation
 # -------------------------------------
 log info "Running Focal LULC Preparation - 20_FocalPrep.sh"
-srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE steps/20_FocalPrep.sh
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/20_FocalPrep.sh
 
 # 30_N-SDM - N-SDM Biodiversity
 # -----------------------------
@@ -109,10 +108,10 @@ srun steps/41_NCP_Clustering.sh &
 # ---------------------
 # Save results to output directory
 log info "Running Cleanup - 99_Cleanup.sh"
-srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE steps/99_Cleanup.sh
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/99_Cleanup.sh
 # Remove temporary directories
 if [ $KEEP_TMP -eq 0 ]; then
-    srun --nodes=$SLURM_JOB_NUM_NODES --tasks-per-node=$SLURM_TASKS_PER_NODE rm -rf $TMP_DIR
+    srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" rm -rf "$TMP_DIR"
 else
     log warning "Keeping temporary files in $TMP_DIR. Non-permanent if in local scratch."
 fi

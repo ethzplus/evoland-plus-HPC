@@ -24,7 +24,8 @@ r-callr
 r-gdata
 r-randomForest
 r-caret
-r-rcppprogress  # for r-dinamica
+r-rcppprogress  # for dinamica
+r-remotes   # for zen4R
 # Not all are available in conda-forge (commented out)
 # https://stackoverflow.com/questions/34705917/how-to-install-r-packages-that-are-not-available-in-r-essentials
 # r-dinamica=1.0.4 from https://dinamicaego.com/dinamica/dokuwiki/doku.php?id=external_communication

@@ -39,15 +39,15 @@ elif [ -z "$CONDA_DEFAULT_ENV" ] && [ -z "$2" ] || [ "$2" == "1" ]; then
     if [[ $CONDA_BIN == *"micromamba"* ]]; then
         echo "Activating environment $1 with micromamba"
         eval "$(micromamba shell hook --shell bash)"
-        micromamba activate $1
+        micromamba activate "$1"
     elif [[ $CONDA_BIN == *"mamba"* ]]; then
         echo "Activating environment $1 with mamba"
         eval "$(mamba shell hook -s bash)"
-        mamba activate $1
+        mamba activate "$1"
     elif [[ $CONDA_BIN == *"conda"* ]]; then
         echo "Activating environment $1 with conda"
         eval "$(conda shell.bash hook)"
-        conda activate $1
+        conda activate "$1"
     else
         echo "No conda installation found"
         exit 1
