@@ -60,7 +60,7 @@
     "href": "setup.html#environments",
     "title": "4  Setup",
     "section": "4.3 Environments",
-    "text": "4.3 Environments\nFor the steps in the pipeline, different environments and modules are required. These are collected in the folder src/environments. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:\nchmod +x src/*.sh"
+    "text": "4.3 Environments\nFor the steps in the pipeline, different environments and modules are required. These are collected in the folder src/environments. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:\nchmod +x src/**.sh"
   },
   {
     "objectID": "summary.html",
