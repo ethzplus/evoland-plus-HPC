@@ -15,12 +15,10 @@ flowchart TD
   NSDM --> AggSp(Species Maps Aggregation)
   NCPs --> AggNCPs(NCP Clustering)
 ```
-[//]: # (is Estimation the correct term here?)
 
 From this structure, a clear order of execution can be derived.
 For each of them there is a short description of the model.
 
-[//]: # (Describe each model in a few sentences and what is does in this context)
 ## LULCC: Land Use Simulation
 The [land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
 [@black2023;@black] simulates the land use change in Switzerland from 2010 to 2060...
@@ -44,7 +42,6 @@ the `Python` modules [`natcap.invest`](https://pypi.org/project/natcap.invest/).
 
 Focal...
 
-[//]: # (Later - check if architecture still true)
 The job of the Future-EI pipeline is to glue all pieces together for use on HPCs.
 For this, a batch job written in `bash` manages multiple climate scenarios
 and other parameters, while keeping track of the intermediate results.
