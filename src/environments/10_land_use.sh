@@ -34,24 +34,17 @@ fi
 log info "Creating conda environment: land_use"
 log debug "Using conda from: $CONDA_BIN"
 log debug "Using requirement file: $SCRIPT_DIR/10_land_use_requirements.txt"
-#$CONDA_BIN env create -n land_use -c conda-forge --file $SCRIPT_DIR/10_land_use_requirements.txt
+$CONDA_BIN env create -n land_use -c conda-forge --file $SCRIPT_DIR/10_land_use_requirements.txt
 
 # Activate the conda environment
 log debug "Activating conda environment: land_use"
-eval "$SCRIPT_DIR/../de_activate.sh" land_use 1
+source "$SCRIPT_DIR/../de_activate.sh" land_use 1
 
-## Not tracked in the environment.yml file:
-## Dinamica EGO connector - Install the Dinamica R package
-#log info "Installing Dinamica EGO R package"
-##R -e "install.packages('$DINAMICA_EGO_DIR/dinamica_1.0.4.tar.gz', repos = NULL, type = 'source')"
-## zen4R - R Interface to Zenodo REST API - https://zenodo.org/record/7552287
-#log info "Installing zen4R R package"
-## using remotes package install from github eblondel/zen4R
-#module load libsodium/1.0.15
-##R -e "remotes::install_github('eblondel/zen4R')" # would install master branch
-## install latest release
-#R -e "remotes::install_github('eblondel/zen4R@*release')"
-#
-## Export the conda environment
-#log debug "Exporting conda environment: land_use"
-#$CONDA_BIN env export | grep -v "^prefix: " > $SCRIPT_DIR/10_land_use_env.yml
+# Not tracked in the environment.yml file:
+# Dinamica EGO connector - Install the Dinamica R package
+log info "Installing Dinamica EGO R package"
+R -e "install.packages('$DINAMICA_EGO_DIR/dinamica_1.0.4.tar.gz', repos = NULL, type = 'source')"
+
+# Export the conda environment
+log debug "Exporting conda environment: land_use"
+$CONDA_BIN env export | grep -v "^prefix: " > $SCRIPT_DIR/10_land_use_env.yml
