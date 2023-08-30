@@ -34,7 +34,7 @@ fi
 log info "Creating conda environment: land_use"
 log debug "Using conda from: $CONDA_BIN"
 log debug "Using requirement file: $SCRIPT_DIR/10_land_use_requirements.txt"
-$CONDA_BIN env create -n land_use -c conda-forge --file $SCRIPT_DIR/10_land_use_requirements.txt
+$CONDA_BIN env create -n land_use -c conda-forge --file "$SCRIPT_DIR"/10_land_use_requirements.txt
 
 # Activate the conda environment
 log debug "Activating conda environment: land_use"
@@ -47,4 +47,4 @@ R -e "install.packages('$DINAMICA_EGO_DIR/dinamica_1.0.4.tar.gz', repos = NULL, 
 
 # Export the conda environment
 log debug "Exporting conda environment: land_use"
-$CONDA_BIN env export | grep -v "^prefix: " > $SCRIPT_DIR/10_land_use_env.yml
+$CONDA_BIN env export | grep -v "^prefix: " > "$SCRIPT_DIR"/10_land_use_env.yml
