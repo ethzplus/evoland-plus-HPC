@@ -69,15 +69,15 @@ srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" ste
 # ______________________________________________________________________________________
 
 
-# 01_LULCC - LULCC
+# 10_LULCC - LULCC
 # ----------------
-log info "Running LULCC - 01_LULCC.sh"
-srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/01_LULCC.sh
+log info "Running LULCC - 10_LULCC.sh"
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/10_LULCC/10_LULCC.sh
 
 # 20_FocalPrep - Focal LULC Preparation
 # -------------------------------------
 log info "Running Focal LULC Preparation - 20_FocalPrep.sh"
-srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/20_FocalPrep.sh
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/20_FocalLULC/20_FocalPrep.sh
 
 # 30_N-SDM - N-SDM Biodiversity
 # -----------------------------
