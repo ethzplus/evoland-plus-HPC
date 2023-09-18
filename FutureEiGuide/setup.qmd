@@ -36,5 +36,6 @@ To make all bash scripts in the source executable, give them the permission as
 follows:
 
 ```bash
-chmod +x src/**.sh
+# possibly activate globstar: shopt -s globstar
+chmod +x src/**/*.sh
 ```
