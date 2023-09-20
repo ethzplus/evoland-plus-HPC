@@ -8,3 +8,4 @@ FutureEiGuide/_book/
 # R
 *.Rhistory
 *.Rprofile
+*.RData
