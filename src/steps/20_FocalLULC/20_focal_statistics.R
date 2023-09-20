@@ -50,9 +50,19 @@ focal_stats <- function(
     d = radius,
     type = window_type
   )
-  # Calculate focal statistics
-  terra::focal(raster, focal_mat, fun = fun, ...)
-}
+  
+  # Split input raster into layer for each class
+  Seg_raster <- terra::segregate(raster)
+  
+  # Loop over layers calculating focal
+  Focal_layers <- sapp(Seg_raster, fun = function(lyr,...) {terra::focal(lyr, focal_mat, fun = fun, ...)})
+
+  # Name layers in Focal_layers according to LULC values or class names (check require from Antoine A.) 
+  
+  #This line would name according to raster values would need something else to get class names
+  names(Focal_layers) <- unique(raster, na.rm=FALSE)
+  
+} #close function
 
 #' Convert map to predictor
 #'
@@ -70,10 +80,22 @@ focal_stats <- function(
 map_to_predictor <- function(map_path, save_path, ...) {
   # Load map
   map <- terra::rast(map_path)
+  
   # Calculate focal statistics
   map <- focal_stats(map, ...)
-  # Save as rds
-  saveRDS(map, save_path)
+  
+  #focal_stats will now return a Spatraster with focal layers for each class value
+  #loop over the layers saving an .rds for each and modifying the save path. 
+  
+  sapp(Seg_raster, fun = function(lyr,...) {
+    
+    #modify save path
+    layer_path <- paste0(save_path, "_", names(x))
+    
+    # Save layer as rds
+    saveRDS(lyr, layer_path)
+  }) #close loop ove rlayers
+  
   # Free memory
   rm(map)
 }
