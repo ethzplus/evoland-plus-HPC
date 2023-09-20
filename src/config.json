@@ -7,5 +7,14 @@
   },
   "LULCC": {
     "LULCC_DIR": "~/LULCC"
+  },
+  "FocalLULCC": {
+    "WorkDir": "~/Future-EI/",
+    "HistoricalDir": "",
+    "InputDir": "/scratch/focal_lulcc/in",
+    "OutputDir": "/scratch/focal_lulcc/out",
+    "RadiusList": [3000, 1500, 200, 100, 25],
+    "WindowType": "circle",
+    "FocalFunction": "mean"
   }
 }
