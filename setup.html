@@ -221,14 +221,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="dinamica-ego" class="level2" data-number="4.2">
 <h2 data-number="4.2" class="anchored" data-anchor-id="dinamica-ego"><span class="header-section-number">4.2</span> Dinamica EGO</h2>
-<p>Dinamica EGO is available on <a href="https://dinamicaego.com/dinamica-7/">the project website</a>. To download the app image via console, use the following command:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://dinamicaego.com/nui_download/1792/ <span class="at">-O</span> dinamica-ego.AppImage</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Dinamica EGO is available on <a href="https://dinamicaego.com/dinamica-7/">the project website</a>, but will be shipped in the LULCC docker image for simplicity.</p>
 <p>For a full description of the environments, see the environments:</p>
 </section>
 <section id="environments" class="level2" data-number="4.3">
 <h2 data-number="4.3" class="anchored" data-anchor-id="environments"><span class="header-section-number">4.3</span> Environments</h2>
-<p>For the steps in the pipeline, different environments and modules are required. These are collected in the folder <a href="https://github.com/cbueth/Future-EI/tree/main/src/environments"><code>src/environments</code></a>. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x src/<span class="pp">**</span>.sh</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For the steps in the pipeline, different environments and modules are required. These are collected in each step folder. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># possibly activate globstar: shopt -s globstar</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x src/<span class="pp">**</span>/<span class="pp">*</span>.sh</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 
 </section>

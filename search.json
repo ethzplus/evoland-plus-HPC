@@ -53,14 +53,14 @@
     "href": "setup.html#dinamica-ego",
     "title": "4  Setup",
     "section": "4.2 Dinamica EGO",
-    "text": "4.2 Dinamica EGO\nDinamica EGO is available on the project website. To download the app image via console, use the following command:\nwget https://dinamicaego.com/nui_download/1792/ -O dinamica-ego.AppImage\nFor a full description of the environments, see the environments:"
+    "text": "4.2 Dinamica EGO\nDinamica EGO is available on the project website, but will be shipped in the LULCC docker image for simplicity.\nFor a full description of the environments, see the environments:"
   },
   {
     "objectID": "setup.html#environments",
     "href": "setup.html#environments",
     "title": "4  Setup",
     "section": "4.3 Environments",
-    "text": "4.3 Environments\nFor the steps in the pipeline, different environments and modules are required. These are collected in the folder src/environments. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:\nchmod +x src/**.sh"
+    "text": "4.3 Environments\nFor the steps in the pipeline, different environments and modules are required. These are collected in each step folder. For each, there are scripts to reproduce our used environment. To make all bash scripts in the source executable, give them the permission as follows:\n# possibly activate globstar: shopt -s globstar\nchmod +x src/**/*.sh"
   },
   {
     "objectID": "summary.html",
