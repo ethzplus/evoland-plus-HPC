@@ -34,7 +34,7 @@ fi
 log info "Creating conda environment: land_use"
 log debug "Using conda from: $CONDA_BIN"
 log debug "Using requirement file: $SCRIPT_DIR/10_land_use_requirements.txt"
-$CONDA_BIN env create -n land_use -c conda-forge --file "$SCRIPT_DIR"/10_land_use_requirements.txt
+$CONDA_BIN create -n land_use -c conda-forge --file "$SCRIPT_DIR"/10_land_use_requirements.txt
 
 # Activate the conda environment
 log debug "Activating conda environment: land_use"

@@ -1,0 +1,6 @@
+r-terra
+r-codetools
+r-jsonlite
+r-stringr
+r-future
+r-future.apply

@@ -2,7 +2,8 @@
 [//]: # (Workflow: Linting shell check)
 [//]: # (R lifecycle batch)
 [![Quarto: Pages Guide](https://github.com/cbueth/Future-EI/actions/workflows/publish.yml/badge.svg?branch=main)](https://cbueth.github.io/Future-EI/)
-[![ShellCheck: bash](https://github.com/cbueth/Future-EI/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint.yml)
+[![Shellcheck](https://github.com/cbueth/Future-EI/actions/workflows/lint-sh.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint-sh.yml)
+[![Lintr](https://github.com/cbueth/Future-EI/actions/workflows/lint-R.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint-R.yml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
 
