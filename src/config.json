@@ -13,9 +13,11 @@
     "HistoricalDir": "",
     "InputDir": "/scratch/focal_lulcc/in",
     "OutputDir": "/scratch/focal_lulcc/out",
-    "BaseName": "ch_lulc_agg11_future_pixel_",
-    "RadiusList": [3000, 1500, 200, 100, 25],
+    "BaseName": "ch_lulc_agg11_present_pixel",
+    "RadiusList": [100, 200, 500, 1500, 3000],
     "WindowType": "circle",
-    "FocalFunction": "mean"
+    "FocalFunction": "mean",
+    "Parallel": "True",
+    "NWorkers": 0
   }
 }

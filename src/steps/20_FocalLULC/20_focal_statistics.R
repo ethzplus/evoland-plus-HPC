@@ -17,16 +17,17 @@
 #'
 
 # Load libraries
-packs <- c("terra", "jsonlite")
+packs <- c("terra", "jsonlite", "future", "future.apply", "stringr")
 invisible(lapply(packs, require, character.only = TRUE))
 
 
 ## Functions
 
-#' Calculate focal statistics for a given raster and radius
+#' Calculate focal statistics for a given raster and radius, and save as rds
 #'
 #' @param raster RasterLayer to calculate focal statistics for
 #' @param radius Radius for window
+#' @param base_path Base path for predictor
 #' @param window_type Type of window, e.g. "circle", "rectangle"
 #' @param fun Function to calculate focal statistics, function taking multiple
 #' numbers and returning a numeric vector (one or more values),
@@ -42,8 +43,15 @@ invisible(lapply(packs, require, character.only = TRUE))
 #'
 
 focal_stats <- function(
-  raster, radius, window_type = "circle", fun = "mean", ...
+  raster, radius, base_path, window_type = "circle", fun = "mean", ...
 ) {
+  # Check if radius is >= the resolution of the raster
+  if (radius < min(terra::res(raster))) {
+    stop(paste0(
+      "Radius (", radius, ") is smaller than the resolution of the raster (",
+      min(terra::res(raster)), ")."
+    ))
+  }
   # Create focal matrix
   focal_mat <- terra::focalMat(
     x = raster,
@@ -55,16 +63,25 @@ focal_stats <- function(
   seg_raster <- terra::segregate(raster)
 
   # Loop over layers calculating focal
-  focal_layers <- terra::sapp(seg_raster, fun = function(lyr, ...) {
-    terra::focal(lyr, focal_mat, fun = fun, ...)
+  sapply(as.list(seg_raster), function(lyr, ...) {
+    focal_lyr <- terra::focal(
+      x = lyr,
+      w = focal_mat,
+      fun = fun,
+      ...
+    )
+    # modify save path: {base_path}_{year}_cl{class}_{radius}.rds
+    layer_path <- paste0(
+      base_path,
+      "_cl", names(lyr),
+      "_", radius,
+      ".rds"
+    )
+    # Save layer as rds
+    saveRDS(focal_lyr, layer_path)
+    # Save to tif - terra::writeRaster(focal_lyr, paste0(layer_path, ".tif"))
+    cat("Saved layer ", names(lyr), " to ", layer_path, "!\n")
   })
-
-  # TODO: Name layers in Focal_layers according to LULC values or class names
-  # (check require from Antoine A.)
-
-  # This line would name according to raster values would need something else
-  # to get class names
-  names(focal_layers) <- unique(raster, na.rm = FALSE)
 
 }
 
@@ -97,31 +114,19 @@ map_to_predictor <- function(map_path, base_path, ...) {
   year <- stringr::str_match(basename(map_path), "_(\\d{4})(_|\\.)")[, 2]
   base_path <- paste0(base_path, "_", year)
 
+  # Skip if radius is smaller than resolution of map
+  if (list(...)$radius < min(terra::res(map))) {
+    cat(paste0(
+      "Radius (", list(...)$radius, ") is smaller than the resolution of the ",
+      "map (", min(terra::res(map)), "). Skipping map ", map_path, ".\n"
+    ))
+    return()
+  }
+
   # Calculate focal statistics
-  focal_layers <- focal_stats(map, ...)
-
+  focal_stats(map, base_path, ...)
   rm(map)
-
-  # focal_stats will now return a Spatraster with focal layers for each class
-  # value loop over the layers saving an .rds for each and modifying the save
-  # path.
-
-  terra::sapp(focal_layers, fun = function(lyr, ...) {
-
-    # modify save path: {base_path}_{year}_cl{class}_{radius}.rds
-    layer_path <- paste0(
-      base_path,
-      "_cl", names(lyr),
-      "_", list(...)$radius,
-      ".rds"
-    )
-
-    # Save layer as rds
-    saveRDS(lyr, layer_path)
-  }) #close loop over layers
-
-  # Free memory
-  rm(focal_layers)
+  cat("Done calculating focal statistics for map ", map_path, "!\n")
 }
 
 #' Convert all maps to predictors in folder
@@ -142,23 +147,45 @@ map_to_predictor <- function(map_path, base_path, ...) {
 #'
 #' @docType methods
 #' @importFrom utils txtProgressBar setTxtProgressBar getTxtProgressBar
+#' @importFrom future future_sapply availableCores
+#' @importFrom future.apply future_sapply
 #'
 
-folder_to_predictors <- function(folder, save_folder, base_name, combinations) {
+folder_to_predictors <- function(
+  folder, save_folder, base_name, combinations, parallel = FALSE
+) {
   # Get all maps - tif or rds
   map_paths <- list.files(folder, full.names = TRUE)
-  map_paths <- map_paths[grepl(".tif|.rds", map_paths)]
+  map_paths <- map_paths[grepl(".tif|.rds|.grd", map_paths)]
   # For each map
-  progress <- utils::txtProgressBar(
-    min = 0,
-    max = length(map_paths),
-    style = 3
-  )
-  cat(paste0("Calculating focal statistics for ", length(map_paths),
-             " maps...\n"))
-  for (map in map_paths) {
+  if (parallel == FALSE) {
+    cat(paste0("Calculating focal statistics for ", length(map_paths),
+               " maps sequentially...\n"))
+    progress <- utils::txtProgressBar(
+      min = 0,
+      max = length(map_paths) * length(combinations),
+      style = 3
+    )
+    future::plan(future::sequential)
+  } else {
+    # number of workers from config - if not set, use all available cores
+    n_workers <- ifelse(
+      is.null(config$NWorkers) ||
+        config$NWorkers == "" ||
+        config$NWorkers == 0,
+      future::availableCores(),
+      config$NWorkers
+    )
+    cat(paste0("Calculating focal statistics for ", length(map_paths),
+               " maps in parallel with ", n_workers, " workers...\n"))
+    future::plan(future::multisession, workers = n_workers)
+  }
+  future.apply::future_sapply(map_paths, function(map) {
+    cat(paste0("Calculating focal statistics for map ", map, "...\n"))
     # For each combination
     for (combination in combinations) {
+      cat(paste0("Calculating focal statistics for combination ",
+                 paste(combination, collapse = ", "), "...\n"))
       # Convert map to predictor
       do.call(
         map_to_predictor,
@@ -168,21 +195,23 @@ folder_to_predictors <- function(folder, save_folder, base_name, combinations) {
           combination
         )
       )
+      if (parallel == FALSE) {
+        # Update progress bar
+        utils::setTxtProgressBar(
+          progress,
+          value = utils::getTxtProgressBar(progress) + 1
+        )
+      }
     }
-    # Update progress bar
-    utils::setTxtProgressBar(
-      progress,
-      i = utils::getTxtProgressBar(progress) + 1
-    )
-  }
+  })
 }
 
 
 ## Main
 
-# Load config - only FocalLULCC
-config <- jsonlite::read_json("../../config.json", simplifyVector = TRUE)
-config <- config$FocalLULCC
+# Load config from src/config.json
+config <- jsonlite::read_json("src/config.json", simplifyVector = TRUE)
+config <- config$FocalLULCC # only FocalLULCC
 
 # Check if InputDir is set
 if (is.null(config$InputDir) || config$InputDir == "") {
@@ -194,7 +223,7 @@ if (is.null(config$OutputDir) || config$OutputDir == "") {
 }
 # Check if OutputDir exists and create if not
 if (!dir.exists(config$OutputDir)) {
-  dir.create(config$OutputDir)
+  dir.create(config$OutputDir, recursive = TRUE)
 }
 # Check if BaseName is set
 if (is.null(config$BaseName) || config$BaseName == "") {
@@ -211,6 +240,7 @@ cat("Output directory set to:", config$OutputDir, "\n")
 cat("Base name set to:", config$BaseName, "\n")
 cat("Radii:", paste(config$RadiusList, collapse = ", "), "\n")
 
+t0 <- Sys.time()
 
 # Convert maps to predictors for each radius in config$RadiusList
 folder_to_predictors(
@@ -223,16 +253,13 @@ folder_to_predictors(
       list(
         radius = radius,
         windowType = config$WindowType,
-        fun = config$FocalFunction,
+        fun = config$FocalFunction
       )
     }
-  )
+  ),
+  parallel = config$Parallel
 )
 
 cat("Done calculating focal statistics for LULC preparation!\n")
-
-
-# simulated_LULC_scenario_BAU_simID_v1_year_2020.tif
-#           -> ch_lulc_agg11_future_pixel_2020_cl1_100.rds
-#
-# 'ch_lulc_geostat65_present_pixel_2013_2018_cl53_100.rds'
+t0 <- Sys.time() - t0
+cat("Time elapsed: ", t0, attr(t0, "units"), "\n")
