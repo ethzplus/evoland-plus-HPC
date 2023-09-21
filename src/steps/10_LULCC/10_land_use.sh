@@ -1,7 +1,7 @@
 #!/bin/bash
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "Running script from: $SCRIPT_DIR"
-source "$SCRIPT_DIR/../bash_common.sh"
+source "$SCRIPT_DIR/../../bash_common.sh"
 # Setup script for the land use conda environment
 
 # The LULCC requires Dinamica EGO. Download the AppImage and add the path to the
@@ -38,7 +38,7 @@ $CONDA_BIN env create -n land_use -c conda-forge --file "$SCRIPT_DIR"/10_land_us
 
 # Activate the conda environment
 log debug "Activating conda environment: land_use"
-source "$SCRIPT_DIR/../de_activate.sh" land_use 1
+source "$SCRIPT_DIR/../../de_activate.sh" land_use 1
 
 # Not tracked in the environment.yml file:
 # Dinamica EGO connector - Install the Dinamica R package
