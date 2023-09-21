@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/../../bash_common.sh"
 log info "Creating conda environment: focal_lulc"
 log debug "Using conda from: $CONDA_BIN"
 log debug "Using requirement file: $SCRIPT_DIR/20_FocalPrep_requirements.txt"
-$CONDA_BIN env create -n focal_lulc -c conda-forge --file "$SCRIPT_DIR"/20_FocalPrep_requirements.txt
+$CONDA_BIN create -n focal_lulc -c conda-forge --file "$SCRIPT_DIR"/20_FocalPrep_requirements.txt
 
 # Activate the conda environment
 log debug "Activating conda environment: focal_lulc"
