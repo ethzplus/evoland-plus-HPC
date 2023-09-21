@@ -1,3 +1,4 @@
 r-terra
 r-codetools
 r-jsonlite
+r-stringr

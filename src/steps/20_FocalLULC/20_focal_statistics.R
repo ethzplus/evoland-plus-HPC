@@ -11,7 +11,7 @@
 #' @environment focal_lulc
 #' @config config.json
 #' @date 2023-09-20
-#' @author Carlson Büth
+#' @author Carlson Büth, Benjamin Black
 #'
 #' @docType script
 #'
@@ -50,60 +50,85 @@ focal_stats <- function(
     d = radius,
     type = window_type
   )
-  
-  # Split input raster into layer for each class
-  Seg_raster <- terra::segregate(raster)
-  
-  # Loop over layers calculating focal
-  Focal_layers <- sapp(Seg_raster, fun = function(lyr,...) {terra::focal(lyr, focal_mat, fun = fun, ...)})
 
-  # Name layers in Focal_layers according to LULC values or class names (check require from Antoine A.) 
-  
-  #This line would name according to raster values would need something else to get class names
-  names(Focal_layers) <- unique(raster, na.rm=FALSE)
-  
-} #close function
+  # Split input raster into layer for each class
+  seg_raster <- terra::segregate(raster)
+
+  # Loop over layers calculating focal
+  focal_layers <- terra::sapp(seg_raster, fun = function(lyr, ...) {
+    terra::focal(lyr, focal_mat, fun = fun, ...)
+  })
+
+  # TODO: Name layers in Focal_layers according to LULC values or class names
+  # (check require from Antoine A.)
+
+  # This line would name according to raster values would need something else
+  # to get class names
+  names(focal_layers) <- unique(raster, na.rm = FALSE)
+
+}
 
 #' Convert map to predictor
 #'
-#' @param map_path Path to map, tif or rds
-#' @param save_path Path to save predictor
+#' Loads the map from map_path, extracts the year, so focal_stats() can save
+#' the predictor layer per class with the year in the name, in the format
+#' "{base_path}_{year}_cl{class}_{radius}.rds"
+#' The year is extracted from the map name by _(\d{4})(_|\.),
+#' a four digit number enclosed by `_`, and `_` | `.` at the end.
+#'
+#' @param map_path Path to map, tif or rds.
+#' Needs to include four digits for year
+#' @param base_path Base path for predictor
 #' @param ... Additional arguments for focal_stats
 #'
 #' @examples
-#' map_to_predictor("SimulationMap_1.tif", "predictor_1.rds", radius = 500)
+#' map_to_predictor("SimulationMap_2020.tif", "folder/name", radius = 500)
+#' # -> "folder/name_2025_cl1_500.rds", "folder/name_2025_cl2_500.rds", ...
 #'
 #' @docType methods
 #' @importFrom terra rast
+#' @importFrom stringr str_match
 #'
 
-map_to_predictor <- function(map_path, save_path, ...) {
+map_to_predictor <- function(map_path, base_path, ...) {
   # Load map
   map <- terra::rast(map_path)
-  
+  # Match year in map name by _(\d{4})(_|\.) and extract first capture group
+  year <- stringr::str_match(basename(map_path), "_(\\d{4})(_|\\.)")[, 2]
+  base_path <- paste0(base_path, "_", year)
+
   # Calculate focal statistics
-  map <- focal_stats(map, ...)
-  
-  #focal_stats will now return a Spatraster with focal layers for each class value
-  #loop over the layers saving an .rds for each and modifying the save path. 
-  
-  sapp(Seg_raster, fun = function(lyr,...) {
-    
-    #modify save path
-    layer_path <- paste0(save_path, "_", names(x))
-    
+  focal_layers <- focal_stats(map, ...)
+
+  rm(map)
+
+  # focal_stats will now return a Spatraster with focal layers for each class
+  # value loop over the layers saving an .rds for each and modifying the save
+  # path.
+
+  terra::sapp(focal_layers, fun = function(lyr, ...) {
+
+    # modify save path: {base_path}_{year}_cl{class}_{radius}.rds
+    layer_path <- paste0(
+      base_path,
+      "_cl", names(lyr),
+      "_", list(...)$radius,
+      ".rds"
+    )
+
     # Save layer as rds
     saveRDS(lyr, layer_path)
-  }) #close loop ove rlayers
-  
+  }) #close loop over layers
+
   # Free memory
-  rm(map)
+  rm(focal_layers)
 }
 
 #' Convert all maps to predictors in folder
 #'
 #' @param folder Folder with simulation maps
 #' @param save_folder Folder to save predictors
+#' @param base_name Base string for naming convetion
 #' @param combinations List of combinations of radius, windowType, fun, ...
 #'
 #' @examples
@@ -111,41 +136,35 @@ map_to_predictor <- function(map_path, save_path, ...) {
 #'  list(radius = 100, window_type = "circle", fun = "mean"),
 #'  list(radius = 500, window_type = "circle", fun = "mean", na.rm = TRUE),
 #' )
-#' maps_to_predictors("SimulationMaps", "Predictors", combinations)
+#' maps_to_predictors("SimulationMaps", "Predictors", "tests", combinations)
+#' # -> "Predictors/tests_2025_cl1_100.rds",
+#' #    "Predictors/tests_2025_cl1_500.rds", ...
 #'
 #' @docType methods
+#' @importFrom utils txtProgressBar setTxtProgressBar getTxtProgressBar
 #'
 
-maps_to_predictors <- function(folder, save_folder, combinations) {
+folder_to_predictors <- function(folder, save_folder, base_name, combinations) {
   # Get all maps - tif or rds
-  maps <- list.files(folder, full.names = TRUE)
-  maps <- maps[grepl(".tif|.rds", maps)]
+  map_paths <- list.files(folder, full.names = TRUE)
+  map_paths <- map_paths[grepl(".tif|.rds", map_paths)]
   # For each map
   progress <- utils::txtProgressBar(
     min = 0,
-    max = length(maps),
+    max = length(map_paths),
     style = 3
   )
-  cat(paste0("Calculating focal statistics for ", length(maps), " maps...\n"))
-  for (map in maps) {
-    # Get map name
-    map_name <- basename(map)
+  cat(paste0("Calculating focal statistics for ", length(map_paths),
+             " maps...\n"))
+  for (map in map_paths) {
     # For each combination
     for (combination in combinations) {
-      # Get combination name: radius_windowType_fun_{mapName}.rds
-      combination_name <- paste(
-        combination$radius,
-        combination$windowType,
-        combination$fun,
-        map_name,
-        sep = "_"
-      )
       # Convert map to predictor
       do.call(
         map_to_predictor,
         c(
-          list(mapPath = map),
-          list(savePath = file.path(save_folder, combination_name)),
+          list(map_path = map),
+          list(base_path = file.path(save_folder, base_name)),
           combination
         )
       )
@@ -177,6 +196,10 @@ if (is.null(config$OutputDir) || config$OutputDir == "") {
 if (!dir.exists(config$OutputDir)) {
   dir.create(config$OutputDir)
 }
+# Check if BaseName is set
+if (is.null(config$BaseName) || config$BaseName == "") {
+  stop("BaseName not set in config.json")
+}
 
 cat("Calculating focal statistics for LULC preparation\n")
 
@@ -185,13 +208,15 @@ setwd(config$WorkDir)
 cat("Working directory set to:", getwd(), "\n")
 cat("Input directory set to:", config$InputDir, "\n")
 cat("Output directory set to:", config$OutputDir, "\n")
+cat("Base name set to:", config$BaseName, "\n")
 cat("Radii:", paste(config$RadiusList, collapse = ", "), "\n")
 
 
 # Convert maps to predictors for each radius in config$RadiusList
-maps_to_predictors(
+folder_to_predictors(
   folder = config$InputDir,
   save_folder = config$OutputDir,
+  base_name = config$BaseName,
   combinations = lapply(
     config$RadiusList,
     function(radius) {
@@ -205,3 +230,9 @@ maps_to_predictors(
 )
 
 cat("Done calculating focal statistics for LULC preparation!\n")
+
+
+# simulated_LULC_scenario_BAU_simID_v1_year_2020.tif
+#           -> ch_lulc_agg11_future_pixel_2020_cl1_100.rds
+#
+# 'ch_lulc_geostat65_present_pixel_2013_2018_cl53_100.rds'
