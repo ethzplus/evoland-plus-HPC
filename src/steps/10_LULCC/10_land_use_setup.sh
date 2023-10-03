@@ -1,4 +1,7 @@
 #!/bin/bash
+# ---> Rather use containerized Docker image,
+#      see src/steps/10_LULCC/docker_setup.sh
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "Running script from: $SCRIPT_DIR"
 source "$SCRIPT_DIR/../../bash_common.sh"
