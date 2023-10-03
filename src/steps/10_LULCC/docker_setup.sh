@@ -11,8 +11,6 @@ version="0.1"
 namespace="cbueth"  # can later be changed to an organizational account
 repo="lulcc"
 
-apptainer=$(command -v singularity)  #$(command -v apptainer)
-
 # Check if the Docker or apptainer command is available
 if command -v docker &> /dev/null; then
     # List docker images of the local machine for the repository, if any
@@ -63,12 +61,12 @@ if command -v docker &> /dev/null; then
             log info "Skipping push of Docker image $namespace/$repo:$version"
         fi
     fi
-elif command -v "$apptainer" /dev/null; then
-    log info "Apptainer is available from $(command -v singularity)"
+elif command -v apptainer /dev/null; then
+    log info "Apptainer is available from $(command -v apptainer)"
     log info "Downloading Docker image $namespace/$repo:$version"
-    $apptainer pull docker://$namespace/$repo:$version
+    apptainer pull docker://$namespace/$repo:$version
 else
-    log error "Neither Docker nor apptainer is available. Please install one of them and make sure it is available in the PATH."
+    log error "Neither Docker nor Apptainer is available. Please install one of them and make sure it is available in the PATH."
     return
 fi
 
