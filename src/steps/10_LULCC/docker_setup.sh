@@ -64,7 +64,7 @@ if command -v docker &> /dev/null; then
 elif command -v apptainer /dev/null; then
     log info "Apptainer is available from $(command -v apptainer)"
     log info "Downloading Docker image $namespace/$repo:$version"
-    apptainer pull docker://$namespace/$repo:$version
+    apptainer pull docker://$namespace/$repo:$version --dir "$APPTAINER_CONTAINERDIR"
 else
     log error "Neither Docker nor Apptainer is available. Please install one of them and make sure it is available in the PATH."
     return

@@ -3,8 +3,10 @@
     "DINAMICA_EGO_DIR": "~/dinamica-ego",
     "DINAMICA_EGO_APP": "~/dinamica-ego/DinamicaEGO-740-Ubuntu-LTN.AppImage",
     "FUTURE_EI_LOG_LEVEL": "debug",
-    "LULCC_CH_HPC_DIR": "~/LULCC-CH-HPC",
-    "LULCC_DOCKER_IMAGE": "cbueth/lulcc:0.1"
+    "LULCC_CH_HPC_DIR": "~/LULCC_CH_HPC",
+    "LULCC_DOCKER_IMAGE": "cbueth/lulcc:0.1",
+    "APPTAINER_CONTAINERDIR": "~/apptainer_containers",
+    "APPTAINER_CACHEDIR": "/scratch/apptainer_cache"
   },
   "LULCC": {
     "LULCC_DIR": "~/LULCC"
