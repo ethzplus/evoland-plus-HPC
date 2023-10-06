@@ -6,10 +6,15 @@ source "$SCRIPT_DIR/../../bash_common.sh"
 # Script to download, build and distribute the Docker image for the LULCC step
 # Supports Docker, and Apptainer (Singularity) as a fallback only for downloading
 
+# Assure LULCC_DOCKER_NAMESPACE, LULCC_DOCKER_REPO, and LULCC_DOCKER_VERSION are set
+if [ -z "$LULCC_DOCKER_NAMESPACE" ] || [ -z "$LULCC_DOCKER_REPO" ] || [ -z "$LULCC_DOCKER_VERSION" ]; then
+    log error "Please set the Docker Hub namespace, repository, and version of the LULCC Docker image. You can do this by setting the variables LULCC_DOCKER_NAMESPACE, LULCC_DOCKER_REPO, and LULCC_DOCKER_VERSION in the src/config.yml file."
+    return
+fi
 # Docker Hub repository
-version="0.1"
-namespace="cbueth"  # can later be changed to an organizational account
-repo="lulcc"
+namespace="$LULCC_DOCKER_NAMESPACE"  # can later be changed to an organizational account
+repo="$LULCC_DOCKER_REPO"
+version="$LULCC_DOCKER_VERSION"
 
 # Check if the Docker or apptainer command is available
 if command -v docker &> /dev/null; then
@@ -23,9 +28,7 @@ if command -v docker &> /dev/null; then
     if docker image inspect $repo:$version &> /dev/null; then
         log info "Docker image $repo:$version already exists. Skipping build."
     else
-        log info "Docker image $repo:$version does not exist. You can download it
-         from Docker Hub or build it yourself. Do you want to build it? [
-         (d)ownload/(b)uild/(s)kip]"
+        log info "Docker image $repo:$version does not exist. You can download it from Docker Hub or build it yourself. Do you want to build it? [(d)ownload/(b)uild/(s)kip]"
         read -r answer
         if [ "$answer" == "d" ]; then
             log info "Downloading Docker image $namespace/$repo:$version"
@@ -64,6 +67,13 @@ if command -v docker &> /dev/null; then
 elif command -v apptainer /dev/null; then
     log info "Apptainer is available from $(command -v apptainer)"
     log info "Downloading Docker image $namespace/$repo:$version"
+    # Create the Apptainer container directory if it does not exist
+    if [ ! -d "$APPTAINER_CONTAINERDIR" ]; then
+        log info "Creating Apptainer container directory: $APPTAINER_CONTAINERDIR"
+        mkdir -p "$APPTAINER_CONTAINERDIR"
+    else
+        log info "Using existing Apptainer container directory: $APPTAINER_CONTAINERDIR"
+    fi
     apptainer pull --dir "$APPTAINER_CONTAINERDIR" docker://$namespace/$repo:$version
 else
     log error "Neither Docker nor Apptainer is available. Please install one of them and make sure it is available in the PATH."

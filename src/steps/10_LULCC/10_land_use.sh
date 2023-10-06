@@ -3,34 +3,38 @@
 # If called separately for testing, source the bash_common.sh script first
 
 # Assure Apptainer (/Singularity) or Docker is available
-if ! command -v apptainer &> /dev/null; then
-    if ! command -v docker &> /dev/null; then
-        log error "Neither Apptainer nor Docker is available. Please install one of them and make sure it is available in the PATH."
-        return
-    fi
+if ! (command -v apptainer &> /dev/null || command -v docker &> /dev/null); then
+    log error "Neither Apptainer nor Docker is available. Please install one of them and make sure it is available in the PATH."
+    return
 fi
 # Assure LULCC_CH_HPC_DIR is set
 if [ -z "$LULCC_CH_HPC_DIR" ]; then
     log error "LULCC_CH_HPC_DIR is not set. Please set it to the directory of the LULCC-CH-HPC repository."
     return
 fi
-# Assure LULCC_DOCKER_IMAGE is set
-if [ -z "$LULCC_DOCKER_IMAGE" ]; then
-    log error "LULCC_DOCKER_IMAGE is not set. Please set it to the Docker image to use."
+# Assure LULCC_DOCKER_NAMESPACE, LULCC_DOCKER_REPO, and LULCC_DOCKER_VERSION are set
+if [ -z "$LULCC_DOCKER_NAMESPACE" ] || [ -z "$LULCC_DOCKER_REPO" ] || [ -z "$LULCC_DOCKER_VERSION" ]; then
+    log error "Please set the Docker Hub namespace, repository, and version of the LULCC Docker image. You can do this by setting the variables LULCC_DOCKER_NAMESPACE, LULCC_DOCKER_REPO, and LULCC_DOCKER_VERSION in the src/config.yml file."
     return
 fi
-# Lazy load LULCC_DOCKER_IMAGE if not available
-if ! apptainer exec docker://"$LULCC_DOCKER_IMAGE" true; then
-    log info "Lazy loading Docker image $LULCC_DOCKER_IMAGE"
-    apptainer pull docker://"$LULCC_DOCKER_IMAGE"
+lulcc_docker_image="$LULCC_DOCKER_NAMESPACE/$LULCC_DOCKER_REPO:$LULCC_DOCKER_VERSION"
+
+# Get Apptainer APPTAINER_CONTAINERDIR
+matching_container=$(find "$APPTAINER_CONTAINERDIR" -type f -name "*.sif" \
+    -exec sh -c 'apptainer inspect "$1" | grep "org.label-schema.usage.singularity.deffile.from" | grep -q "$lulcc_docker_image"' _ {} \; \
+    -print)
+
+if ! (docker image inspect "$lulcc_docker_image" &> /dev/null || [ -n "$matching_container" ]); then
+    log error "Docker image $lulcc_docker_image does not exist. Please download or build it first."
+    return
 fi
 
-# Docker image is available, run the container, preferably with Apptainer
-log info "Running Docker image $LULCC_DOCKER_IMAGE with $LULCC_CH_HPC_DIR mounted to /model"
-if ! command -v apptainer &> /dev/null; then
-    log debug "Using Apptainer from $(command -v apptainer)"
-    apptainer exec --bind "$LULCC_CH_HPC_DIR":/model docker://"$LULCC_DOCKER_IMAGE"
+# Run the container, preferably with Apptainer
+log info "Running Docker image $lulcc_docker_image with $LULCC_CH_HPC_DIR mounted to /model"
+if command -v apptainer &> /dev/null; then
+    log debug "Using Apptainer from $(command -v apptainer) with container $matching_container"
+    apptainer run --bind "$LULCC_CH_HPC_DIR":/model "$matching_container"
 else
     log debug "Using docker from $(command -v docker)"
-    docker run -v "$LULCC_CH_HPC_DIR":/model -it "$LULCC_DOCKER_IMAGE"
+    docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
 fi

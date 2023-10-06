@@ -25,7 +25,7 @@ RUN mkdir -p $INPUT_DIR $OUTPUT_DIR $MODEL_DIR
 RUN apt update && apt install -y curl bzip2
 RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 RUN eval "$(./bin/micromamba shell hook -s posix)"
-RUN micromamba shell init -s bash -p ~/micromamba
+RUN micromamba shell init -s bash -p $APP_DIR/micromamba
 
 # Create and activate environment - land_use
 COPY 10_land_use_docker.sh $APP_DIR/10_land_use_docker.sh
