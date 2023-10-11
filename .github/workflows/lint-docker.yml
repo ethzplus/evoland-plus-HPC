@@ -2,7 +2,7 @@
 on:
   push:
     paths:
-      - '**/Dockerfile'
+      - '**/*Dockerfile'
   pull_request:
 
 name: "Hadolint"
