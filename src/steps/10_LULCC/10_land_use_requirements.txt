@@ -1,35 +1,31 @@
-r-base
-# r-stats
-r-data.table
-r-raster
-r-tidyverse
-r-plyr
-r-readr
-r-sjmisc
-r-terra
-r-rgdal
-r-rgeos
-r-future.apply
-r-future
-r-future.callr
-r-stringr
-r-stringi
-r-readxl
-r-rlist
-r-rstatix
-r-openxlsx
-r-sp
-r-xlsx
-r-callr
-r-gdata
-r-randomForest
-r-caret
-# for dinamica
-r-rcppprogress
-r-filelock
-#r-rbenchmark
-r-rcpp
-# Not all are available in conda-forge (commented out)
-# https://stackoverflow.com/questions/34705917/how-to-install-r-packages-that-are-not-available-in-r-essentials
-# r-dinamica=1.0.4 from https://dinamicaego.com/dinamica/dokuwiki/doku.php?id=external_communication
-# r-grid   R-base
+data.table
+raster
+curl
+openssl
+httr
+ragg
+rvest
+xml2
+googledrive
+googlesheets4
+tidyverse
+plyr
+readr
+sjmisc
+terra
+geos
+future.apply
+future
+future.callr
+stringr
+stringi
+readxl
+rlist
+rstatix
+openxlsx
+sp
+xlsx
+callr
+gdata
+randomForest
+caret

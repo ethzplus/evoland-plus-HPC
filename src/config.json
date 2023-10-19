@@ -6,7 +6,7 @@
     "LULCC_CH_HPC_DIR": "~/LULCC_CH_HPC",
     "LULCC_DOCKER_NAMESPACE": "cbueth",
     "LULCC_DOCKER_REPO": "lulcc",
-    "LULCC_DOCKER_VERSION": "0.1.1",
+    "LULCC_DOCKER_VERSION": "0.1.5",
     "APPTAINER_CONTAINERDIR": "~/apptainer_containers",
     "APPTAINER_CACHEDIR": "/scratch/apptainer_cache"
   },
