@@ -1,5 +1,7 @@
 # Docker image the LULCC use
 # https://github.com/cbueth/dinamica-ego-docker/
+# Unpublished image - build locally with dinamica-ego-docker
+# hadolint ignore=DL3006
 FROM dinamica-ego
 LABEL authors="Carlson Büth" \
       description="Docker image for the LULCC (land use land cover change) model"
