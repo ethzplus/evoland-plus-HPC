@@ -80,7 +80,9 @@ elif command -v apptainer /dev/null; then
     else
         log info "Using existing Apptainer container directory: $APPTAINER_CONTAINERDIR"
     fi
-    apptainer pull --dir "$APPTAINER_CONTAINERDIR" "docker://$namespace/$repo:$version"
+    apptainer build \
+      --build-arg "namespace=$namespace" --build-arg "repo=$repo" --build-arg "version=$version" \
+      "$APPTAINER_CONTAINERDIR/${repo}_${version}.sif" "$SCRIPT_DIR/lulcc.def"
 else
     log error "Neither Docker nor Apptainer is available. Please install one of them and make sure it is available in the PATH."
     return

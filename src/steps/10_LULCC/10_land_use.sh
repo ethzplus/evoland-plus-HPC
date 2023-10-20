@@ -19,21 +19,11 @@ if [ -z "$LULCC_DOCKER_NAMESPACE" ] || [ -z "$LULCC_DOCKER_REPO" ] || [ -z "$LUL
 fi
 lulcc_docker_image="$LULCC_DOCKER_NAMESPACE/$LULCC_DOCKER_REPO:$LULCC_DOCKER_VERSION"
 
-# Get Apptainer APPTAINER_CONTAINERDIR
-matching_container=$(find "$APPTAINER_CONTAINERDIR" -type f -name "*.sif" \
-    -exec sh -c 'apptainer inspect "$1" | grep "org.label-schema.usage.singularity.deffile.from" | grep -q "$lulcc_docker_image"' _ {} \; \
-    -print)
-
-if ! (docker image inspect "$lulcc_docker_image" &> /dev/null || [ -n "$matching_container" ]); then
-    log error "Docker image $lulcc_docker_image does not exist. Please download or build it first."
-    return
-fi
-
 # Run the container, preferably with Apptainer
 log info "Running Docker image $lulcc_docker_image with $LULCC_CH_HPC_DIR mounted to /model"
 if command -v apptainer &> /dev/null; then
     log debug "Using Apptainer from $(command -v apptainer) with container $matching_container"
-    apptainer run --bind "$LULCC_CH_HPC_DIR":/model "$matching_container"
+    apptainer run --bind "$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
 else
     log debug "Using docker from $(command -v docker)"
     docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
