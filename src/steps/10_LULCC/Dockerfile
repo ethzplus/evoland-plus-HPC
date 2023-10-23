@@ -13,7 +13,7 @@ RUN if [ -z "$DINAMICA_EGO_CLI" ]; then echo "DINAMICA_EGO_CLI not found"; exit 
  && if [ ! -d "$APP_DIR" ]; then echo "APP_DIR does not exist"; exit 1; fi
 
 # hadolint ignore=DL3009
-RUN apt-get update && apt-get install libcurl4-openssl-dev=8.3.0-3 \
+RUN apt-get update && apt-get install libcurl4-openssl-dev=8.4.0-2 \
     libssl-dev=3.0.11-1 libfreetype-dev=2.13.2+dfsg-1 -y --no-install-recommends
 
 RUN install2.r --error --skipinstalled \

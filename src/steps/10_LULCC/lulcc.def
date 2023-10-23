@@ -13,6 +13,8 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
 %post
     BUILD_TIME=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
     echo "export BUILD_TIME=\"${BUILD_TIME}\"" >> $APPTAINER_ENVIRONMENT
+    echo "AlternativePathForR = \"/usr/bin/Rscript\"" >> "$MODEL_DIR/.dinamica_ego_7.conf"
+    touch "$MODEL_DIR/.dinamica_ego_7_system.conf"
 
 %startscript
     # echo "Working directory: `pwd`"
@@ -43,5 +45,5 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     Version {{ version }}
 
 %help
-    This is a container wrapping the docker image cbueth/lulcc:0.1.5 to make the
-    run script compatible with Apptainer.
+    This is a container wrapping the docker image cbueth/lulcc to make the run
+    script compatible with Apptainer.
