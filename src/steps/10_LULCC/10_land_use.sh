@@ -1,50 +1,30 @@
 #!/bin/bash
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-echo "Running script from: $SCRIPT_DIR"
-source "$SCRIPT_DIR/../../bash_common.sh"
-# Setup script for the land use conda environment
+# Land use HPC step for the batch job src/future-ei-pipeline.sh
+# If called separately for testing, source the bash_common.sh script first
 
-# The LULCC requires Dinamica EGO. Download the AppImage and add the path to the
-# DINAMICA_EGO_DIR and DINAMICA_EGO_APP variable in the .bash_variables file in the
-# root directory of the repository. The AppImage can be downloaded from:
-# https://dinamicaego.com/dinamica-7/
-# or directly from:
-# wget https://dinamicaego.com/nui_download/1792/
-
-# Check if the DINAMICA_EGO_DIR and DINAMICA_EGO_APP variables are set and exist
-if [ -z "$DINAMICA_EGO_DIR" ] || [ -z "$DINAMICA_EGO_APP" ]; then
-    log error "DINAMICA_EGO_DIR or DINAMICA_EGO_APP not set. Please set the variables in the .bash_variables file in the root directory of the repository."
+# Assure Apptainer (/Singularity) or Docker is available
+if ! (command -v apptainer &> /dev/null || command -v docker &> /dev/null); then
+    log error "Neither Apptainer nor Docker is available. Please install one of them and make sure it is available in the PATH."
     return
 fi
-if [ ! -f "$DINAMICA_EGO_APP" ]; then
-    log error "DINAMICA_EGO_APP does not exist. Please set the variable in the .bash_variables file in the root directory of the repository."
+# Assure LULCC_CH_HPC_DIR is set
+if [ -z "$LULCC_CH_HPC_DIR" ]; then
+    log error "LULCC_CH_HPC_DIR is not set. Please set it to the directory of the LULCC-CH-HPC repository."
     return
 fi
-
-# The external communication with R is described in
-# https://dinamicaego.com/dinamica/dokuwiki/doku.php?id=external_communication
-# Verion 1.0.4 of the R package is used. It can be downloaded from:
-# https://dinamicaego.com/dinamica/dokuwiki/lib/exe/fetch.php?media=dinamica_1.0.4.tar.gz
-if [ ! -f "$DINAMICA_EGO_DIR/dinamica_1.0.4.tar.gz" ]; then
-    log debug "Downloading Dinamica EGO R package"
-    wget https://dinamicaego.com/dinamica/dokuwiki/lib/exe/fetch.php?media=dinamica_1.0.4.tar.gz -O "$DINAMICA_EGO_DIR/dinamica_1.0.4.tar.gz"
+# Assure LULCC_DOCKER_NAMESPACE, LULCC_DOCKER_REPO, and LULCC_DOCKER_VERSION are set
+if [ -z "$LULCC_DOCKER_NAMESPACE" ] || [ -z "$LULCC_DOCKER_REPO" ] || [ -z "$LULCC_DOCKER_VERSION" ]; then
+    log error "Please set the Docker Hub namespace, repository, and version of the LULCC Docker image. You can do this by setting the variables LULCC_DOCKER_NAMESPACE, LULCC_DOCKER_REPO, and LULCC_DOCKER_VERSION in the src/config.yml file."
+    return
 fi
+lulcc_docker_image="$LULCC_DOCKER_NAMESPACE/$LULCC_DOCKER_REPO:$LULCC_DOCKER_VERSION"
 
-# Create the conda environment
-log info "Creating conda environment: land_use"
-log debug "Using conda from: $CONDA_BIN"
-log debug "Using requirement file: $SCRIPT_DIR/10_land_use_requirements.txt"
-$CONDA_BIN create -n land_use -c conda-forge --file "$SCRIPT_DIR"/10_land_use_requirements.txt
-
-# Activate the conda environment
-log debug "Activating conda environment: land_use"
-source "$SCRIPT_DIR/../../de_activate.sh" land_use 1
-
-# Not tracked in the environment.yml file:
-# Dinamica EGO connector - Install the Dinamica R package
-log info "Installing Dinamica EGO R package"
-R -e "install.packages('$DINAMICA_EGO_DIR/dinamica_1.0.4.tar.gz', repos = NULL, type = 'source')"
-
-# Export the conda environment
-log debug "Exporting conda environment: land_use"
-$CONDA_BIN env export | grep -v "^prefix: " > "$SCRIPT_DIR"/10_land_use_env.yml
+# Run the container, preferably with Apptainer
+log info "Running Docker image $lulcc_docker_image with $LULCC_CH_HPC_DIR mounted to /model"
+if command -v apptainer &> /dev/null; then
+    log debug "Using Apptainer from $(command -v apptainer) with container $APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
+    apptainer run --bind "$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
+else
+    log debug "Using docker from $(command -v docker)"
+    docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
+fi

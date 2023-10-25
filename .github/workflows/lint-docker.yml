@@ -1,0 +1,22 @@
+# Lint Dockerfiles with Hadolint
+on:
+  push:
+    paths:
+      - '**/*Dockerfile'
+  pull_request:
+
+name: "Hadolint"
+
+jobs:
+  hadolint:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          recursive: true

@@ -1,0 +1,49 @@
+BootStrap: docker
+From: {{ namespace }}/{{ repo }}:{{ version }}
+
+%arguments
+    namespace = cbueth
+    repo = lulcc
+    version = latest
+
+%environment
+    export VERSION="$version"
+    export HOME="$MODEL_DIR"
+
+%post
+    BUILD_TIME=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+    echo "export BUILD_TIME=\"${BUILD_TIME}\"" >> $APPTAINER_ENVIRONMENT
+    echo "AlternativePathForR = \"/usr/bin/Rscript\"" >> "$MODEL_DIR/.dinamica_ego_7.conf"
+    touch "$MODEL_DIR/.dinamica_ego_7_system.conf"
+
+%startscript
+    # echo "Working directory: `pwd`"
+
+%runscript
+    cd $MODEL_DIR
+    echo "Working directory: `pwd`"
+    echo "Container was created at $BUILD_TIME"
+    echo "Container was started at `date -u +"%Y-%m-%dT%H:%M:%SZ"`"
+    echo "Running LULCC Script ($MODEL_DIR/Scripts/LULCC_CH_master.R)"
+    Rscript $MODEL_DIR/Scripts/LULCC_CH_master.R
+
+%test
+    if [ -z "$APP_DIR" ]; then
+       echo "APP_DIR is not defined"
+       exit 1
+    fi
+    if [ ! -d "$APP_DIR" ]; then
+        echo "APP_DIR is not a directory"
+        exit 1
+    fi
+    # try to call $DINAMICA_EGO_CLI -help/-version
+    $DINAMICA_EGO_CLI -help
+    $DINAMICA_EGO_CLI -version
+
+%labels
+    Author Carlson Büth
+    Version {{ version }}
+
+%help
+    This is a container wrapping the docker image cbueth/lulcc to make the run
+    script compatible with Apptainer.

@@ -1,60 +1,30 @@
 # Docker image the LULCC use
-
-# Use Ubuntu 22.10
-FROM ubuntu:23.04
+# https://github.com/cbueth/dinamica-ego-docker/
+# Unpublished image - build locally with dinamica-ego-docker
+# hadolint ignore=DL3006
+FROM dinamica-ego
 LABEL authors="Carlson Büth" \
-      version="0.1" \
       description="Docker image for the LULCC (land use land cover change) model"
 
-# Environment variables
-ENV INPUT_DIR="/input"
-ENV OUTPUT_DIR="/output"
-ENV MODEL_DIR="/model"
-# need to be mounted when running the container
-ENV APP_DIR="/app"
-ENV DINAMICA_EGO_CLI="$APP_DIR/squashfs-root/usr/bin/DinamicaConsole"
-# Add shared libraries to the library path
-ENV LD_LIBRARY_PATH="$APP_DIR/squashfs-root/usr/lib/:$LD_LIBRARY_PATH"
-ENV DINAMICA_EGO_7_INSTALLATION_DIRECTORY="$APP_DIR/squashfs-root/usr/bin"
-ENV REGISTRY_FILE="/root/.dinamica_ego_7.conf"
+# Check if $DINAMICA_EGO_CLI and $APP_DIR are set and exist
+RUN if [ -z "$DINAMICA_EGO_CLI" ]; then echo "DINAMICA_EGO_CLI not found"; exit 1; fi \
+ && if [ -z "$APP_DIR" ]; then echo "APP_DIR not found"; exit 1; fi \
+ && if [ ! -f "$DINAMICA_EGO_CLI" ]; then echo "DINAMICA_EGO_CLI does not exist"; exit 1; fi \
+ && if [ ! -d "$APP_DIR" ]; then echo "APP_DIR does not exist"; exit 1; fi
 
-# Create folders
-RUN mkdir -p $INPUT_DIR $OUTPUT_DIR $MODEL_DIR
+# hadolint ignore=DL3009
+RUN apt-get update && apt-get install libcurl4-openssl-dev=8.4.0-2 \
+    libssl-dev=3.0.11-1 libfreetype-dev=2.13.2+dfsg-1 -y --no-install-recommends
 
-# Install Micromamba
-RUN apt update && apt install -y curl bzip2
-RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
-RUN eval "$(./bin/micromamba shell hook -s posix)"
-RUN micromamba shell init -s bash -p ~/micromamba
-
-# Create and activate environment - land_use
-COPY 10_land_use_docker.sh $APP_DIR/10_land_use_docker.sh
-RUN chmod +x $APP_DIR/10_land_use_docker.sh
+RUN install2.r --error --skipinstalled \
+    curl pak pkgdepends
+# Use pak to install all R and system dependencies
 COPY 10_land_use_requirements.txt $APP_DIR/10_land_use_requirements.txt
-RUN eval $APP_DIR/10_land_use_docker.sh
-
-# Download and Unpack Dinamica EGO 7 AppImage
-# https://dinamicaego.com/nui_download/1792/
-WORKDIR $APP_DIR
-RUN curl -Ls https://dinamicaego.com/nui_download/1792/ -o DinamicaEGO-740-Ubuntu-LTS.AppImage
-RUN chmod +x DinamicaEGO-740-Ubuntu-LTS.AppImage
-RUN ./DinamicaEGO-740-Ubuntu-LTS.AppImage --appimage-extract
+RUN R -e "pak::pkg_install(readLines(\"$APP_DIR/10_land_use_requirements.txt\"), upgrade = TRUE)" \
+ && rm -rf /var/lib/apt/lists/*
+# Show dependency tree with pak::pkg_deps_tree(readLines("10_land_use_requirements.txt"))
 
 WORKDIR $MODEL_DIR
-COPY .dinamica_ego_7.conf $REGISTRY_FILE
 
 # Define entrypoint for the DinamicaConsole in the AppImage, within Micromamba environment
-#ENTRYPOINT ["/bin/bash", "-c", "eval \"$(micromamba shell hook --shell bash)\" && micromamba activate land_use && exec $DINAMICA_EGO_CLI $APP_DIR/LULCC_Dinamica_models/LULCC_CH.ego \"$@\"", "--"]
-#ENTRYPOINT ["/bin/bash", "-c", "eval \"$(micromamba shell hook --shell bash)\" && micromamba activate land_use && exec $DINAMICA_EGO_CLI \"$@\" $MODEL_DIR/$MODEL_SCRIPT", "--"]
-#Rscript Scripts/LULCC_CH_master.R
-ENTRYPOINT ["/bin/bash", "-c", "eval \"$(micromamba shell hook --shell bash)\" && micromamba activate land_use && exec Rscript $MODEL_DIR/Scripts/LULCC_CH_master.R", "--"]
-
-
-# Build
-# docker build -t lulcc:0.1 .
-
-# Call with
-# docker run -v /path/to/model:/model -e MODEL_SCRIPT="/app/model_file"  -v /path/to/input:/input -v /path/to/output:/output lulcc:0.1
-
-# Delete docker container
-# docker rm $(docker ps -a -q)
+ENTRYPOINT ["/bin/bash", "-c", "Rscript $MODEL_DIR/Scripts/LULCC_CH_master.R", "--"]
