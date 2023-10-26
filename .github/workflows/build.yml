@@ -1,13 +1,11 @@
 on:
   workflow_dispatch:
   push:
-#    - '**/*_setup.sh'
-#    - '**/*_requirements.txt'
-#    paths:
-##      - 'src/steps/10_LULCC/10_land_use_setup.sh'
-##      - 'src/steps/10_LULCC/10_land_use_requirements.txt'
-#      - 'src/steps/40_NCPs/40_NCPs_setup.sh'
-#      - 'src/steps/40_NCPs/40_NCPs_requirements.txt'
+    paths:
+#      - 'src/steps/10_LULCC/10_land_use_setup.sh'
+#      - 'src/steps/10_LULCC/10_land_use_requirements.txt'
+      - 'src/steps/40_NCPs/40_NCPs_setup.sh'
+      - 'src/steps/40_NCPs/40_NCPs_requirements.txt'
   pull_request:
 
 name: "Build Environments"
@@ -30,11 +28,6 @@ jobs:
               miniforge-version: latest
               miniforge-variant: Mambaforge
               use-mamba: true
-          - name: mamba
-            with:
-              mamba-version: "*"
-              channels: conda-forge,defaults
-              channel-priority: true
           - name: micromamba
         exclude:
           - setup_script: 'src/steps/40_NCPs/40_NCPs_setup.sh'
