@@ -25,9 +25,10 @@ jobs:
           - name: conda
             with:
               auto-update-conda: true
-          - name: miniforge
+          - name: mambaforge
             with:
               miniforge-version: latest
+              miniforge-variant: Mambaforge
               use-mamba: true
           - name: mamba
             with:
