@@ -35,6 +35,7 @@ computers) , with `bash` scripts `SLURM` is used to submit jobs.
 
 ## NCPs: Nature Contributions to People
 A range of NCPs are then estimated from the previous models outputs [@kuelling]...
+Find a description of the NCP scripts in the [NCPs folder](https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs).
 
 Additionally to `R` and CRAN packages,
 [`InVEST`](https://naturalcapitalproject.stanford.edu/software/invest) is used via
