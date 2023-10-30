@@ -1,7 +1,7 @@
 # Natures Contribution to People (NCPs)
 
 This document describes the scripts used to calculate the NCPs indicators.
-The shorthands of the NCPs are taken from the [IPBES](https://www.ipbes.net/).
+The categories of the NCPs are taken from the [IPBES](https://www.ipbes.net/).
 
 - [CAR: Regulation of climate](#car-regulation-of-climate)
 - [FF: Food and feed](#ff-food-and-feed)
@@ -117,7 +117,7 @@ maps are calculated.
 
 ## NDR: Nutrient Delivery Ratio
 
-#### Indicator: ??
+#### Indicator: Annual nutrient retention by vegetation 
 
 [`1_NDR_S_CH.py`](NCP_models/NDR/1_NDR_S_CH.py):
 This script runs the Nutrient Delivery Ratio model from InVEST.
