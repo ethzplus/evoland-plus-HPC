@@ -6,6 +6,9 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     repo = lulcc
     version = latest
 
+%files
+    $LULCC_CH_HPC_DIR/Model/Dinamica_models/LULCC_CH_ego_Submodels/*.ego /app/squashfs-root/usr/bin/Submodels/
+
 %environment
     export VERSION="$version"
     export HOME="$MODEL_DIR"
