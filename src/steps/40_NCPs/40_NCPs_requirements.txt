@@ -8,6 +8,8 @@ r-raster
 r-data.table
 r-sf
 natcap.invest
+r-yaml
+pyyaml
 # # # Dependencies by NCP:
 #
 # #  CAR

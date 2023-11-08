@@ -29,4 +29,4 @@ R -e "remotes::install_github('cropmodels/Recocrop', dependencies=FALSE)"
 
 # Export the conda environment
 log debug "Exporting conda environment: ncps"
-$CONDA_BIN env export | grep -v "^prefix: " > "$SCRIPT_DIR"/40_ncps_env.yml
+$CONDA_BIN env export | grep -v "^prefix: " > "$SCRIPT_DIR"/40_NCPs_env.yml

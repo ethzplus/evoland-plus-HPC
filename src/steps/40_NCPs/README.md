@@ -52,7 +52,7 @@ The aim of this script is to prepare the monthly average data for the
 Ecocrop model.
 The script reads precipitation and temperature datasets and preprocesses them.
 
-[`1_FF.r`](NCP_models/FF/1_FF.r):
+[`1_FF.R`](NCP_models/FF/1_FF.R):
 The Ecocrop model is applied to each crop of interest to generate
 suitability maps.
 The script reads precipitation, temperature, pH and crop datasets and

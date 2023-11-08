@@ -1,0 +1,181 @@
+# Other Settings
+other:
+  scratch_dir: /scratch/.ncps-temp
+
+# Data
+data:
+  # Land Use Land Cover Change
+  lulcc2018: DATA/OFS25_DS/2018/results/LU-CH_2018.tif
+  # Production regions
+  prodreg: DATA/Swiss_Regions_SHP/PRODREG.shp
+  # Municipality Layer
+  mun_layer: DATA/Swiss boundaries/swissBOUNDARIES3D_1_3_TLM_HOHEITSGEBIET.shp
+  # DEM
+  dem: DATA/DEM(unil)/DEM_mean_LV95.tif
+  # DEM filled
+  dem_filled: DATA/DEM(unil)/DEM_meanLV95_filled.tif
+  # Runoff Proxy
+  runoff_proxy: DATA/UNIL_data/bioclim25/precipitations/ch_bioclim_chclim25_present_pixel_2013_2017_prec.tif
+  # Wathersheds
+  watersheds: DATA/HADES/a04_bilanz/a04_bilanz.shp
+  sub_watersheds: DATA/UNIL_data/catchment_epsg2056/catchment_epsg2056/catchment_epsg2056.shp
+  # SDM map directory - ID
+  sdm_reg_cov_dir: maps_NSDM/valpar-pipeline-v2_d8_ensembles_reg_covariate_
+  # SDM map directory - MED
+  sdm_curr_dir: medicinal/data/current
+  # SDM map directory - PC
+  sdm_glo_dir: maps_NSDM/valpar-pipeline-v2_d8_ensembles_glo_
+  # ETO
+  eto: DATA/UNIL_data/bioclim25/evapotranspiration/ch_bioclim_chclim25_present_pixel_2006_2015_etp.tif
+  # PAWC
+  pawc: DATA/Maps.Geo.Soils/Processed_data/Soil_water_storage_capacity/Water_storage_capacity_100m_reclassified1.tif
+  # Precipitation
+  precipitation: DATA/UNIL_data/bioclim25/precipitations/ch_bioclim_chclim25_present_pixel_2006_2015_prec.tif
+  # Soil depth
+  depth_to_root_rest_layer: DATA/Maps.Geo.Soils/Processed_data/Root_restricting_depth/rrd_100_mm_rexport.tif
+
+
+# Projection Settings - change for different regions
+proj:
+  # CRS
+  crs: epsg:2056
+  # Extent
+  ext: [ 2480000, 2840000, 1070000, 1300000 ]
+  # Resolution
+  res: 25
+
+# NCP Params
+
+CAR:
+  # Working directory
+  wd: Module_c/scenarios_lulc/NCP_models/CAR
+  # 1_CAR_S_CH.R
+  # 2_CAR_S_CH.py
+  bp_tables_dir: NCP_models\CAR\BPTABLE
+  # Path to a directory containing LULC rasters for each region
+  lu_dir: NCP_models\CAR\scratch\lulc_clip\18
+  # Path to output directory containing each InVEST model
+  output_dir: NCP_models\CAR\scratch\Invest_models
+  # 3_CAR_S_CH.R
+  # directory containing invest models
+  dir18: NCP_models/CAR/scratch/Invest_models
+  # directory to save results
+  res18: Module_c/scenarios_lulc/NCP_models/CARresults
+  # output name
+  n18: CAR_S_CH_18.tif
+
+FF:
+  # 0_monthly_average_dataprep.R
+  # 1_FF.R
+  ecocrop_rawdata_dir: ecocrop/rawdata
+  #
+  pavg_dir: ecocrop/pavg_95/13_18
+  #
+  tavg_dir: ecocrop/tavg_95/13_18
+  # 2_FF_aggregate_masking.R
+  r_stack_2_dir: ES Assessment/Food and Feed/ecocrop/results/13-18_crops
+
+HAB:
+  # 0_thread_layers_generation.R
+  wd: Habitat_quality/FINAL/SUPPLY/CODE/BPTABLE/layer_build
+  # 1_HAB_S_CH.py
+  half_saturation_constant: 0.075
+  sensitivity_table_path: BPTABLE/hab_sensitivity.csv
+  threat_raster_folder: BPTABLE/layer_build/LAYERPROD
+  threats_table_path: BPTABLE/18_threats.csv
+  workspace_dir: INVEST/18
+
+ID:
+  # 1_ID_S_CH.R
+  wd: Supporting identities/FINAL/SUPPLY/CODE
+  # Output directory
+  outdir_18: Supporting identities/FINAL/SUPPLY/18
+  # Species list
+  list_sp: SDM/first_sdm_extract/sp_list.csv
+
+MED:
+  # 1_MED_S_CH.R
+  # Output directory
+  out_dir: medicinal/results
+  # Species list
+  sp_list: medicinal/data/SDM_ES_sp_list.csv
+  # Evaluations data
+  evals_list: medicinal/data/evals_reg_cov.csv
+
+NDR:
+  # 1_NDR_S_CH.py
+  # Biophysical table
+  biophysical_table_path: ./ndr_bptable_ds25.csv
+  calc_n: True
+  calc_p: True
+  k_param: 2
+  # Number of workers
+  n_workers: -1
+  # Suffix for output files
+  results_suffix: _v3
+  # Subsurface critical length
+  subsurface_critical_length_n: 100
+  # Subsurface effective retention
+  subsurface_eff_n: 0.75
+  # Threshold flow accumulation
+  threshold_flow_accumulation: 200
+  # Workspace directory
+  workspace_dir: water_quality/beta/invest_outputs/v3
+
+PC:
+  # 1_PC_S_CH.R
+  # Working directory
+  wd: pest_control/FINAL/SUPPLY/CODE
+  # Species list
+  sp_list: ./sp_list.csv
+
+POL:
+  # 1_POL_S_CH.py
+  # Farm vector path
+  farm_vector_path: ''
+  # Guild table path
+  guild_table_path': Pollination/FINAL/SUPPLY/CODE/BPTABLE/guild.csv
+  # Landcover biophysical table path
+  landcover_biophysical_table_path: Pollination/FINAL/SUPPLY/CODE/BPTABLE/pollination_bptable_ds25.csv
+  # Suffix for output files
+  results_suffix: ''
+  # Workspace directory
+  workspace_dir: Pollination/FINAL/SUPPLY/CODE/invest
+  # 2_POL_S_CH_aggregating.R
+  wd: Pollination/FINAL/SUPPLY/CODE
+
+SDR:
+  # 1_SDR_S_CH.py
+  # Biophysical table
+  biophysical_table_path': ./bptable_SDR_v2.csv
+  # Drainage path
+  drainage_path: '',
+  # Erodibility path
+  erodibility_path: Soil erodibility (ESDAC)/Kst_Factorextr(stoniness)/reprocessed_lv95/Kst_LV95_ch_nib.tif
+  # Erosivity path
+  erosivity_path: Sediment delivery ratio/older/data/Rainfall erosivity/rainfall_erosivity_CH.tif
+  ic_0_param: 0.4
+  k_param: 2
+  l_max: 100
+  # Number of workers
+  n_workers: -1
+  # Suffix for output files
+  results_suffix: _v2
+  # SDR max
+  sdr_max: 0.75
+  threshold_flow_accumulation: 200
+  # Workspace directory
+  workspace_dir: Sediment delivery ratio/beta/outputs/v2
+
+WY:
+  # 1_WY_S_CH.py
+  # Biophysical table
+  biophysical_table_path: ./wy_bptable_ds25.csv
+  # Do scarcity and valuation
+  do_scarcity_and_valuation: False,
+  # Suffix for output files
+  results_suffix: _18
+  # Seasonality constant
+  seasonality_constant: 25
+  # Workspace directory
+  workspace_dir: Annual water yield/FINAL/SUPPLY/CODE/INVEST/18
