@@ -9,6 +9,8 @@ log debug "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
 log debug "SLURM_JOB_NUM_NODES: $SLURM_JOB_NUM_NODES"
 log debug "SLURM_JOB_CPUS_PER_NODE: $SLURM_JOB_CPUS_PER_NODE"
 
+# Transfer simulation input parameters - prepare
+
 # Assure Apptainer (/Singularity) or Docker is available
 if ! (command -v apptainer &> /dev/null || command -v docker &> /dev/null); then
     log error "Neither Apptainer nor Docker is available. Please install one of them and make sure it is available in the PATH."
@@ -36,3 +38,5 @@ else
     log debug "Using docker from $(command -v docker)"
     docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
 fi
+
+# Transfer simulation output, remove temporary files
