@@ -1,12 +1,13 @@
 #!/bin/bash
 
-#SBATCH -n 1
-#SBATCH --cpus-per-task=1
-#SBATCH --time=0:15:00
-#SBATCH --mem-per-cpu=10240
-#SBATCH --tmp=8000            # https://scicomp.ethz.ch/wiki/Using_local_scratch
+#SBATCH -n 1                  # Number of cores requested
+#SBATCH --cpus-per-task=6     # Number of CPUs per task
+#SBATCH --time=3:00:00        # Runtime
+#SBATCH --mem-per-cpu=4G      # Memory per cpu in GB (see also --mem)
+#SBATCH --tmp=2G              # https://scicomp.ethz.ch/wiki/Using_local_scratch
 #SBATCH --output="logs/10_land_use-%j.out"
 #SBATCH --error="logs/10_land_use-%j.err"
+#SBATCH --mail-type=ALL       # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
 echo "Current working directory: $(pwd)"
 source /cluster/project/eawag/p01002/Future-EI/src/bash_common.sh

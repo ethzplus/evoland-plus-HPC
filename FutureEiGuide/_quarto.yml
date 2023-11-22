@@ -4,7 +4,7 @@ project:
 book:
   title: "Future-EI"
   author: "Carlson Büth and Benjamin Black"
-  date: "9/22/2023"
+  date: "9/22/2023" # TODO: update date
   chapters:
     - index.qmd
     - intro.qmd

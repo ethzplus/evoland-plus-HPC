@@ -6,6 +6,9 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     repo = lulcc
     version = latest
 
+%files
+    $LULCC_CH_HPC_DIR/Model/Dinamica_models/LULCC_CH_ego_Submodels/*.ego /app/squashfs-root/usr/bin/Submodels/
+
 %environment
     export VERSION="$version"
     export HOME="$MODEL_DIR"
@@ -15,30 +18,49 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     echo "export BUILD_TIME=\"${BUILD_TIME}\"" >> $APPTAINER_ENVIRONMENT
     echo "AlternativePathForR = \"/usr/bin/Rscript\"" >> "$MODEL_DIR/.dinamica_ego_7.conf"
     touch "$MODEL_DIR/.dinamica_ego_7_system.conf"
-
-%startscript
-    # echo "Working directory: `pwd`"
+    # remove submodels from /app/squashfs-root/usr/bin/Submodels/
+    # - AllocateTransitions.egoml
+    # - CalcSimilarityOfDifferences.ego
+    rm -f /app/squashfs-root/usr/bin/Submodels/AllocateTransitions.egoml
+    rm -f /app/squashfs-root/usr/bin/Submodels/CalcSimilarityOfDifferences.egoml
 
 %runscript
-    cd $MODEL_DIR
+    cd "$MODEL_DIR"
     echo "Working directory: `pwd`"
     echo "Container was created at $BUILD_TIME"
     echo "Container was started at `date -u +"%Y-%m-%dT%H:%M:%SZ"`"
+    mkdir -p /tmp/dinamica_ego_7_temp
     echo "Running LULCC Script ($MODEL_DIR/Scripts/LULCC_CH_master.R)"
     Rscript $MODEL_DIR/Scripts/LULCC_CH_master.R
 
 %test
+    cd "$APP_DIR"
+    mkdir -p /tmp/dinamica_ego_7_temp
     if [ -z "$APP_DIR" ]; then
        echo "APP_DIR is not defined"
        exit 1
+    else
+         echo "APP_DIR is $APP_DIR"
     fi
     if [ ! -d "$APP_DIR" ]; then
         echo "APP_DIR is not a directory"
         exit 1
+    else
+        echo "APP_DIR is a directory"
     fi
-    # try to call $DINAMICA_EGO_CLI -help/-version
-    $DINAMICA_EGO_CLI -help
-    $DINAMICA_EGO_CLI -version
+    # Try to call $DINAMICA_EGO_CLI -help/-version
+    {
+        $DINAMICA_EGO_CLI -help;
+        echo "Dinamica EGO CLI -help succeeded";
+    } || {
+        echo "Dinamica EGO CLI -help failed"; exit 1;
+    }
+    {
+        $DINAMICA_EGO_CLI -version;
+        echo "Dinamica EGO CLI -version succeeded";
+    } || {
+        echo "Dinamica EGO CLI -version failed"; exit 1;
+    }
 
 %labels
     Author Carlson Büth
@@ -47,3 +69,9 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
 %help
     This is a container wrapping the docker image cbueth/lulcc to make the run
     script compatible with Apptainer.
+    Run by mounting the LULCC directory to /model, no options need to be passed:
+        apptainer run --bind "$LULCC_CH_HPC_DIR":/model built_image
+    If you want to use an external tmp directory, mount /tmp/dinamica_ego_7_temp
+    to the desired location.
+        apptainer run --bind "$LULCC_CH_HPC_DIR":/model --bind \
+        /desired/tmp/location:/tmp/dinamica_ego_7_temp built_image

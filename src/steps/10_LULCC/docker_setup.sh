@@ -72,7 +72,6 @@ if command -v docker &> /dev/null; then
     fi
 elif command -v apptainer /dev/null; then
     log info "Apptainer is available from $(command -v apptainer)"
-    log info "Downloading Docker image $namespace/$repo:$version"
     # Create the Apptainer container directory if it does not exist
     if [ ! -d "$APPTAINER_CONTAINERDIR" ]; then
         log info "Creating Apptainer container directory: $APPTAINER_CONTAINERDIR"
@@ -80,6 +79,8 @@ elif command -v apptainer /dev/null; then
     else
         log info "Using existing Apptainer container directory: $APPTAINER_CONTAINERDIR"
     fi
+    log info "Building SIF container $APPTAINER_CONTAINERDIR/${repo}_${version}.sif from docker base image $namespace/$repo:$version.
+    Using submodules from $LULCC_CH_HPC_DIR/Model/Dinamica_models/LULCC_CH_ego_Submodels/*.ego"
     apptainer build \
       --build-arg "namespace=$namespace" --build-arg "repo=$repo" --build-arg "version=$version" \
       "$APPTAINER_CONTAINERDIR/${repo}_${version}.sif" "$SCRIPT_DIR/lulcc.def"

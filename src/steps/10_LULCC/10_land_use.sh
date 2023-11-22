@@ -2,6 +2,15 @@
 # Land use HPC step for the batch job src/future-ei-pipeline.sh
 # If called separately for testing, source the bash_common.sh script first
 
+# log SLURM variables
+log debug "SLURM_JOB_ID: $SLURM_JOB_ID"
+log debug "SLURM_JOB_NAME: $SLURM_JOB_NAME"
+log debug "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
+log debug "SLURM_JOB_NUM_NODES: $SLURM_JOB_NUM_NODES"
+log debug "SLURM_JOB_CPUS_PER_NODE: $SLURM_JOB_CPUS_PER_NODE"
+
+# Transfer simulation input parameters - prepare
+
 # Assure Apptainer (/Singularity) or Docker is available
 if ! (command -v apptainer &> /dev/null || command -v docker &> /dev/null); then
     log error "Neither Apptainer nor Docker is available. Please install one of them and make sure it is available in the PATH."
@@ -23,8 +32,11 @@ lulcc_docker_image="$LULCC_DOCKER_NAMESPACE/$LULCC_DOCKER_REPO:$LULCC_DOCKER_VER
 log info "Running Docker image $lulcc_docker_image with $LULCC_CH_HPC_DIR mounted to /model"
 if command -v apptainer &> /dev/null; then
     log debug "Using Apptainer from $(command -v apptainer) with container $APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
-    apptainer run --bind "$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
+    log info "apptainer run --bind \"$TMPDIR:/tmp,$LULCC_CH_HPC_DIR\":/model \"$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif\""
+    apptainer run --bind "$TMPDIR:/tmp,$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
 else
     log debug "Using docker from $(command -v docker)"
     docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
 fi
+
+# Transfer simulation output, remove temporary files
