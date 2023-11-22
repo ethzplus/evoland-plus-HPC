@@ -236,7 +236,7 @@ div.csl-indent {
 </section>
 <section id="ncps-nature-contributions-to-people" class="level2" data-number="2.3">
 <h2 data-number="2.3" class="anchored" data-anchor-id="ncps-nature-contributions-to-people"><span class="header-section-number">2.3</span> NCPs: Nature Contributions to People</h2>
-<p>A range of NCPs are then estimated from the previous models outputs <span class="citation" data-cites="kuelling">(<a href="references.html#ref-kuelling" role="doc-biblioref">Kuelling and Adde, n.d.</a>)</span>…</p>
+<p>A range of NCPs are then estimated from the previous models outputs <span class="citation" data-cites="kuelling">(<a href="references.html#ref-kuelling" role="doc-biblioref">Kuelling and Adde, n.d.</a>)</span>… Find a description of the NCP scripts in the <a href="https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs">NCPs folder</a>.</p>
 <p>Additionally to <code>R</code> and CRAN packages, <a href="https://naturalcapitalproject.stanford.edu/software/invest"><code>InVEST</code></a> is used via the <code>Python</code> modules <a href="https://pypi.org/project/natcap.invest/"><code>natcap.invest</code></a>.</p>
 <p>Focal…</p>
 <p>The job of the Future-EI pipeline is to glue all pieces together for use on HPCs. For this, a batch job written in <code>bash</code> manages multiple climate scenarios and other parameters, while keeping track of the intermediate results. Such big batch job can be broken down onto steps from the diagram above, and parallelization through tasks with several cpus. As each step is different in requirements and execution, resources must be allocated accordingly. The most computationally expensive step is the N-SDM model. Further details will be given in the following sections.</p>
