@@ -1,0 +1,34 @@
+# --------------------------------------------- #
+# Central config file for the Future-EI project #
+# --------------------------------------------- #
+
+# Bash variables
+bash_variables:
+  DINAMICA_EGO_DIR: ~/dinamica-ego
+  DINAMICA_EGO_APP: ~/dinamica-ego/DinamicaEGO-740-Ubuntu-LTN.AppImage
+  FUTURE_EI_LOG_LEVEL: debug
+  # LULCC HPC version
+  LULCC_CH_HPC_DIR: ~/LULCC_CH_HPC
+  # Docker variables for the docker container
+  LULCC_DOCKER_NAMESPACE: cbueth
+  LULCC_DOCKER_REPO: lulcc
+  LULCC_DOCKER_VERSION: 0.1.7
+  # Apptainer variables for the apptainer container
+  APPTAINER_CONTAINERDIR: ~/apptainer_containers
+  APPTAINER_CACHEDIR: /scratch/apptainer_cache
+  # Overwrites $TMPDIR if not set by the system. $TMPDIR is used by Dinamica EGO.
+  # and conda/libmamba
+  ALTERNATIVE_TMPDIR: /scratch
+
+# Focal LULC
+FocalLULCC:
+  WorkDir: ~/Future-EI/
+  HistoricalDir:
+  InputDir: /scratch/focal_lulcc/in
+  OutputDir: /scratch/focal_lulcc/out
+  BaseName: ch_lulc_agg11_present_pixel
+  RadiusList: [ 100, 200, 500, 1500, 3000 ]
+  WindowType: circle
+  FocalFunction: mean
+  Parallel: True
+  NWorkers: 0

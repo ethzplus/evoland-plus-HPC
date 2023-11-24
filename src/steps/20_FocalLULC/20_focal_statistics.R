@@ -9,7 +9,7 @@
 #' Output: N-SDM predictors
 #'
 #' @environment focal_lulc
-#' @config config.json
+#' @config config.yml
 #' @date 2023-09-20
 #' @author Carlson Büth, Benjamin Black
 #'
@@ -17,7 +17,7 @@
 #'
 
 # Load libraries
-packs <- c("terra", "jsonlite", "future", "future.apply", "stringr")
+packs <- c("terra", "yaml", "future", "future.apply", "stringr")
 invisible(lapply(packs, require, character.only = TRUE))
 
 
@@ -209,17 +209,20 @@ folder_to_predictors <- function(
 
 ## Main
 
-# Load config from src/config.json
-config <- jsonlite::read_json("src/config.json", simplifyVector = TRUE)
+# Load config from src/config.yml
+if (!file.exists("src/config.yml")) {
+  stop("config.yml not found in src/ directory")
+}
+config <- yaml.load_file("src/config.yml")
 config <- config$FocalLULCC # only FocalLULCC
 
 # Check if InputDir is set
 if (is.null(config$InputDir) || config$InputDir == "") {
-  stop("InputDir not set in config.json")
+  stop("InputDir not set in config.yml")
 }
 # Check if OutputDir is set
 if (is.null(config$OutputDir) || config$OutputDir == "") {
-  stop("OutputDir not set in config.json")
+  stop("OutputDir not set in config.yml")
 }
 # Check if OutputDir exists and create if not
 if (!dir.exists(config$OutputDir)) {
@@ -227,13 +230,11 @@ if (!dir.exists(config$OutputDir)) {
 }
 # Check if BaseName is set
 if (is.null(config$BaseName) || config$BaseName == "") {
-  stop("BaseName not set in config.json")
+  stop("BaseName not set in config.yml")
 }
 
 cat("Calculating focal statistics for LULC preparation\n")
 
-# Set working directory from config$WorkDir
-setwd(config$WorkDir)
 cat("Working directory set to:", getwd(), "\n")
 cat("Input directory set to:", config$InputDir, "\n")
 cat("Output directory set to:", config$OutputDir, "\n")
