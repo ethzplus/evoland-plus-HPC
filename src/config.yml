@@ -31,4 +31,5 @@ FocalLULCC:
   WindowType: circle
   FocalFunction: mean
   Parallel: True
+  Depth: 2
   NWorkers: 0

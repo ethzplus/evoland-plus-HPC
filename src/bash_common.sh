@@ -9,7 +9,7 @@ fi
 # load bash_variables from config.yml
 config_file="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/config.yml"
 if [ -f "$config_file" ]; then
-    eval "$(yq e '.bash_variables | to_entries | .[] | .key + "=" + .value' "$config_file")"
+    eval "$(yq e '.bash_variables | to_entries | .[] | "export " + .key + "=" + .value' "$config_file")"
     echo "Loaded bash_variables from $config_file. Logging level: $FUTURE_EI_LOG_LEVEL"
 else
     echo "No config.yml file found"
