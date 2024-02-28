@@ -3,7 +3,7 @@
 # Tests for the get_rows function
 # -------------------------------
 source ../src/bash_common.sh
-source ../src/get_rows.sh
+source ../src/control_table_control.sh
 
 # Variable to keep track of whether any tests have failed
 tests_failed=0

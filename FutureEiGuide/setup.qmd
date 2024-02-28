@@ -49,6 +49,10 @@ follows:
 chmod +x src/**/*.sh
 ```
 
+Attention: When you set up the environments, make sure to use compatible
+versions of the same packages between the different steps, to ensure upward
+compatibility.
+
 ## Yaml Parser `yq`
 
 For the `bash` scripts, we use [`yq`](https://mikefarah.gitbook.io/yq/) to parse
