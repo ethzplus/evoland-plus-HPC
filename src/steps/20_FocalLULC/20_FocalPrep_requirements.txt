@@ -1,4 +1,5 @@
 r-terra
+r-raster==3.6_26
 r-codetools
 r-stringr
 r-future
