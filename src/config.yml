@@ -34,6 +34,8 @@ bash_variables:
   LULCC_M_EI_LAYER_DIR: Data/EI_intervention_layers
   LULCC_M_REMOVE_PRED_PROB_MAPS: True # remove prediction probability maps after
   # simulation if 1, True or TRUE
+  # Output Directories are relative to the $FUTURE_EI_OUTPUT_DIR
+  # While processing these will be in the $TMPDIR/$ALTERNATIVE_TMPDIR
   LULCC_CH_OUTPUT_BASE_DIR: /lulcc_output # Location of all scenario folders, named by IDs
   # Focal Prep
   FOCAL_OUTPUT_BASE_DIR: /focal_output # Location of all scenario folders, named by IDs

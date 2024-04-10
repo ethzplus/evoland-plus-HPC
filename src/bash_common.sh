@@ -43,15 +43,5 @@ else
     log debug "TMPDIR already set to $TMPDIR"
 fi
 
-# Use scratch for output folders
-log debug "Using scratch for output folders:"
-LULCC_CH_OUTPUT_BASE_DIR=$TMPDIR$LULCC_CH_OUTPUT_BASE_DIR
-log debug "LULCC_CH_OUTPUT_BASE_DIR: $LULCC_CH_OUTPUT_BASE_DIR"
-NCP_OUTPUT_BASE_DIR=$TMPDIR$NCP_OUTPUT_BASE_DIR
-log debug "NCP_OUTPUT_BASE_DIR: $NCP_OUTPUT_BASE_DIR"
-NSDM_OUTPUT_BASE_DIR=$TMPDIR$NSDM_OUTPUT_BASE_DIR
-log debug "NSDM_OUTPUT_BASE_DIR: $NSDM_OUTPUT_BASE_DIR"
-FOCAL_OUTPUT_BASE_DIR=$TMPDIR$FOCAL_OUTPUT_BASE_DIR
-log debug "FOCAL_OUTPUT_BASE_DIR: $FOCAL_OUTPUT_BASE_DIR"
-SPAGG_OUTPUT_BASE_DIR=$TMPDIR$SPAGG_OUTPUT_BASE_DIR
-log debug "SPAGG_OUTPUT_BASE_DIR: $SPAGG_OUTPUT_BASE_DIR"
+preparation_script="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/steps/00_Preparation.sh"
+source "$preparation_script"
