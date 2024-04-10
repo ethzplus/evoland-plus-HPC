@@ -1,10 +1,15 @@
-# Docker image the LULCC use
+# Docker image LULCC uses
 # https://github.com/cbueth/dinamica-ego-docker/
 # Unpublished image - build locally with dinamica-ego-docker
 # hadolint ignore=DL3006
 FROM dinamica-ego
 LABEL authors="Carlson Büth" \
       description="Docker image for the LULCC (land use land cover change) model"
+
+ENV DINAMICA_EGO_CLI_LOG_LEVEL=4
+# Change log level by passing --env DINAMICA_EGO_CLI_LOG_LEVEL=7 when running
+# UNCONDITIONAL=0, ERROR=1, WARNING=2, RESULT=3,
+# INFO=4, INFO2=5, DEBUG=6, DEBUG2=7
 
 # Check if $DINAMICA_EGO_CLI and $APP_DIR are set and exist
 RUN if [ -z "$DINAMICA_EGO_CLI" ]; then echo "DINAMICA_EGO_CLI not found"; exit 1; fi \
@@ -13,8 +18,8 @@ RUN if [ -z "$DINAMICA_EGO_CLI" ]; then echo "DINAMICA_EGO_CLI not found"; exit 
  && if [ ! -d "$APP_DIR" ]; then echo "APP_DIR does not exist"; exit 1; fi
 
 # hadolint ignore=DL3009
-RUN apt-get update && apt-get install libcurl4-openssl-dev=8.4.0-2 \
-    libssl-dev=3.0.11-1 libfreetype-dev=2.13.2+dfsg-1 -y --no-install-recommends
+RUN apt-get update && apt-get install libcurl4-openssl-dev=8.5.0-2 \
+    libssl-dev=3.1.5-1 libfreetype-dev=2.13.2+dfsg-1+b1 -y --no-install-recommends
 
 RUN install2.r --error --skipinstalled \
     curl pak pkgdepends
@@ -27,4 +32,5 @@ RUN R -e "pak::pkg_install(readLines(\"$APP_DIR/10_land_use_requirements.txt\"),
 WORKDIR $MODEL_DIR
 
 # Define entrypoint for the DinamicaConsole in the AppImage, within Micromamba environment
-ENTRYPOINT ["/bin/bash", "-c", "Rscript $MODEL_DIR/Scripts/LULCC_CH_master.R", "--"]
+ENTRYPOINT ["/bin/bash", "-c", "$DINAMICA_EGO_CLI -disable-parallel-steps -log-level $DINAMICA_EGO_CLI_LOG_LEVEL $MODEL_DIR/Dinamica_models/LULCC_CH.ego"]
+
