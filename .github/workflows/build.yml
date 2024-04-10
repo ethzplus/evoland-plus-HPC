@@ -2,8 +2,10 @@ on:
   workflow_dispatch:
   push:
     paths:
-#      - 'src/steps/10_LULCC/10_land_use_setup.sh'
-#      - 'src/steps/10_LULCC/10_land_use_requirements.txt'
+      #      - 'src/steps/10_LULCC/10_land_use_setup.sh'
+      #      - 'src/steps/10_LULCC/10_land_use_requirements.txt'
+      - 'src/steps/20_FocalLULC/20_FocalPrep_setup.sh'
+      - 'src/steps/20_FocalLULC/20_FocalPrep_requirements.txt'
       - 'src/steps/40_NCPs/40_NCPs_setup.sh'
       - 'src/steps/40_NCPs/40_NCPs_requirements.txt'
   pull_request:
@@ -14,39 +16,22 @@ name: "Build Environments"
 
 jobs:
   build:
-    name: "${{ matrix.conda_type.name }}: ${{ matrix.setup_script }}"
+    name: "${{ matrix.setup_script.name }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        setup_script: ['src/steps/40_NCPs/40_NCPs_setup.sh']
-        conda_type:
-          - name: conda
-            with:
-              auto-update-conda: true
-          - name: mambaforge
-            with:
-              miniforge-version: latest
-              miniforge-variant: Mambaforge
-              use-mamba: true
-          - name: micromamba
-        exclude:
-          - setup_script: 'src/steps/40_NCPs/40_NCPs_setup.sh'
-            conda_type:
-              name: conda
-              with:
-                auto-update-conda: true
+        setup_script:
+          - name: 20_FocalPrep
+            path: src/steps/20_FocalLULC/20_FocalPrep_setup.sh
+          - name: 40_NCPs
+            path: src/steps/40_NCPs/40_NCPs_setup.sh
 
     steps:
       - name: "Checkout"
-        uses: actions/checkout@v2
-      - name: "Setup ${{ matrix.conda_type.name }}"
-        uses: conda-incubator/setup-miniconda@v2
-        with: ${{ matrix.conda_type.with }}
-        if: matrix.conda_type.name != 'micromamba'
+        uses: actions/checkout@v4
       - name: "Setup micromamba"
         uses: mamba-org/setup-micromamba@v1
-        if: matrix.conda_type.name == 'micromamba'
-      - name: "Setup Environment (${{ matrix.setup_script }})"
+      - name: "Setup Environment (${{ matrix.setup_script.name }})"
         run: |
-          chmod +x ${{ matrix.setup_script }}
-          ./${{ matrix.setup_script }}
+          chmod +x ${{ matrix.setup_script.path }}
+          ./${{ matrix.setup_script.path }}
