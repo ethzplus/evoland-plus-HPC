@@ -44,4 +44,5 @@ else
 fi
 
 preparation_script="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/steps/00_Preparation.sh"
+# shellcheck source=src/steps/00_Preparation.sh
 source "$preparation_script"

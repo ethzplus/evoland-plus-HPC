@@ -11,6 +11,6 @@ output_dirs=(
     SPAGG_OUTPUT_BASE_DIR
 )
 for dir in "${output_dirs[@]}"; do
-    declare $dir="$TMPDIR${!dir}"
+    declare "$dir"="$TMPDIR${!dir}"
     log debug "$dir: ${!dir}"
 done

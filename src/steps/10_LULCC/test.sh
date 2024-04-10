@@ -28,7 +28,7 @@ source /cluster/project/eawag/p01002/Future-EI/src/bash_common.sh
 source /cluster/project/eawag/p01002/Future-EI/src/steps/10_LULCC/10_land_use.sh
 
 mkdir -p "$FUTURE_EI_OUTPUT_DIR"
-cp -r $LULCC_CH_OUTPUT_BASE_DIR "$FUTURE_EI_OUTPUT_DIR/land_use_test"
+cp -r "$LULCC_CH_OUTPUT_BASE_DIR" "$FUTURE_EI_OUTPUT_DIR/land_use_test"
 
 # With tail -f logs/10_land_use-*.out you can follow the progress of the job
 # To follow both .out and .err files, use tail -f logs/10_land_use-*.out logs/10_land_use-*.err
