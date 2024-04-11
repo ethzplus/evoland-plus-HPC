@@ -24,8 +24,7 @@ source "$SCRIPT_DIR/../../de_activate.sh" ncps 1
 # meteor        : https://cran.r-project.org/web/packages/meteor/
 # ecocrop       : https://github.com/cropmodels/Recocrop
 log info "Installing meteor and ecocrop R packages"
-R -e "install.packages('meteor', repos='https://cloud.r-project.org/')"
-R -e "remotes::install_github('cropmodels/Recocrop', dependencies=FALSE)"
+R -e "pak::pkg_install(c('meteor', 'cropmodels/Recocrop'), upgrade = FALSE)"
 
 # Export the conda environment
 log debug "Exporting conda environment: ncps"

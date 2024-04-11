@@ -39,4 +39,13 @@ else
     docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
 fi
 
-# Transfer simulation output, remove temporary files
+# Check for ERROR in control table csv ($LULCC_M_SIM_CONTROL_TABLE)
+log debug "Loading simulation control file: $LULCC_M_SIM_CONTROL_TABLE"
+# Check if ERROR in any row of the control table
+if grep -q ERROR "$LULCC_M_SIM_CONTROL_TABLE"; then
+  # Log the number of occurrences of ERROR
+  log error "Found $(grep -c ERROR "$LULCC_M_SIM_CONTROL_TABLE") occurrences of ERROR in simulation control file $LULCC_M_SIM_CONTROL_TABLE"
+  return
+else
+  log info "No ERROR found in simulation control file $LULCC_M_SIM_CONTROL_TABLE"
+fi

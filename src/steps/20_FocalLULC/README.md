@@ -15,4 +15,4 @@ The toolbox requires the following inputs:
 
 The **mean** value is calculated within circular areas with varying radii.
 Radii, focal window type and function are configurable in the global
-[`config.json`](config.json).
+[`config.yml`](../../config.yml).

@@ -1,5 +1,5 @@
 #!/bin/bash
-eval "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/bash_common.sh"
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/bash_common.sh"
 # Script to de-/activate environment passed as first argument
 # Only de/activate depending on second argument: 1 - activate, 0 - deactivate
 

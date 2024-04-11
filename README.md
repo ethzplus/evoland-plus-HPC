@@ -32,7 +32,7 @@ but an example is provided in the guide.
 For the setup of Future-EI, please refer to
 the [setup guide](https://cbueth.github.io/Future-EI/setup).
 Generally, a shared configuration file can be found at
-[`src/config.json`](src/config.json).
+[`src/config.yml`](src/config.yml).
 
 ### Dependencies
 
