@@ -18,9 +18,11 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     echo "export BUILD_TIME=\"${BUILD_TIME}\"" >> $APPTAINER_ENVIRONMENT
     echo "AlternativePathForR = \"/usr/bin/Rscript\"" >> "$MODEL_DIR/.dinamica_ego_7.conf"
     touch "$MODEL_DIR/.dinamica_ego_7_system.conf"
-
-%startscript
-    # echo "Working directory: `pwd`"
+    # remove submodels from /app/squashfs-root/usr/bin/Submodels/
+    # - AllocateTransitions.egoml
+    # - CalcSimilarityOfDifferences.ego
+    rm -f /app/squashfs-root/usr/bin/Submodels/AllocateTransitions.egoml
+    rm -f /app/squashfs-root/usr/bin/Submodels/CalcSimilarityOfDifferences.egoml
 
 %runscript
     cd "$MODEL_DIR"

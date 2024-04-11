@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #SBATCH -n 1                  # Number of cores requested
-#SBATCH --cpus-per-task=8     # Number of CPUs per task
-#SBATCH --time=4:00:00        # Runtime
-#SBATCH --mem-per-cpu=16G     # Memory per cpu in GB (see also --mem)
+#SBATCH --cpus-per-task=6     # Number of CPUs per task
+#SBATCH --time=3:00:00        # Runtime
+#SBATCH --mem-per-cpu=4G      # Memory per cpu in GB (see also --mem)
 #SBATCH --tmp=2G              # https://scicomp.ethz.ch/wiki/Using_local_scratch
 #SBATCH --output="logs/10_land_use-%j.out"
 #SBATCH --error="logs/10_land_use-%j.err"
