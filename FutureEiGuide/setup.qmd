@@ -3,7 +3,8 @@
 To set up Future-EI for usage, you need to clone this repository, install the
 models used in @fig-pipeline, and configure the local paths for inputs and parameters.
 For the `bash` script, environment variables are set in the
-[`src/config.json` file](https://github.com/cbueth/Future-EI/tree/main/src/config.json).
+[`src/config.yml`](https://github.com/cbueth/Future-EI/tree/main/src/config.yml)
+file.
 
 ## Micromamba/Conda
 
@@ -24,6 +25,14 @@ The given scripts identify the installed package manager, as can be found in
 
 Dinamica EGO is available on [the project website](https://dinamicaego.com/dinamica-7/),
 but will be shipped in the LULCC docker image for simplicity.
+It can be automatically installed or built using the
+[src/steps/10_LULCC/docker_setup.sh](src/steps/10_LULCC/docker_setup.sh)
+script, which uses variables from the
+[`src/config.yml`](https://github.com/cbueth/Future-EI/tree/main/src/config.yml)
+file, and depends on the
+[dinamica-ego-docker](https://github.com/cbueth/dinamica-ego-docker/)
+container.
+The script is compatible with `docker` and `apptainer`.
 
 For a full description of the environments, see the environments:
 
@@ -39,3 +48,26 @@ follows:
 # possibly activate globstar: shopt -s globstar
 chmod +x src/**/*.sh
 ```
+
+Attention: When you set up the environments, make sure to use compatible
+versions of the same packages between the different steps, to ensure upward
+compatibility.
+
+## Yaml Parser `yq`
+
+For the `bash` scripts, we use [`yq`](https://mikefarah.gitbook.io/yq/) to parse
+the `yaml` configuration file.
+`yq` needs to be available in the `PATH` variable of the shell.
+To install the latest version, run the following command:
+```bash
+bin_dir=/usr/bin &&\
+wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O $bin_dir/yq
+chmod +x $bin_dir/yq
+```
+Other [installation options](https://github.com/mikefarah/yq/#install)
+and binaries can be found on the repository's README.
+To make `yq` available in the `PATH` variable, make sure the `$bin_dir` is
+in the `PATH` variable.
+To check the parser is installed correctly, run `yq --version` in the shell.
+And to print contents of `config.yml` as idiomatic YAML to stdout, run
+`yq -P -oy src/config.yml`.

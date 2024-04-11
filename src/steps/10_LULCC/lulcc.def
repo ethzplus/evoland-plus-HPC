@@ -6,23 +6,18 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     repo = lulcc
     version = latest
 
-%files
-    $LULCC_CH_HPC_DIR/Model/Dinamica_models/LULCC_CH_ego_Submodels/*.ego /app/squashfs-root/usr/bin/Submodels/
-
 %environment
     export VERSION="$version"
     export HOME="$MODEL_DIR"
+    export DINAMICA_EGO_CLI_LOG_LEVEL=4
+    # UNCONDITIONAL=0, ERROR=1, WARNING=2, RESULT=3,
+    # INFO=4, INFO2=5, DEBUG=6, DEBUG2=7
 
 %post
     BUILD_TIME=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
     echo "export BUILD_TIME=\"${BUILD_TIME}\"" >> $APPTAINER_ENVIRONMENT
     echo "AlternativePathForR = \"/usr/bin/Rscript\"" >> "$MODEL_DIR/.dinamica_ego_7.conf"
     touch "$MODEL_DIR/.dinamica_ego_7_system.conf"
-    # remove submodels from /app/squashfs-root/usr/bin/Submodels/
-    # - AllocateTransitions.egoml
-    # - CalcSimilarityOfDifferences.ego
-    rm -f /app/squashfs-root/usr/bin/Submodels/AllocateTransitions.egoml
-    rm -f /app/squashfs-root/usr/bin/Submodels/CalcSimilarityOfDifferences.egoml
 
 %runscript
     cd "$MODEL_DIR"
@@ -30,8 +25,30 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     echo "Container was created at $BUILD_TIME"
     echo "Container was started at `date -u +"%Y-%m-%dT%H:%M:%SZ"`"
     mkdir -p /tmp/dinamica_ego_7_temp
-    echo "Running LULCC Script ($MODEL_DIR/Scripts/LULCC_CH_master.R)"
-    Rscript $MODEL_DIR/Scripts/LULCC_CH_master.R
+    if [ -z "$DINAMICA_EGO_7_MAX_DETECTED_CORES" ]; then
+        echo "DINAMICA_EGO_7_MAX_DETECTED_CORES is not set"
+    else
+        echo "DINAMICA_EGO_7_MAX_DETECTED_CORES is set to $DINAMICA_EGO_7_MAX_DETECTED_CORES"
+    fi
+
+    # Make paths relative to mounted directory
+    # remove LULCC_CH_HPC_DIR from LULCC_M_SIM_CONTROL_TABLE to get relative path
+    # to/hpc_folder/table.csv - to/hpc_folder = hpc_folder
+    LULCC_M_SIM_CONTROL_TABLE=$(echo $LULCC_M_SIM_CONTROL_TABLE | sed "s|$LULCC_CH_HPC_DIR/||g")
+    LULCC_CH_OUTPUT_BASE_DIR=/tmp/$(echo $LULCC_CH_OUTPUT_BASE_DIR | sed "s|$TMPDIR/||g")
+    mkdir -p $LULCC_CH_OUTPUT_BASE_DIR
+    LULCC_CH_HPC_DIR=$MODEL_DIR  # As the directory is mounted to /model
+
+    echo "LULCC_M_SIM_CONTROL_TABLE: $LULCC_M_SIM_CONTROL_TABLE"
+    echo "LULCC_CH_OUTPUT_BASE_DIR: $LULCC_CH_OUTPUT_BASE_DIR"
+    echo "LULCC_CH_HPC_DIR: $LULCC_CH_HPC_DIR"
+
+    echo "Running LULCC Dinamica Model ($MODEL_DIR/Model/Dinamica_models/LULCC_CH.ego)"
+    $DINAMICA_EGO_CLI -disable-parallel-steps -log-level $DINAMICA_EGO_CLI_LOG_LEVEL $MODEL_DIR/Model/Dinamica_models/LULCC_CH.ego
+
+    echo "See /tmp/dinamica_ego_7_temp directory for output folders:"
+    ls -la /tmp/dinamica_ego_7_temp
+    echo "Container finished at `date -u +"%Y-%m-%dT%H:%M:%SZ"`"
 
 %test
     cd "$APP_DIR"

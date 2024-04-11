@@ -1,0 +1,16 @@
+name: ncps
+channels:
+  - conda-forge
+dependencies:
+  - r-base
+  - r-remotes
+  - r-codetools
+  - gdal
+  - proj
+  - r-terra
+  - r-raster
+  - r-data.table
+  - r-sf
+  - natcap.invest
+  - r-yaml
+  - pyyaml
