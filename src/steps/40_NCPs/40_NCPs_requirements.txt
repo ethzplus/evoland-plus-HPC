@@ -8,6 +8,7 @@ r-raster
 r-data.table
 r-sf
 natcap.invest
+r-pak
 # # # Dependencies by NCP:
 #
 # #  CAR

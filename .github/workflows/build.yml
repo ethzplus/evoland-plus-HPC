@@ -2,8 +2,6 @@ on:
   workflow_dispatch:
   push:
     paths:
-      #      - 'src/steps/10_LULCC/10_land_use_setup.sh'
-      #      - 'src/steps/10_LULCC/10_land_use_requirements.txt'
       - 'src/steps/20_FocalLULC/20_FocalPrep_setup.sh'
       - 'src/steps/20_FocalLULC/20_FocalPrep_requirements.txt'
       - 'src/steps/40_NCPs/40_NCPs_setup.sh'
@@ -25,12 +23,18 @@ jobs:
             path: src/steps/20_FocalLULC/20_FocalPrep_setup.sh
           - name: 40_NCPs
             path: src/steps/40_NCPs/40_NCPs_setup.sh
+    defaults:
+      run:
+        shell: bash -leo pipefail {0}
 
     steps:
       - name: "Checkout"
         uses: actions/checkout@v4
-      - name: "Setup micromamba"
-        uses: mamba-org/setup-micromamba@v1
+      - name: "Setup mamba"
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          mamba-version: "*"
+          channels: conda-forge
       - name: "Setup Environment (${{ matrix.setup_script.name }})"
         run: |
           chmod +x ${{ matrix.setup_script.path }}

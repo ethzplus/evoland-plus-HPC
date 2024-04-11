@@ -1,6 +1,13 @@
 #!/bin/bash
 # File for loading bash variables
 
+# Make sure only sourced once
+if [ -n "$BASH_COMMON_LOADED" ]; then
+    return
+else
+    BASH_COMMON_LOADED=1
+fi
+
 # Try to call yq, if not refer to installation instructions (https://github.com/mikefarah/yq/#install)
 if ! (command -v yq &> /dev/null); then
     echo "yq not found. Installation instructions: https://github.com/mikefarah/yq/#install"
