@@ -3,9 +3,9 @@ on:
   push:
     paths:
       - 'src/steps/20_FocalLULC/20_FocalPrep_setup.sh'
-      - 'src/steps/20_FocalLULC/20_FocalPrep_requirements.txt'
+      - 'src/steps/20_FocalLULC/20_FocalPrep_env.yml'
       - 'src/steps/40_NCPs/40_NCPs_setup.sh'
-      - 'src/steps/40_NCPs/40_NCPs_requirements.txt'
+      - 'src/steps/40_NCPs/40_NCPs_env.yml'
   pull_request:
 
 name: "Build Environments"
