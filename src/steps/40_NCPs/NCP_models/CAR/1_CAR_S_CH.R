@@ -18,28 +18,41 @@
 library(terra)
 library(yaml)
 
-# Load the parameters from ../40_NCPs_params.yml
-params <- yaml.load_file(
-  # Find config file relative to the location of the current script
-  file.path(dirname(sys.frame(1)$ofile), "..", "40_NCPs_params.yml")
-)
+# Load the parameters into env by sourcing the ../load_params.R script
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- "--file="
+script.dir <- dirname(sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)]))
+source(file.path(script.dir, "..", "load_params.R"))
+# Check all required parameters are set
+if (is.null(params$data$dem)) { stop("params$data$dem is not set") }
+if (is.null(params$data$prodreg)) { stop("params$data$prodreg is not set") }
+if (is.null(params$run_params$NCP_RUN_LULC_MAP)) {
+  stop("params$run_params$NCP_RUN_LULC_MAP is not set")
+}
+if (is.null(params$run_params$NCP_RUN_YEAR)) {
+  stop("params$run_params$NCP_RUN_YEAR is not set")
+}
+if (is.null(params$run_params$NCP_RUN_SCRATCH_DIR)) {
+  stop("params$run_params$NCP_RUN_SCRATCH_DIR is not set")
+}
 
 # Digital elevation model
 dem <- rast(params$data$dem)
 # Production regions from CH
 prodreg <- vect(params$data$prodreg)
 # Land use
-lulc18 <- rast(params$data$lulcc2018)
+lulc <- rast(params$run_params$NCP_RUN_LULC_MAP)
 
-# Folder paths
-setwd(params$CAR$wd)
-
-# Creating scratch folders used for temporary storage of data
-scratch <- paste(params$CAR$wd, "scratch", sep = "/")
-dir.create(paste(params$CAR$wd, "scratch", sep = "/"))
-dir.create(paste(scratch, "lulc_clip", sep = "/"))
-dir.create(paste(scratch, "lulc_clip", "18", sep = "/"))
-dir.create(paste(scratch, "Invest_models", sep = "/"))
+# Creating scratch folder used for temporary storage of data
+scratch <- file.path(params$run_params$NCP_RUN_SCRATCH_DIR, "CAR")
+out_dir <- file.path(scratch, "lulc_clip", params$run_params$NCP_RUN_YEAR)
+if (dir.exists(out_dir))
+  cat("Warning: Directory already exists, overwriting existing files.\n")
+dir.create(
+  out_dir,
+  recursive = TRUE,  # creates parent directories if they don't exist
+  showWarnings = FALSE
+)
 
 # 1) Preprocessing data
 
@@ -70,10 +83,19 @@ regelev$regelev_n <- paste(regelev$ProdregN_1, regelev$DEM_mean_LV95, sep = "")
 # Reclassify the LULC map into 18 categories
 # Always pairs of two, first number is original LULC category and second number
 # the one it is casted into
-# TODO: change to use the LULC-classes created by Ben
-clip_and_reclassify <- function(lulc, year) {
+clip_and_reclassify <- function(lulc, out) {
   m <- c(
-    0, 0, 10, 12, 11, 12, 12, 2, 13, 1, 14, 4, 15, 3, 16, 18, 17, 18, 7, 19, 16
+    0, 0,
+    10, 12,
+    11, 12,
+    12, 2,
+    13, 1,
+    14, 4,
+    15, 3,
+    16, 18,
+    17, 18,
+    18, 7,
+    19, 16
   )
 
   #making the vector a matrix with two columns
@@ -97,11 +119,13 @@ clip_and_reclassify <- function(lulc, year) {
     NAflag(c) <- 255
 
     # saving the data
-    writeRaster(c, paste(scratch, "lulc_clip", year, paste(name, ".tif", sep = ""), sep = "/"), overwrite = TRUE, NAflag = 255)
-    print(paste("raster", name, "created", i, "/", nrow(list_reg_elev), sep = " "))
-    gc()
+    filename <- file.path(out, paste(name, ".tif", sep = ""))
+    writeRaster(c, filename, overwrite = TRUE, NAflag = 255)
+    print(paste0(formatC(i, width = nchar(nrow(list_reg_elev)), flag = "0"),
+                 "/", nrow(list_reg_elev), ": created ", name))
+    gc()  # garbage collection
   }
 }
 
 # Applying the function
-clip_and_reclassify(lulc18, "18")
+clip_and_reclassify(lulc, out_dir)

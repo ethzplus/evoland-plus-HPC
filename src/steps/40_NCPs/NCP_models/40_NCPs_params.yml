@@ -2,10 +2,15 @@
 other:
   scratch_dir: /scratch/.ncps-temp
 
+# Run Params (are overwritten when loading)
+#run_params:
+#  NCP_RUN_YEAR:
+#  NCP_RUN_LULC_MAP:
+#  NCP_RUN_OUTPUT_DIR:
+#  NCP_RUN_SCRATCH_DIR:
+
 # Data
 data:
-  # Land Use Land Cover Change
-  lulcc2018: DATA/OFS25_DS/2018/results/LU-CH_2018.tif
   # Production regions
   prodreg: DATA/Swiss_Regions_SHP/PRODREG.shp
   # Municipality Layer
@@ -47,22 +52,12 @@ proj:
 # NCP Params
 
 CAR:
-  # Working directory
-  wd: Module_c/scenarios_lulc/NCP_models/CAR
   # 1_CAR_S_CH.R
   # 2_CAR_S_CH.py
-  bp_tables_dir: NCP_models\CAR\BPTABLE
-  # Path to a directory containing LULC rasters for each region
-  lu_dir: NCP_models\CAR\scratch\lulc_clip\18
-  # Path to output directory containing each InVEST model
-  output_dir: NCP_models\CAR\scratch\Invest_models
+  bp_tables_dir: Future-EI/src/steps/40_NCPs/NCP_models/CAR/BPTABLE/
   # 3_CAR_S_CH.R
-  # directory containing invest models
-  dir18: NCP_models/CAR/scratch/Invest_models
-  # directory to save results
-  res18: Module_c/scenarios_lulc/NCP_models/CARresults
-  # output name
-  n18: CAR_S_CH_18.tif
+  # output prefix
+  out_prefix: tot_c_cur_
 
 FF:
   # 0_monthly_average_dataprep.R

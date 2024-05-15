@@ -46,6 +46,10 @@ bash_variables:
   # NCP variables
   NCP_PARAMS_YML: ~/Future-EI/src/steps/40_NCPs/NCP_models/40_NCPs_params.yml
   NCP_OUTPUT_BASE_DIR: /ncp_output
+  NCP_RUN_LULC_MAP: # LULC map path, automatically set for each configuration
+  NCP_RUN_YEAR: # Year for which to run NCPs, automatically set
+  NCP_RUN_OUTPUT_DIR: # Output directory for NCPs, automatically set
+  NCP_RUN_SCRATCH_DIR: # Scratch directory for NCPs, automatically set
   # Apptainer variables for the apptainer container
   APPTAINER_CONTAINERDIR: ~/apptainer_containers
   APPTAINER_CACHEDIR: /scratch/apptainer_cache

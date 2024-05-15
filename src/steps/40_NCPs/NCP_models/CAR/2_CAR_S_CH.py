@@ -4,68 +4,73 @@
 # Model: InVEST Carbon Model
 # Python version : 3.8 
 # -----------------------------------------------
-# This script runs the Carbon model from InVEST. It first defines the folders, where the biophysical tables and the land use files are. Then it creates a list containing the names
-# for each region and each biophiscal table and land use file associated to it. Then it runs the module for each region.
+# This script runs the Carbon model from InVEST. It first defines the folders,
+# where the biophysical tables and the land use files are.
+# Then it creates a list containing the names for each region and each
+# biophiscal table and land use file associated to it.
+# Then it runs the module for each region.
+import sys
+from os import listdir, makedirs
+from os.path import join, basename, dirname
 
-# import modules
+import natcap.invest.carbon
 
-import natcap.invest.carbon, os, string, yaml
+sys.path.append(join(dirname(__file__), '..'))  # bad practice
+from load_params import load_params
 
-# Requires to have all natcap.invest dependencies installed (e.g. GDAL, rtree, numpy, etc). Cannot run on python 2!!!
+# Requires to have all natcap.invest dependencies installed
+# (e.g. GDAL, rtree, numpy, etc). Cannot run on python 2!
 
-# Load the parameters from ../40_NCPs_params.yml (relative to this file)
-with open(os.path.join(os.path.dirname(__file__), '..',
-                       '40_NCPs_params.yml')) as stream:
-    params = yaml.safe_load(stream)
+params = load_params(
+    check_params=[
+        ['CAR', 'bp_tables_dir'],
+        ['run_params', 'NCP_RUN_YEAR'],
+        ['run_params', 'NCP_RUN_OUTPUT_DIR'],
+        ['run_params', 'NCP_RUN_SCRATCH_DIR'],
+    ]
+)
 
 # ------ Define paths to variables
 
 # Path to a folder containing biophysical tables for each region+altitude
 bp_tables_dir = params['CAR']['bp_tables_dir']
-# Path to a folder containing LULC rasters for each region
-lu_dir = params['CAR']['lu_dir']
+# Path to a folder containing the prepared LULC rasters for each region
+lulc_clip_dir = join(params['run_params']['NCP_RUN_SCRATCH_DIR'], 'CAR',
+                     'lulc_clip', params['run_params']['NCP_RUN_YEAR'])
 # Path to output folder containing each InVEST model
-output_dir = params['CAR']['output_dir']
+model_dir = join(params['run_params']['NCP_RUN_OUTPUT_DIR'], 'CAR',
+                 params['run_params']['NCP_RUN_YEAR'], 'Invest_models')
 
-# Process: browsing through folders and defining names
 
-# Lists all files in the biophysical tables folder.
-listdir = os.listdir(bp_tables_dir)
-list_names = []
+def _get_region_names(dir_path: str) -> list[str]:
+    """
+    This function returns of all files in a folder without the file extension.
+    :param dir_path: Path to the folder containing the files
+    :return: List of file names without the file extension
+    """
+    return [basename(f).split('.')[0] for f in listdir(dir_path)]
 
-print("List of regions:")
 
-# Extracts the region name from the filename by removing the last 4 characters (file extension) and adding them to list_names
-for i in range(0, len(listdir)):
-    name = listdir[i]
-    name = name[:-4]
-    list_names.append(name)
-    print(name)
+if __name__ == '__main__':
 
-# Process: Individually running InVEST Carbon model on each raster map from "lu_dir"
+    list_names = _get_region_names(bp_tables_dir)
+    print(f"CAR: Starting Carbon model for {len(list_names)} regions...\n"
+          f"     Regions: {list_names}")
 
-# specifying filenames for getting biophysical table & land use and specifying the output file path
-for i in range(0, len(list_names)):
-    bptable = bp_tables_dir + "\\" + list_names[i] + ".csv"
-    lu = lu_dir + "\\" + list_names[i] + ".tif"
-    out = output_dir + "\\" + list_names[i]
-    tag = list_names[i]
+    # create output folder
+    makedirs(model_dir, exist_ok=True)
 
-    args = {
-        # Dictionary containing the input parameters required to run the InVEST Carbon Model for the current region.
-        'calc_sequestration': False,
-        'carbon_pools_path': bptable,
-        'do_redd': False,
-        'do_valuation': False,
-        'lulc_cur_path': lu,
-        'results_suffix': tag,
-        'workspace_dir': out,
-    }
-
-    # Executing the model calculation for each region
-    if __name__ == '__main__':
+    for region in list_names:
+        args = {
+            'calc_sequestration': False,
+            'carbon_pools_path': join(bp_tables_dir, f"{region}.csv"),
+            'do_redd': False,
+            'do_valuation': False,
+            # 'lulc_cur_path': lu_map,  # join(lu_dir, f"{region}.tif"),
+            'lulc_cur_path': join(lulc_clip_dir, f"{region}.tif"),
+            'results_suffix': region,
+            'workspace_dir': join(model_dir, region),
+        }
         natcap.invest.carbon.execute(args)
-    print("InVEST model " + tag + " :done")
 
-print(".........................................")
-print("script 2, year 2018 done!")
+    print("CAR: ...done!")
