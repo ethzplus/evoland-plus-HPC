@@ -6,11 +6,9 @@ The categories of the NCPs are taken from the [IPBES](https://www.ipbes.net/).
 - [CAR: Regulation of climate](#car-regulation-of-climate)
 - [FF: Food and feed](#ff-food-and-feed)
 - [HAB: Habitat creation and maintenance](#hab-habitat-creation-and-maintenance)
-- [ID: Supporting identities](#id-supporting-identities)
-- [MED: Medicinal, biochemical and genetic resources](#med-medicinal-biochemical-and-genetic-resources)
 - [NDR: Nutrient Delivery Ratio](#ndr-nutrient-delivery-ratio)
-- [PC: Regulation of organisms detrimental to humans](#pc-regulation-of-organisms-detrimental-to-humans)
 - [POL: Pollination and dispersal of seeds](#pol-pollination-and-dispersal-of-seeds)
+- [SDR: Formation, protection and decontamination of soils](#sdr-formation-protection-and-decontamination-of-soils)
 - [WY: Regulation of freshwater quantity, location and timing](#wy-regulation-of-freshwater-quantity-location-and-timing)
 
 ## CAR: Regulation of climate
@@ -88,33 +86,6 @@ The `threat_hab` function is then defined to create the threat layers.
 This function classifies the land use/land cover raster into crop, rural
 residential, and urban threat layers.
 
-## ID: Supporting identities
-
-#### Indicator: Index of species richness for "supporting identities"
-
-[`1_ID_S_CH.R`](NCP_models/ID/1_ID_S_CH.R):
-Species Distribution Models (SDM) maps for symbolic species are processed.
-The script starts by loading a list of species and filters it to only retain
-symbolic species.
-The script then matches each species with its corresponding SDM map file.
-After matching, it stacks the SDM maps of symbolic species and calculates both
-the mean and sum of the stacked maps.
-
-## MED: Medicinal, biochemical and genetic resources
-
-#### Indicator: Distribution of medicinal plant species
-
-[`1_MED_S_CH.R`](NCP_models/MED/1_MED_S_CH.R):
-Aggregating species of interest of Medicinal resources NCP.
-
-The script reads a list of species and their evaluations.
-The species list is filtered to exclude aquatic species and further refined to
-include only species with MED ES values.
-For each species in the refined list, the script identifies its
-corresponding Species Distribution Model (SDM) map.
-These SDM maps are then stacked together, and the mean and sum of the stacked
-maps are calculated.
-
 ## NDR: Nutrient Delivery Ratio
 
 #### Indicator: Annual nutrient retention by vegetation 
@@ -125,18 +96,6 @@ It defines the needed arguments (inputs) by specifying their values or the
 path to the input files.
 Additionally, before it creates a handler that specifies which log output is
 sent to the console and how it is formatted.
-
-## PC: Regulation of organisms detrimental to humans
-
-#### Indicator: Distribution of main predators to main pests
-
-[`1_PC_S_CH.R`](NCP_models/PC/1_PC_S_CH.R):
-The script reads a list of species and filters it to retain only those
-associated with pest control.
-It then maps each species to its corresponding SDM map filename.
-Then a raster stack is created and populated with SDM maps for each pest control
-species.
-Finally, the sum and mean of those SDM maps is calculated.
 
 ## POL: Pollination and dispersal of seeds
 

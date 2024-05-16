@@ -24,12 +24,6 @@ data:
   # Wathersheds
   watersheds: DATA/HADES/a04_bilanz/a04_bilanz.shp
   sub_watersheds: DATA/UNIL_data/catchment_epsg2056/catchment_epsg2056/catchment_epsg2056.shp
-  # SDM map directory - ID
-  sdm_reg_cov_dir: maps_NSDM/valpar-pipeline-v2_d8_ensembles_reg_covariate_
-  # SDM map directory - MED
-  sdm_curr_dir: medicinal/data/current
-  # SDM map directory - PC
-  sdm_glo_dir: maps_NSDM/valpar-pipeline-v2_d8_ensembles_glo_
   # ETO
   eto: DATA/UNIL_data/bioclim25/evapotranspiration/ch_bioclim_chclim25_present_pixel_2006_2015_etp.tif
   # PAWC
@@ -80,23 +74,6 @@ HAB:
   threats_table_path: BPTABLE/18_threats.csv
   workspace_dir: INVEST/18
 
-ID:
-  # 1_ID_S_CH.R
-  wd: Supporting identities/FINAL/SUPPLY/CODE
-  # Output directory
-  outdir_18: Supporting identities/FINAL/SUPPLY/18
-  # Species list
-  list_sp: SDM/first_sdm_extract/sp_list.csv
-
-MED:
-  # 1_MED_S_CH.R
-  # Output directory
-  out_dir: medicinal/results
-  # Species list
-  sp_list: medicinal/data/SDM_ES_sp_list.csv
-  # Evaluations data
-  evals_list: medicinal/data/evals_reg_cov.csv
-
 NDR:
   # 1_NDR_S_CH.py
   # Biophysical table
@@ -116,13 +93,6 @@ NDR:
   threshold_flow_accumulation: 200
   # Workspace directory
   workspace_dir: water_quality/beta/invest_outputs/v3
-
-PC:
-  # 1_PC_S_CH.R
-  # Working directory
-  wd: pest_control/FINAL/SUPPLY/CODE
-  # Species list
-  sp_list: ./sp_list.csv
 
 POL:
   # 1_POL_S_CH.py
