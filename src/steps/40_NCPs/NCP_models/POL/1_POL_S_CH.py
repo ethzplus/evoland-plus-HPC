@@ -5,26 +5,40 @@
 # -----------------------------------------------
 # This script runs the Crop Pollination model from InVEST. Nothing else is done except to define the parameters and input files, and then run the model.
 
-import natcap.invest.pollination
-import yaml, os
+import sys
+from os.path import join, dirname
 
-# Load the parameters from ../40_NCPs_params.yml (relative to this file)
-with open(os.path.join(os.path.dirname(__file__), '..',
-                       '40_NCPs_params.yml')) as stream:
-    params = yaml.safe_load(stream)
+import natcap.invest.pollination
+
+sys.path.append(join(dirname(__file__), '..'))
+from load_params import load_params
+
+params = load_params(
+    check_params=[
+        ['run_params', 'NCP_RUN_LULC_MAP'],
+        ['run_params', 'NCP_RUN_YEAR'],
+        ['run_params', 'NCP_RUN_SCRATCH_DIR'],
+        ['POL', 'farm_vector_path'],
+        ['POL', 'guild_table_path'],
+        ['POL', 'landcover_biophysical_table_path'],
+    ]
+)
 
 args = {
     # This dictionary contains the input parameters required to run the NDR model.
     # Each key-value pair specifies a parameter and its corresponding value.
+    'landcover_raster_path': params['run_params']['NCP_RUN_LULC_MAP'],
     'farm_vector_path': params['POL']['farm_vector_path'],
     'guild_table_path': params['POL']['guild_table_path'],
     'landcover_biophysical_table_path': params['POL'][
         'landcover_biophysical_table_path'],
-    'landcover_raster_path': params['data']['landcover_raster_path'],
-    'results_suffix': params['POL']['results_suffix'],
-    'workspace_dir': params['global']['workspace_dir'],
+    'workspace_dir': join(
+        params['run_params']['NCP_RUN_SCRATCH_DIR'], 'POL',
+        params['run_params']['NCP_RUN_YEAR']),
 }
 
 # Executing Model calculation
 if __name__ == '__main__':
+    print("POL: Starting Crop Pollination model...")
     natcap.invest.pollination.execute(args)
+    print("POL: ...done!")

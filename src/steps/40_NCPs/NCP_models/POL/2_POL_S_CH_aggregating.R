@@ -11,26 +11,31 @@
 
 library(terra)
 library(raster)
-library(yaml)
 
-# Load the parameters from ../40_NCPs_params.yml
-params <- yaml.load_file(
-  # Find config file relative to the location of the current script
-  file.path(dirname(sys.frame(1)$ofile), "..", "40_NCPs_params.yml")
-)
+# Load the parameters into env by sourcing the ../load_params.R script
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- "--file="
+script.dir <- dirname(sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)]))
+source(file.path(script.dir, "..", "load_params.R"))
+# Check all required parameters are set
+if (is.null(params$run_params$NCP_RUN_YEAR)) {
+  stop("params$run_params$NCP_RUN_YEAR is not set")
+}
+if (is.null(params$run_params$NCP_RUN_SCRATCH_DIR)) {
+  stop("params$run_params$NCP_RUN_SCRATCH_DIR is not set")
+}
+if (is.null(params$run_params$NCP_RUN_OUTPUT_DIR)) {
+  stop("params$run_params$NCP_RUN_OUTPUT_DIR is not set")
+}
 
-#Local variables
-setwd(params$POL$wd)
-
-data_folder <- paste(getwd(), "/invest", sep = "")
+data_folder <- file.path(params$run_params$NCP_RUN_SCRATCH_DIR, "POL",
+                         params$run_params$NCP_RUN_YEAR)  # TODO: Check if files are here
 
 # Retrieve a list of file paths from the data folder that match the pattern "supply"
 files <- list.files(data_folder, pattern = "supply", full.names = T)
 
-#output folder
-
-out18 <- paste(getwd(), "18", sep = "/")
-
+out_dir <- file.path(params$run_params$NCP_RUN_OUTPUT_DIR, "POL",
+                     params$run_params$NCP_RUN_YEAR)
 
 # Read and stack the rasters from the list of file paths into a single raster stack
 p_list <- rast(files)
@@ -42,5 +47,7 @@ pol_sum <- sum(p_list)
 nx <- minmax(pol_sum)
 rn <- (pol_sum - nx[1,]) / (nx[2,] - nx[1,])
 
-writeRaster(rn, paste(out18, "POL_S_CH_18.tif", sep = "/"))
+writeRaster(rn, file.path(out_dir, "POL_S_CH.tif"))
 
+# Remove temporary files not explicitly needed,
+# as they are stored in the scratch directory

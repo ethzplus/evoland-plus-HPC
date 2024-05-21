@@ -96,15 +96,10 @@ POL:
   # Farm vector path
   farm_vector_path: ''
   # Guild table path
-  guild_table_path': Pollination/FINAL/SUPPLY/CODE/BPTABLE/guild.csv
+  guild_table_path: Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/guild.csv
   # Landcover biophysical table path
-  landcover_biophysical_table_path: Pollination/FINAL/SUPPLY/CODE/BPTABLE/pollination_bptable_ds25.csv
-  # Suffix for output files
-  results_suffix: ''
-  # Workspace directory
-  workspace_dir: Pollination/FINAL/SUPPLY/CODE/invest
+  landcover_biophysical_table_path: Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/pollination_bptable_ds25_futei.csv
   # 2_POL_S_CH_aggregating.R
-  wd: Pollination/FINAL/SUPPLY/CODE
 
 SDR:
   # 1_SDR_S_CH.py

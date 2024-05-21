@@ -1,0 +1,11 @@
+lucode,nesting_cavity_availability_index,nesting_ground_availability_index,floral_resources_spring_index,floral_resources_summer_index,floral_resources_fall_index,LULC_name
+10,0.1,0,0,0,0,Urban
+11,0,0,0,0,0,Static
+12,1,0.9,0.4,0.3,0.4,Open_Forest
+13,0.6,0.9,0.5,0.2,0.1,Closed_Forest
+14,0.9,0.6,0.5,0.3,0.3,Shrubland
+15,0,0.3,0.4,0.5,0.4,Int_AG
+16,0.6,1,0.3,0.7,0.1,Alp_Past
+17,0.6,1,0.4,0.6,0.2,Grassland
+18,0,0.5,0.8,0.3,0.2,Perm_crops
+19,0,0,0,0,0,Glacier
