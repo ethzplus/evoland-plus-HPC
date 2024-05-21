@@ -2,6 +2,10 @@
 # Script to load the NCP parameters
 
 # Load libraries
+import logging
+import sys
+
+from natcap.invest.utils import LOG_FMT
 from yaml import safe_load
 from os.path import join, dirname
 from os import environ
@@ -114,3 +118,33 @@ def load_params(check_params=None):
             raise Exception("Parameter %s not found in parameter file.", param)
 
     return params
+
+
+# Logging for natcap.invest models
+
+# Creates a logger object for the current module, which can be used to log
+# messages specific to this module.
+LOGGER = logging.getLogger(__name__)
+
+# Creates a root logger object, which can be used to log messages at the
+# application level.
+root_logger = logging.getLogger()
+
+# Creates a logging handler that sends log messages to the standard output (
+# console).
+handler = logging.StreamHandler(sys.stdout)
+
+# Defines the format for logging messages using the format provided by the
+# natcap.invest toolkit. This format includes details like timestamps,
+# log levels, and the actual message content.
+formatter = logging.Formatter(
+    fmt=LOG_FMT,
+    datefmt='%m/%d/%Y %H:%M:%S ')
+
+# Sets the formatter for the logging handler.
+handler.setFormatter(formatter)
+
+# Configures the basic settings for logging. It sets the log level to INFO,
+# meaning only messages of level INFO and above will be logged. It also adds
+# the handler
+logging.basicConfig(level=logging.INFO, handlers=[handler])
