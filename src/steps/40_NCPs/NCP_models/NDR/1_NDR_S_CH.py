@@ -8,45 +8,35 @@
 # and how it is formatted. Then it defines the needed arguments (inputs) by
 # specifying their values or the path to the input files.
 
-import logging
 import sys
+from os.path import join, dirname
+from shutil import rmtree
 
 import natcap.invest.ndr.ndr
 import natcap.invest.utils
 
-import yaml, os
+sys.path.append(join(dirname(__file__), '..'))
+from load_params import load_params
 
-# Load the parameters from ../40_NCPs_params.yml (relative to this file)
-with open(os.path.join(os.path.dirname(__file__), '..',
-                       '40_NCPs_params.yml')) as stream:
-    params = yaml.safe_load(stream)
-
-# Creates a logger object for the current module, which can be used to log
-# messages specific to this module.
-LOGGER = logging.getLogger(__name__)
-
-# Creates a root logger object, which can be used to log messages at the
-# application level.
-root_logger = logging.getLogger()
-
-# Creates a logging handler that sends log messages to the standard output (
-# console).
-handler = logging.StreamHandler(sys.stdout)
-
-# Defines the format for logging messages using the format provided by the
-# natcap.invest toolkit. This format includes details like timestamps,
-# log levels, and the actual message content.
-formatter = logging.Formatter(
-    fmt=natcap.invest.utils.LOG_FMT,
-    datefmt='%m/%d/%Y %H:%M:%S ')
-
-# Sets the formatter for the logging handler.
-handler.setFormatter(formatter)
-
-# Configures the basic settings for logging. It sets the log level to INFO,
-# meaning only messages of level INFO and above will be logged. It also adds
-# the handler
-logging.basicConfig(level=logging.INFO, handlers=[handler])
+params = load_params(
+    check_params=[
+        ['run_params', 'NCP_RUN_LULC_MAP'],
+        ['run_params', 'NCP_RUN_YEAR'],
+        ['run_params', 'NCP_RUN_OUTPUT_DIR'],
+        ['data', 'dem'],
+        ['data', 'runoff_proxy'],
+        ['data', 'watersheds'],
+        ['NDR', 'biophysical_table_path'],
+        ['NDR', 'calc_n'],
+        ['NDR', 'calc_p'],
+        ['NDR', 'k_param'],
+        ['NDR', 'n_workers'],
+        ['NDR', 'subsurface_critical_length_n'],
+        ['NDR', 'subsurface_eff_n'],
+        ['NDR', 'threshold_flow_accumulation'],
+        ['other', 'remove_temp_files'],
+    ]
+)
 
 args = {
     # This dictionary contains the input parameters required to run the NDR
@@ -58,18 +48,30 @@ args = {
     'calc_p': params['NDR']['calc_p'],
     'dem_path': params['data']['dem'],
     'k_param': params['NDR']['k_param'],
-    'lulc_path': params['data']['lulc2018'],
+    'lulc_path': params['run_params']['NCP_RUN_LULC_MAP'],
     'n_workers': params['NDR']['n_workers'],
-    'results_suffix': params['NDR']['results_suffix'],
     'runoff_proxy_path': params['data']['runoff_proxy'],
     'subsurface_critical_length_n': params['NDR'][
         'subsurface_critical_length_n'],
     'subsurface_eff_n': params['NDR']['subsurface_eff_n'],
     'threshold_flow_accumulation': params['NDR']['threshold_flow_accumulation'],
     'watersheds_path': params['data']['watersheds'],
-    'workspace_dir': params['NDR']['workspace_dir']
+    'workspace_dir': join(
+        params['run_params']['NCP_RUN_OUTPUT_DIR'], 'NDR',
+        params['run_params']['NCP_RUN_YEAR']),
 }
 
 # Executes the NDR model with the specified input parameters.
 if __name__ == '__main__':
+    print("NDR: Starting Nutrient Delivery Ratio model...")
     natcap.invest.ndr.ndr.execute(args)
+    print("NDR: ...done!")
+
+    if params['other']['remove_temp_files']:
+        # remove intermediate outputs
+        intermediate_output_dir = join(
+            params['run_params']['NCP_RUN_OUTPUT_DIR'], 'NDR',
+            params['run_params']['NCP_RUN_YEAR'], 'intermediate_outputs')
+        print(f"Removing intermediate outputs in {intermediate_output_dir}")
+        # delete folder
+        rmtree(intermediate_output_dir)

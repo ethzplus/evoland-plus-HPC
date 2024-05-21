@@ -41,7 +41,7 @@ proj:
   # Extent
   ext: [ 2480000, 2840000, 1070000, 1300000 ]
   # Resolution
-  res: 25
+  res: 100
 
 # NCP Params
 
@@ -77,22 +77,19 @@ HAB:
 NDR:
   # 1_NDR_S_CH.py
   # Biophysical table
-  biophysical_table_path: ./ndr_bptable_ds25.csv
+  biophysical_table_path: Future-EI/src/steps/40_NCPs/NCP_models/NDR/BPTABLE/ndr_bptable_ds25_futei.csv
   calc_n: True
   calc_p: True
   k_param: 2
   # Number of workers
-  n_workers: -1
+  n_workers: 6
   # Suffix for output files
-  results_suffix: _v3
   # Subsurface critical length
   subsurface_critical_length_n: 100
   # Subsurface effective retention
   subsurface_eff_n: 0.75
   # Threshold flow accumulation
   threshold_flow_accumulation: 200
-  # Workspace directory
-  workspace_dir: water_quality/beta/invest_outputs/v3
 
 POL:
   # 1_POL_S_CH.py
