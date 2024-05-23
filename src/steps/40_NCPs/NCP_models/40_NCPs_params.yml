@@ -32,6 +32,12 @@ data:
   precipitation: DATA/UNIL_data/bioclim25/precipitations/ch_bioclim_chclim25_present_pixel_2006_2015_prec.tif
   # Soil depth
   depth_to_root_rest_layer: DATA/Maps.Geo.Soils/Processed_data/Root_restricting_depth/rrd_100_mm_rexport.tif
+  # Precipitation avgs - FF # TODO: automate for scenarios
+  pavg_dir: Data/monthly_prec/gcm_mean/RCP26_2020/
+  # Temperature avgs   - FF # TODO: automate for scenarios
+  tavg_dir: Data/monthly_temp/gcm_mean/RCP26_2020/
+  # Soil texture       - FF
+  ph_raster: Data/ch_edaphic_eiv_descombes_pixel_r.tif
 
 
 # Projection Settings - change for different regions
@@ -54,15 +60,9 @@ CAR:
   out_prefix: tot_c_cur_
 
 FF:
-  # 0_monthly_average_dataprep.R
-  # 1_FF.R
-  ecocrop_rawdata_dir: ecocrop/rawdata
-  #
-  pavg_dir: ecocrop/pavg_95/13_18
-  #
-  tavg_dir: ecocrop/tavg_95/13_18
-  # 2_FF_aggregate_masking.R
-  r_stack_2_dir: ES Assessment/Food and Feed/ecocrop/results/13-18_crops
+  # 0_FF_ecocrop.R
+  crops_data: Future-EI/src/steps/40_NCPs/NCP_models/FF/crops.txt
+  ecocrop_dir: ncp_output/FF/ecocrop/
 
 HAB:
   # 0_thread_layers_generation.R

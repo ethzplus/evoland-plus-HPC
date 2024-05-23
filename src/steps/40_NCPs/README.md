@@ -45,20 +45,17 @@ previously calculated in the other code files into one final map.
 
 #### Indicator: Crop production potential (`ecocrop`)
 
-[`0_monthly_average_dataprep.R`](NCP_models/FF/data_preparation/0_monthly_average_dataprep.R):
-The aim of this script is to prepare the monthly average data for the
-Ecocrop model.
-The script reads precipitation and temperature datasets and preprocesses them.
-
-[`1_FF.R`](NCP_models/FF/1_FF.R):
+[`0_FF_ecocrop`](NCP_models/FF/data_preparation/0_FF_ecocrop.R):
 The Ecocrop model is applied to each crop of interest to generate
 suitability maps.
 The script reads precipitation, temperature, pH and crop datasets and
 preprocesses them.
 For each crop in the list, the script runs the Ecocrop model, which predicts
 the suitability of the crop based on the provided environmental variables.
+This only needs to be done once for each climate scenario, it is not
+dependent on any LULC data.
 
-[`2_FF_aggregate_masking.R`](NCP_models/FF/2_FF_aggregate_masking.R):
+[`1_FF_aggregate_masking.R`](NCP_models/FF/1_FF_aggregate_masking.R):
 The aim of this script is to first, aggregate map outputs from ecocrop
 models, and second, mask aggregated map with only agricultural land.
 

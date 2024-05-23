@@ -11,25 +11,29 @@ library(Recocrop)
 library(data.table)
 library(terra)
 library(sf)
-library(yaml)
 
-# Load the parameters from ../40_NCPs_params.yml
-params <- yaml.load_file(
-  # Find config file relative to the location of the current script
-  file.path(dirname(sys.frame(1)$ofile), "..", "40_NCPs_params.yml")
-)
+# Load the parameters into env by sourcing the ../load_params.R script
+initial.options <- commandArgs(trailingOnly = FALSE)
+file.arg.name <- "--file="
+script.dir <- dirname(sub(file.arg.name, "", initial.options[grep(file.arg.name, initial.options)]))
+source(file.path(script.dir, "..", "..", "load_params.R"))
+# Check all required parameters are set
+if (is.null(params$FF$crops_data)) { stop("params$FF$crops_data is not set") }
+if (is.null(params$FF$ecocrop_dir)) { stop("params$FF$ecocrop_dir is not set") }
+if (is.null(params$data$ph_raster)) { stop("params$data$ph_raster is not set") }
+if (is.null(params$data$pavg_dir)) { stop("params$data$pavg_dir is not set") }
+if (is.null(params$data$tavg_dir)) { stop("params$data$tavg_dir is not set") }
+if (is.null(params$proj$crs)) { stop("params$proj$crs is not set") }
 
-#setting working directory
-wd <- params$FF$ecocrop_rawdata_dir
-setwd(wd)
 
 #--local variables
 # setting paths to local variables
-sm_dir <- paste(wd, "results", sep = "/")
-pavg95 <- paste(wd, "pavg_95/13_18/lv95", sep = "/") # precipitations
-tavg95 <- paste(wd, "tavg_95/13_18/lv95", sep = "/") # temperature
-ph <- paste(wd, "ch_edaphic_eiv_descombes_pixel_r.tif", sep = "/")      # pH
-crops_data <- paste(wd, "crops.txt", sep = "/") #crops names
+out_dir <- file.path(params$FF$ecocrop_dir)
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+pavg95 <- params$data$pavg_dir  # precipitations
+tavg95 <- params$data$tavg_dir  # temperature
+ph <- params$data$ph_raster  # pH
+crops_data <- params$FF$crops_data  # crops names
 
 ##---Loading variables
 
@@ -43,17 +47,25 @@ colnames(crops) <- "crop"
 crops <- as.data.frame(crops)
 
 #Environmental variables (Temp, prec, ph)
-
-ta <- rast(paste(tavg95, list.files(tavg95), sep = "/"))
+ta <- list.files(tavg95)  # list of temperature files
+print("Loaded temperature data")
+ta <- ta[grepl(".tif$", ta)]  # filtering only tif files
+ta <- rast(paste(tavg95, ta, sep = "/"))  # reading temperature files
+print("Loaded temperature rasters")
 # TODO: Possibly needs change for other countries
 ta <- ta / 10 # adjusting temperature values (originally multiplied by 10)
+print("Loaded and adjusted temperature data")
 
-pr <- rast(paste(pavg95, list.files(pavg95), sep = "/"))
+pr <- list.files(pavg95)  # list of precipitation files
+pr <- pr[grepl(".tif$", pr)]  # filtering only tif files
+pr <- rast(paste(pavg95, pr, sep = "/"))  # reading precipitation files
 # TODO: Possibly needs change for other countries
 pr <- pr / 100 * 16 # adjusting precipitation values (originally multiplied by 100 and for 100m raster cells)
+print("Loaded and adjusted precipitation data")
 
-ph <- rast(paste(ph, list.files(ph), sep = "/"))
-
+ph <- rast(ph)
+ph <- aggregate(ph, fact = 4, fun = mean)
+print("Loaded and aggregated pH data")
 
 ##---- Ecocrop model on each crop type
 # counter variable
@@ -73,12 +85,20 @@ for (i in 1:nrow(crops)) {
   # Get parameters for the current crop and create a model
   pars <- ecocropPars(a)
   m_name <- ecocrop(pars) #model
-  control(m_name, get_max = TRUE)
+  print(paste(
+    "Iteration:", i,
+    "Crop:", a,
+    "Short name:", c_name,
+    sep = " "
+  ))
+  control(m_name, get_max = TRUE)  # get the maximum value of the model
+  print("Model created")
   # Predict using the model
   pred <- predict(m_name, tavg = ta, prec = pr, ph = ph, wopt = list(names = c_name))
+  crs(pred) <- crs(params$proj$crs)
   # Export the prediction
   ex_name <- paste(c_name, ".tif", sep = "")
-  terra::writeRaster(pred, paste(sm_dir, ex_name, sep = "/"), overwrite = TRUE)
+  terra::writeRaster(pred, file.path(out_dir, ex_name), overwrite = TRUE)
   # Print progress
   print(paste("model:", a, "done.", round((i * 100) / nrow(crops), 1), "%", sep = " "))
   gc()

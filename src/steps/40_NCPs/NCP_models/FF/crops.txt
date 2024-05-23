@@ -1,3 +1,3 @@
-brassica napus L.;sugar beet;barley;maize;potato;triticum aestivum;rye;avena sativa;tobacco;spelt;sunflower;glycine max;pisum sativum;vicia faba
+Brassica napus L.;Sugar beet;Barley;Maize;Potato;Triticum aestivum L.;Rye;Avena Sativa L.;Tobacco;Spelt;Sunflower;Glycine max (L.) Merrill;Pisum sativum L.;Vicia faba L.
  
 
