@@ -35,7 +35,7 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     # remove LULCC_CH_HPC_DIR from LULCC_M_SIM_CONTROL_TABLE to get relative path
     # to/hpc_folder/table.csv - to/hpc_folder = hpc_folder
     LULCC_M_SIM_CONTROL_TABLE=$(echo $LULCC_M_SIM_CONTROL_TABLE | sed "s|$LULCC_CH_HPC_DIR/||g")
-    LULCC_CH_OUTPUT_BASE_DIR=/tmp/$(echo $LULCC_CH_OUTPUT_BASE_DIR | sed "s|$TMPDIR/||g")
+    LULCC_CH_OUTPUT_BASE_DIR=/tmp/$(echo $LULCC_CH_OUTPUT_BASE_DIR | sed "s|$FUTURE_EI_OUTPUT_DIR/||g")
     mkdir -p $LULCC_CH_OUTPUT_BASE_DIR
     LULCC_CH_HPC_DIR=$MODEL_DIR  # As the directory is mounted to /model
 
@@ -46,8 +46,8 @@ From: {{ namespace }}/{{ repo }}:{{ version }}
     echo "Running LULCC Dinamica Model ($MODEL_DIR/Model/Dinamica_models/LULCC_CH.ego)"
     $DINAMICA_EGO_CLI -disable-parallel-steps -log-level $DINAMICA_EGO_CLI_LOG_LEVEL $MODEL_DIR/Model/Dinamica_models/LULCC_CH.ego
 
-    echo "See /tmp/dinamica_ego_7_temp directory for output folders:"
-    ls -la /tmp/dinamica_ego_7_temp
+    echo "See $LULCC_CH_OUTPUT_BASE_DIR directory for output folders:"
+    ls -la $LULCC_CH_OUTPUT_BASE_DIR
     echo "Container finished at `date -u +"%Y-%m-%dT%H:%M:%SZ"`"
 
 %test

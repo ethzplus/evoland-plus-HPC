@@ -6,28 +6,17 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 source "$SCRIPT_DIR"/bash_common.sh
 
-# Script Variables
-# ----------------
-TMP_DIR=$TMPDIR/$SLURM_JOB_ID        # Temporary directory
-KEEP_TMP=0                           # Keep temporary files (0: no, 1: yes) for debug
-
 # Slurm
 # -----
 # Request 3 nodes with 2 task each -> 6 CPUs
 # SBATCH --nodes=3
 # SBATCH --tasks-per-node=2
-## Number of tasks
-## SBATCH --ntasks=6
 # Memory per node
 # SBATCH --mem=1G
-## Memory per CPU
-## SBATCH --mem-per-cpu=500M
 # Scratch space
 # SBATCH --tmp=1G
 # Max time: days-hours:minutes:seconds
 # SBATCH --time=0-00:02:00
-## Array job
-## SBATCH --array=1-4%2
 
 # Log file
 # SBATCH --output=~/logs/future-ei-%j.out
@@ -48,13 +37,9 @@ KEEP_TMP=0                           # Keep temporary files (0: no, 1: yes) for 
 log info "Starting Future EI Pipeline"
 log info "Job ID: $SLURM_JOB_ID"
 log info "Job Name: $SLURM_JOB_NAME"
-if [ -n "$SLURM_ARRAY_JOB_ID" ]; then
-    log info "Job Array ID: $SLURM_ARRAY_JOB_ID"
-    log info "Job Array Index: $SLURM_ARRAY_TASK_ID"
-fi
 log info "Number of Nodes: $SLURM_JOB_NUM_NODES"
 log info "Number of Tasks per Node: $SLURM_TASKS_PER_NODE"
-log info "Temporary Directory: $TMP_DIR"
+log info "Temporary Directory: $TMPDIR"
 
 # ______________________________________________________________________________________
 
@@ -64,10 +49,10 @@ srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" hos
 # Preparation
 # -----------
 # Make temporary directories - one for every node
-srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" mkdir -p "$TMP_DIR"
-# Preparation script
-log info "Running Preparation - 00_Preparation.sh"
-srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/00_Preparation.sh
+srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" mkdir -p "$TMPDIR"
+## Preparation script
+#log info "Running Preparation - 00_Preparation.sh"
+#srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/00_Preparation.sh
 
 
 # only if array job
@@ -95,6 +80,14 @@ mkdir -p "$LULCC_CH_OUTPUT_BASE_DIR"
 log info "Running LULCC - 10_LULCC.sh"
 srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/10_LULCC/10_LULCC.sh
 
+# Remove prediction probability maps if
+# $LULCC_M_REMOVE_PRED_PROB_MAPS is 1 or True/TRUE
+if [ "$LULCC_M_REMOVE_PRED_PROB_MAPS" = "1" ] || [ "$LULCC_M_REMOVE_PRED_PROB_MAPS" = "True" ] || [ "$LULCC_M_REMOVE_PRED_PROB_MAPS" = "TRUE" ]; then
+    log info "Removing prediction probability maps"
+    rm -rf "$LULCC_CH_HPC_DIR/Results/Pred_prob_maps"
+fi
+
+
 # only if array job
 if [ -n "$SLURM_ARRAY_JOB_ID" ]; then
     # Merge control table back together
@@ -108,7 +101,7 @@ for i in {LULCC_START_ROW..LULCC_END_ROW}; do
   log info "Running loop $i (parameters: $(sed -n "$i"p "$LULCC_M_SIM_CONTROL_TABLE"))"
   
   SIM_ID=$i
-  LULCC_CH_OUTPUT_SIM_DIR=$LULCC_CH_OUTPUT_BASE_DIR$SIM_ID
+  LULCC_CH_OUTPUT_SIM_DIR=$LULCC_CH_OUTPUT_BASE_DIR$SIM_ID  # TODO: is SIM_ID needed?
   FOCAL_OUTPUT_SIM_DIR=$FOCAL_OUTPUT_BASE_DIR$SIM_ID
   log debug "Current LULCC_CH_OUTPUT_SIM_DIR: $LULCC_CH_OUTPUT_SIM_DIR"
   log debug "Current FOCAL_OUTPUT_SIM_DIR: $FOCAL_OUTPUT_SIM_DIR"
@@ -136,7 +129,7 @@ for i in {LULCC_START_ROW..LULCC_END_ROW}; do
   log info "Running Species Aggregation - 31_SpeciesAgg.sh"
   srun steps/31_SpeciesAgg.sh #&
 
-  NCP_OUTPUT_SIM_DIR=$NCP_OUTPUT_BASE_DIR$SIM_ID
+  NCP_OUTPUT_SIM_DIR="$NCP_OUTPUT_BASE_DIR/$SIM_ID"
   log debug "Current NCP_OUTPUT_SIM_DIR: $NCP_OUTPUT_SIM_DIR"
 
   # 40_NCPs - NCPs
@@ -158,13 +151,6 @@ done
 # ---------------------
 # Save results to output directory
 log info "Running Cleanup - 99_Cleanup.sh"
-srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/99_Cleanup.sh
-
-# Remove temporary directories
-if [ $KEEP_TMP -eq 0 ]; then
-    srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" rm -rf "$TMP_DIR"
-else
-    log warning "Keeping temporary files in $TMP_DIR. Non-permanent if in local scratch."
-fi
+#srun --nodes="$SLURM_JOB_NUM_NODES" --tasks-per-node="$SLURM_TASKS_PER_NODE" steps/99_Cleanup.sh
 
 wait  # Wait for all srun commands to finish before marking as done

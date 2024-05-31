@@ -7,7 +7,7 @@
 get_rows - Function to distribute list of rows to SLURM jobs
 
 Parameters:
-    $1 - Task ID
+    $1 - Current task ID
     $2 - Total number of tasks/array jobs
     $3 - Minimum task ID
     $4 - Total number of scenarios
@@ -42,10 +42,10 @@ Save a chunk of the control table to a temporary directory.
 Uses the environment variables:
     LULCC_M_SIM_CONTROL_TABLE      - Name of the simulation control table
     LULCC_M_SIM_CONTROL_TABLE_FULL - Name of the full simulation control table
+    SLURM_ARRAY_JOB_ID             - Job array ID number
     SLURM_ARRAY_TASK_ID            - Job array ID (index) number
     SLURM_ARRAY_TASK_COUNT         - Total number of tasks in a job array
     SLURM_ARRAY_TASK_MIN           - Job array's minimum ID (index) number
-    TMP_DIR                        - Path to the temporary directory
     LULCC_START_ROW                - Start row number
     LULCC_END_ROW                  - End row number
 "
@@ -70,13 +70,15 @@ function split_control_table() {
 
     # save subset of simulation control file to temporary directory
     log debug "Saving subset of simulation control file to temporary directory"
-    head -n 1 "$LULCC_M_SIM_CONTROL_TABLE" > "$TMP_DIR/Simulation_control.csv"
-    sed -n "$LULCC_START_ROW,$((LULCC_END_ROW-1))"p "$LULCC_M_SIM_CONTROL_TABLE" >> "$TMP_DIR/Simulation_control.csv"
+    new_control_table_path="$LULCC_CH_HPC_DIR/Tools/Simulation_control_subsets/Simulation_control-${SLURM_ARRAY_JOB_ID}_$SLURM_ARRAY_TASK_ID.csv"
+    mkdir -p "$(dirname "$new_control_table_path")"
+    head -n 1 "$LULCC_M_SIM_CONTROL_TABLE" > "$new_control_table_path"
+    sed -n "$LULCC_START_ROW,$((LULCC_END_ROW-1))"p "$LULCC_M_SIM_CONTROL_TABLE" >> "$new_control_table_path"
     # remember the path to the full simulation control file
     export LULCC_M_SIM_CONTROL_TABLE_FULL
     LULCC_M_SIM_CONTROL_TABLE_FULL="$LULCC_M_SIM_CONTROL_TABLE"
     # set the path to the subset of the simulation control file
-    LULCC_M_SIM_CONTROL_TABLE="$TMP_DIR/Simulation_control.csv"
+    LULCC_M_SIM_CONTROL_TABLE="$new_control_table_path"
 
     log info "Running rows [$LULCC_START_ROW, ${LULCC_END_ROW}[ of $num_sims"
 }
@@ -89,7 +91,7 @@ Merge the temporary control table chunks back into the original control table.
 Uses the environment variables:
     LULCC_M_SIM_CONTROL_TABLE      - Name of the simulation control table
     LULCC_M_SIM_CONTROL_TABLE_FULL - Name of the full simulation control table
-    TMP_DIR                        - Path to the temporary directory
+    TMPDIR                         - Path to the temporary directory
     LULCC_START_ROW                - Start row number
     LULCC_END_ROW                  - End row number
 "
@@ -109,6 +111,9 @@ function merge_control_table() {
     # Set a trap to remove the lockfile on exit
     trap 'rm -f "$lockfile"; echo "Trap: Removed lockfile $lockfile"; exit $?' INT TERM EXIT
 
+    # Create new output file, so processes can work in parallel and concurrently
+    cp "$LULCC_M_SIM_CONTROL_TABLE_FULL" "$LULCC_M_SIM_CONTROL_TABLE_FULL.out"
+    LULCC_M_SIM_CONTROL_TABLE_FULL="$LULCC_M_SIM_CONTROL_TABLE_FULL.out"
     # Overwrite the extracted rows in the full simulation control file with the
     # rows from the temporary simulation control file
     sed -i "$LULCC_START_ROW,$((LULCC_END_ROW-1))"d "$LULCC_M_SIM_CONTROL_TABLE_FULL"

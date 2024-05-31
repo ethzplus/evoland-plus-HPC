@@ -32,10 +32,11 @@ lulcc_docker_image="$LULCC_DOCKER_NAMESPACE/$LULCC_DOCKER_REPO:$LULCC_DOCKER_VER
 log info "Running Docker image $lulcc_docker_image with $LULCC_CH_HPC_DIR mounted to /model"
 if command -v apptainer &> /dev/null; then
     log debug "Using Apptainer from $(command -v apptainer) with container $APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
-    log info "apptainer run --bind \"$TMPDIR:/tmp,$LULCC_CH_HPC_DIR\":/model \"$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif\""
-    apptainer run --bind "$TMPDIR:/tmp,$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
+    log info "apptainer run --bind \"$FUTURE_EI_OUTPUT_DIR:/tmp,$LULCC_CH_HPC_DIR\":/model \"$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif\""
+    apptainer run --bind "$FUTURE_EI_OUTPUT_DIR:/tmp,$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
 else
     log debug "Using docker from $(command -v docker)"
+    log warning "Docker support is experimental and may not work as expected."
     docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
 fi
 
