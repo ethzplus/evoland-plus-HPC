@@ -11,10 +11,12 @@ flowchart TD
   LULCC --> NSDM[N-SDM: Biodiversity Estimation]
   Focal --> NSDM
   LULCC --> NCPs[NCPs: Nature Contributions to People Estimation]
-  NSDM --> NCPs
+  LULCC --> NCPs
   NSDM --> AggSp(Species Maps Aggregation)
   NCPs --> AggNCPs(NCP Clustering)
 ```
+
+[//]: # (TODO: Update the figure)
 
 From this structure, a clear order of execution can be derived.
 For each of them there is a short description of the model.

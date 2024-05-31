@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH --job-name="20_focal_statistics"
 #SBATCH -n 1                  # Number of cores requested
 #SBATCH --cpus-per-task=20    # Number of CPUs per task
 #SBATCH --time=2:00:00        # Runtime
