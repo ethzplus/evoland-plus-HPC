@@ -7,6 +7,18 @@ bash_variables:
   FUTURE_EI_LOG_LEVEL: debug
   FUTURE_EI_CONFIG_FILE: ~/Future-EI/src/config.yml
   FUTURE_EI_OUTPUT_DIR: ~/Future-EI-Output
+  # Output Directories are relative to the $FUTURE_EI_OUTPUT_DIR
+  LULCC_CH_OUTPUT_BASE_DIR: /lulcc_output # Location of all scenario folders, named by IDs
+  # Focal Prep
+  FOCAL_OUTPUT_BASE_DIR: /focal_output
+  # NCP
+  NCP_OUTPUT_BASE_DIR: /ncp_output
+  NCP_SCRATCH_BASE_DIR: /ncp_scratch
+  # NSDM
+  NSDM_OUTPUT_BASE_DIR: /nsdm_outputs
+  # Species Aggregation
+  SPAGG_OUTPUT_BASE_DIR: /spagg_output
+
   SIM_ID: # simulation id, can be used to look up in control table, set automatically
   # Variables for the docker container
   LULCC_DOCKER_NAMESPACE: cbueth
@@ -34,19 +46,9 @@ bash_variables:
   LULCC_M_EI_LAYER_DIR: Data/EI_intervention_layers
   LULCC_M_REMOVE_PRED_PROB_MAPS: True # remove prediction probability maps after
   # simulation if 1, True or TRUE
-  # Output Directories are relative to the $FUTURE_EI_OUTPUT_DIR
-  # While processing these will be in the $TMPDIR/$ALTERNATIVE_TMPDIR
-  LULCC_CH_OUTPUT_BASE_DIR: /lulcc_output # Location of all scenario folders, named by IDs
-  # Focal Prep
-  FOCAL_OUTPUT_BASE_DIR: /focal_output # Location of all scenario folders, named by IDs
-  # NSDM
-  NSDM_OUTPUT_BASE_DIR: /nsdm_output
-  # Species Aggregation
-  SPAGG_OUTPUT_BASE_DIR: /spagg_output
   # NCP variables
   NCP_PARAMS_YML: ~/Future-EI/src/steps/40_NCPs/NCP_models/40_NCPs_params.yml
-  NCP_OUTPUT_BASE_DIR: /ncp_output
-  NCP_RUN_LULC_MAP: # LULC map path, automatically set for each configuration
+  NCP_RUN_SCENARIO_ID: # Scenario ID, automatically set for each configuration
   NCP_RUN_YEAR: # Year for which to run NCPs, automatically set
   NCP_RUN_OUTPUT_DIR: # Output directory for NCPs, automatically set
   NCP_RUN_SCRATCH_DIR: # Scratch directory for NCPs, automatically set

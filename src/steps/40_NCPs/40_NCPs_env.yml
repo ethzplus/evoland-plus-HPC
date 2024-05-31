@@ -6,6 +6,7 @@ dependencies:
   - r-remotes
   - r-codetools
   - gdal
+  - r-rgdal
   - proj
   - r-terra
   - r-raster
@@ -13,7 +14,7 @@ dependencies:
   - r-sf
   - natcap.invest
   - r-yaml
-  - pyyaml
+  - ruamel.yaml
   - r-pak
 
 # # # Dependencies by NCP:

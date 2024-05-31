@@ -72,7 +72,7 @@ This script runs the Habitat Quality model from InVEST.
 Additionally, the parameters and input files are defined before the model is
 run.
 
-[`0_threat_layers_generation.R`](NCP_models/HAB/0_threat_layers_generation.R):
+[`0_HAB_threat_layers_generation.R`](NCP_models/HAB/0_HAB_threat_layers_generation.R):
 Creating threat raster layers for Habitat quality module InVEST model is the
 aim of this script.
 These layers are based on LULC maps and municipality polygons.

@@ -20,17 +20,18 @@ from load_params import load_params
 
 params = load_params(
     check_params=[
-        ['run_params', 'NCP_RUN_LULC_MAP'],
+        ['run_params', 'NCP_RUN_SCENARIO_ID'],
         ['run_params', 'NCP_RUN_YEAR'],
         ['run_params', 'NCP_RUN_OUTPUT_DIR'],
+        ['data', 'lulc'],
         ['data', 'dem'],
-        ['data', 'runoff_proxy'],
+        ['data', 'yearly_precipitation'],
         ['data', 'watersheds'],
         ['NDR', 'biophysical_table_path'],
         ['NDR', 'calc_n'],
         ['NDR', 'calc_p'],
         ['NDR', 'k_param'],
-        ['NDR', 'n_workers'],
+        ['other', 'n_workers'],
         ['NDR', 'subsurface_critical_length_n'],
         ['NDR', 'subsurface_eff_n'],
         ['NDR', 'threshold_flow_accumulation'],
@@ -48,16 +49,18 @@ args = {
     'calc_p': params['NDR']['calc_p'],
     'dem_path': params['data']['dem'],
     'k_param': params['NDR']['k_param'],
-    'lulc_path': params['run_params']['NCP_RUN_LULC_MAP'],
-    'n_workers': params['NDR']['n_workers'],
-    'runoff_proxy_path': params['data']['runoff_proxy'],
+    'lulc_path': params['data']['lulc'],
+    'n_workers': params['other']['n_workers'],
+    'runoff_proxy_path': params['data']['yearly_precipitation'],
     'subsurface_critical_length_n': params['NDR'][
         'subsurface_critical_length_n'],
     'subsurface_eff_n': params['NDR']['subsurface_eff_n'],
     'threshold_flow_accumulation': params['NDR']['threshold_flow_accumulation'],
     'watersheds_path': params['data']['watersheds'],
     'workspace_dir': join(
-        params['run_params']['NCP_RUN_OUTPUT_DIR'], 'NDR',
+        params['run_params']['NCP_RUN_OUTPUT_DIR'],
+        params['run_params']['NCP_RUN_SCENARIO_ID'],
+        'NDR',
         params['run_params']['NCP_RUN_YEAR']),
 }
 
@@ -70,7 +73,9 @@ if __name__ == '__main__':
     if params['other']['remove_temp_files']:
         # remove intermediate outputs
         intermediate_output_dir = join(
-            params['run_params']['NCP_RUN_OUTPUT_DIR'], 'NDR',
+            params['run_params']['NCP_RUN_OUTPUT_DIR'],
+            params['run_params']['NCP_RUN_SCENARIO_ID'],
+            'NDR',
             params['run_params']['NCP_RUN_YEAR'], 'intermediate_outputs')
         print(f"Removing intermediate outputs in {intermediate_output_dir}")
         # delete folder

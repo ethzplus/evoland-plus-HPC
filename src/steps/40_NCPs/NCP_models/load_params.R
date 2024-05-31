@@ -20,13 +20,6 @@ tryCatch({
     print(paste0("Loading NCP parameters from ", Sys.getenv("NCP_PARAMS_YML")))
     params <- yaml.load_file(Sys.getenv("NCP_PARAMS_YML"))
   }
-  # Add runtime parameters to the params list
-  params$run_params <- list(
-    NCP_RUN_YEAR = Sys.getenv("NCP_RUN_YEAR"),
-    NCP_RUN_LULC_MAP = Sys.getenv("NCP_RUN_LULC_MAP"),
-    NCP_RUN_OUTPUT_DIR = Sys.getenv("NCP_RUN_OUTPUT_DIR"),
-    NCP_RUN_SCRATCH_DIR = Sys.getenv("NCP_RUN_SCRATCH_DIR")
-  )
 }, error = function(err) {
   # If err is not a file not found error, re-throw the error
   if (!grepl("No such file or directory", err$message)) stop(err)

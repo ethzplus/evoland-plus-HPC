@@ -12,10 +12,11 @@
 import sys
 from os import listdir, makedirs
 from os.path import join, basename, dirname
+from shutil import rmtree
 
 import natcap.invest.carbon
 
-sys.path.append(join(dirname(__file__), '..'))  # bad practice
+sys.path.append(join(dirname(__file__), '..'))
 from load_params import load_params
 
 # Requires to have all natcap.invest dependencies installed
@@ -23,10 +24,11 @@ from load_params import load_params
 
 params = load_params(
     check_params=[
-        ['CAR', 'bp_tables_dir'],
+        ['run_params', 'NCP_RUN_SCENARIO_ID'],
         ['run_params', 'NCP_RUN_YEAR'],
         ['run_params', 'NCP_RUN_OUTPUT_DIR'],
         ['run_params', 'NCP_RUN_SCRATCH_DIR'],
+        ['CAR', 'bp_tables_dir'],
     ]
 )
 
@@ -35,10 +37,12 @@ params = load_params(
 # Path to a folder containing biophysical tables for each region+altitude
 bp_tables_dir = params['CAR']['bp_tables_dir']
 # Path to a folder containing the prepared LULC rasters for each region
-lulc_clip_dir = join(params['run_params']['NCP_RUN_SCRATCH_DIR'], 'CAR',
+lulc_clip_dir = join(params['run_params']['NCP_RUN_SCRATCH_DIR'],
+                     params['run_params']['NCP_RUN_SCENARIO_ID'], 'CAR',
                      'lulc_clip', params['run_params']['NCP_RUN_YEAR'])
 # Path to output folder containing each InVEST model
-model_dir = join(params['run_params']['NCP_RUN_OUTPUT_DIR'], 'CAR',
+model_dir = join(params['run_params']['NCP_RUN_SCRATCH_DIR'],
+                 params['run_params']['NCP_RUN_SCENARIO_ID'], 'CAR',
                  params['run_params']['NCP_RUN_YEAR'], 'Invest_models')
 
 
@@ -74,3 +78,7 @@ if __name__ == '__main__':
         natcap.invest.carbon.execute(args)
 
     print("CAR: ...done!")
+
+    if params['other']['remove_temp_files']:
+        print("Removing clipped and reclassified LULC rasters...")
+        rmtree(lulc_clip_dir)

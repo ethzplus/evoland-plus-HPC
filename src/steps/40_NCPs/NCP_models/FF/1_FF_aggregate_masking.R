@@ -16,24 +16,31 @@ source(file.path(script.dir, "..", "load_params.R"))
 # Check all required parameters are set
 if (is.null(params$proj$crs)) { stop("params$proj$crs is not set") }
 if (is.null(params$FF$ecocrop_dir)) { stop("params$FF$ecocrop_dir is not set") }
-if (is.null(params$run_params$NCP_RUN_LULC_MAP)) {
-  stop("params$run_params$NCP_RUN_LULC_MAP is not set")
-}
-if (is.null(params$run_params$NCP_RUN_OUTPUT_DIR)) {
-  stop("params$run_params$NCP_RUN_OUTPUT_DIR is not set")
+if (is.null(params$run_params$NCP_RUN_SCENARIO_ID)) {
+  stop("params$run_params$NCP_RUN_SCENARIO_ID is not set")
 }
 if (is.null(params$run_params$NCP_RUN_YEAR)) {
   stop("params$run_params$NCP_RUN_YEAR is not set")
 }
+if (is.null(params$run_params$NCP_RUN_RCP)) {
+  stop("params$run_params$NCP_RUN_RCP is not set")
+}
+if (is.null(params$run_params$NCP_RUN_OUTPUT_DIR)) {
+  stop("params$run_params$NCP_RUN_OUTPUT_DIR is not set")
+}
+if (is.null(params$data$lulc)) { stop("params$data$lulc is not set") }
 
 # Local variables
 # Land use/land cover map
-lulc <- rast(params$run_params$NCP_RUN_LULC_MAP)
+lulc <- rast(params$data$lulc)
 # Ecocrop map outputs
 eco_maps <- rast(list.files(
-  file.path(params$FF$ecocrop_dir), full.names = T, pattern = "\\.tif$"
+  file.path(params$FF$ecocrop_dir, params$run_params$NCP_RUN_YEAR,
+            params$run_params$NCP_RUN_RCP
+  ), full.names = T, pattern = "\\.tif$"
 ))
-results <- file.path(params$run_params$NCP_RUN_OUTPUT_DIR, "FF",
+results <- file.path(params$run_params$NCP_RUN_OUTPUT_DIR,
+                     params$run_params$NCP_RUN_SCENARIO_ID, "FF",
                      params$run_params$NCP_RUN_YEAR)
 dir.create(results, showWarnings = FALSE, recursive = TRUE)
 

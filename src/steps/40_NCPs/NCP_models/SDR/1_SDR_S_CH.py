@@ -9,55 +9,70 @@
 
 import logging
 import sys
+from os.path import join, dirname
+from shutil import rmtree
 
 import natcap.invest.sdr.sdr
 import natcap.invest.utils
-import yaml, os
 
-# Load the parameters from ../40_NCPs_params.yml (relative to this file)
-with open(os.path.join(os.path.dirname(__file__), '..',
-                       '40_NCPs_params.yml')) as stream:
-    params = yaml.safe_load(stream)
+sys.path.append(join(dirname(__file__), '..'))
+from load_params import load_params
 
-# Creates a logger object for the current module, which can be used to log messages specific to this module
-LOGGER = logging.getLogger(__name__)
-
-# Creates a root logger object, which can be used to log messages at the application level
-root_logger = logging.getLogger()
-
-# Creates a logging handler that sends log messages to the standard output (console)
-handler = logging.StreamHandler(sys.stdout)
-
-# Defines the format for logging messages using the format provided by the natcap.invest toolkit. This format includes details like timestamps, log levels, and the actual message content
-formatter = logging.Formatter(
-    fmt=natcap.invest.utils.LOG_FMT,
-    datefmt='%m/%d/%Y %H:%M:%S ')
-
-# Sets the formatter for the logging handler
-handler.setFormatter(formatter)
-
-# Configures the basic settings for logging. It sets the log level to INFO, meaning only messages of level INFO and above will be logged. It also adds the handler
-logging.basicConfig(level=logging.INFO, handlers=[handler])
+params = load_params(
+    check_params=[
+        ['run_params', 'NCP_RUN_SCENARIO_ID'],
+        ['run_params', 'NCP_RUN_YEAR'],
+        ['run_params', 'NCP_RUN_OUTPUT_DIR'],
+        ['data', 'lulc'],
+        ['data', 'dem_filled'],
+        ['data', 'erodibility_path'],
+        ['data', 'erosivity_path'],
+        ['data', 'watersheds'],
+        ['SDR', 'biophysical_table_path'],
+        ['SDR', 'ic_0_param'],
+        ['SDR', 'k_param'],
+        ['SDR', 'l_max'],
+        ['other', 'n_workers'],
+        ['SDR', 'sdr_max'],
+        ['SDR', 'threshold_flow_accumulation'],
+        ['other', 'remove_temp_files'],
+    ]
+)
 
 args = {
     # This dictionary contains the input parameters required to run the SDR model.
     # Each key-value pair specifies a parameter and its corresponding value.
+    'lulc_path': params['data']['lulc'],
     'biophysical_table_path': params['SDR']['biophysical_table_path'],
     'dem_path': params['data']['dem_filled'],
-    'drainage_path': '',
-    'erodibility_path': params['SDR']['erodibility_path'],
-    'erosivity_path': params['SDR']['erosivity_path'],
+    'erodibility_path': params['data']['erodibility_path'],
+    'erosivity_path': params['data']['erosivity_path'],
     'ic_0_param': params['SDR']['ic_0_param'],
     'k_param': params['SDR']['k_param'],
     'l_max': params['SDR']['l_max'],
-    'lulc_path': params['data']['lulcc2018'],
-    'n_workers': params['SDR']['n_workers'],
-    'results_suffix': params['SDR']['results_suffix'],
+    'n_workers': params['other']['n_workers'],
     'sdr_max': params['SDR']['sdr_max'],
     'threshold_flow_accumulation': params['SDR']['threshold_flow_accumulation'],
     'watersheds_path': params['data']['watersheds'],
-    'workspace_dir': params['SDR']['workspace_dir'],
+    'workspace_dir': join(
+        params['run_params']['NCP_RUN_OUTPUT_DIR'],
+        params['run_params']['NCP_RUN_SCENARIO_ID'],
+        'SDR',
+        params['run_params']['NCP_RUN_YEAR']),
 }
 
 if __name__ == '__main__':
+    print("SDR: Starting Sediment Delivery Ratio model...")
     natcap.invest.sdr.sdr.execute(args)
+    print("SDR: ...done!")
+
+    if params['other']['remove_temp_files']:
+        # remove intermediate outputs
+        intermediate_output_dir = join(
+            params['run_params']['NCP_RUN_OUTPUT_DIR'],
+            params['run_params']['NCP_RUN_SCENARIO_ID'],
+            'SDR',
+            params['run_params']['NCP_RUN_YEAR'], 'intermediate_outputs')
+        print(f"Removing intermediate outputs in {intermediate_output_dir}")
+        # delete folder
+        rmtree(intermediate_output_dir)

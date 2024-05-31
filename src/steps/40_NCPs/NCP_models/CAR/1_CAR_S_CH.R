@@ -26,8 +26,8 @@ source(file.path(script.dir, "..", "load_params.R"))
 # Check all required parameters are set
 if (is.null(params$data$dem)) { stop("params$data$dem is not set") }
 if (is.null(params$data$prodreg)) { stop("params$data$prodreg is not set") }
-if (is.null(params$run_params$NCP_RUN_LULC_MAP)) {
-  stop("params$run_params$NCP_RUN_LULC_MAP is not set")
+if (is.null(params$run_params$NCP_RUN_SCENARIO_ID)) {
+  stop("params$run_params$NCP_RUN_SCENARIO_ID is not set")
 }
 if (is.null(params$run_params$NCP_RUN_YEAR)) {
   stop("params$run_params$NCP_RUN_YEAR is not set")
@@ -35,16 +35,18 @@ if (is.null(params$run_params$NCP_RUN_YEAR)) {
 if (is.null(params$run_params$NCP_RUN_SCRATCH_DIR)) {
   stop("params$run_params$NCP_RUN_SCRATCH_DIR is not set")
 }
+if (is.null(params$data$lulc)) { stop("params$data$lulc is not set") }
 
 # Digital elevation model
 dem <- rast(params$data$dem)
 # Production regions from CH
 prodreg <- vect(params$data$prodreg)
 # Land use
-lulc <- rast(params$run_params$NCP_RUN_LULC_MAP)
+lulc <- rast(params$data$lulc)
 
 # Creating scratch folder used for temporary storage of data
-scratch <- file.path(params$run_params$NCP_RUN_SCRATCH_DIR, "CAR")
+scratch <- file.path(params$run_params$NCP_RUN_SCRATCH_DIR,
+                     params$run_params$NCP_RUN_SCENARIO_ID, "CAR")
 out_dir <- file.path(scratch, "lulc_clip", params$run_params$NCP_RUN_YEAR)
 if (dir.exists(out_dir))
   cat("Warning: Directory already exists, overwriting existing files.\n")

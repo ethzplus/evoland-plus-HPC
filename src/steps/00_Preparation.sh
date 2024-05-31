@@ -11,6 +11,13 @@ output_dirs=(
     SPAGG_OUTPUT_BASE_DIR
 )
 for dir in "${output_dirs[@]}"; do
+    declare "$dir"="$FUTURE_EI_OUTPUT_DIR${!dir}"
+    log debug "$dir: ${!dir}"
+done
+scratch_dirs=(
+    NCP_SCRATCH_BASE_DIR
+)
+for dir in "${scratch_dirs[@]}"; do
     declare "$dir"="$TMPDIR${!dir}"
     log debug "$dir: ${!dir}"
 done

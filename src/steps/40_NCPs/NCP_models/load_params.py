@@ -4,11 +4,12 @@
 # Load libraries
 import logging
 import sys
+from os import cpu_count
 
 from natcap.invest.utils import LOG_FMT
-from yaml import safe_load
+from ruamel.yaml import YAML
 from os.path import join, dirname
-from os import environ
+from os import environ, makedirs
 
 
 def _get_param(params, param):
@@ -69,12 +70,125 @@ def _add_run_params(params: dict) -> None:
     params['run_params'] = {
         env_var: environ[env_var]
         for env_var in
-        ['NCP_RUN_YEAR', 'NCP_RUN_LULC_MAP', 'NCP_RUN_OUTPUT_DIR',
-         'NCP_RUN_SCRATCH_DIR']
+        ['NCP_RUN_SCENARIO_ID', 'NCP_RUN_YEAR', 'NCP_RUN_INPUT_DIR',
+         'NCP_RUN_OUTPUT_DIR', 'NCP_RUN_SCRATCH_DIR']
     }
+    ## Set lulc path
+    # {NCP_RUN_INPUT_DIR}/{NCP_RUN_SCENARIO_ID}/simulated_LULC_simID_{NCP_RUN_SCENARIO_ID}_year_{NCP_RUN_YEAR}.tif
+    params['data']['lulc'] = join(
+        params['run_params']['NCP_RUN_INPUT_DIR'],
+        params['run_params']['NCP_RUN_SCENARIO_ID'],
+        f"simulated_LULC_simID_{params['run_params']['NCP_RUN_SCENARIO_ID']}_year_"
+        f"{params['run_params']['NCP_RUN_YEAR']}.tif"
+    )
+
+    ## Set NCP_RUN_RCP
+    # Get current RCP from $LULCC_M_SIM_CONTROL_TABLE
+    from pandas import read_csv
+    df = read_csv(environ['LULCC_M_SIM_CONTROL_TABLE'],
+                  usecols=["Simulation_ID.string", "Climate_scenario.string",
+                           "Scenario_end.real", "Step_length.real"])
+    # get the Climate_scenario.string only where
+    # NCP_RUN_SCENARIO_ID==Simulation_ID.string, should be unique
+    df = df[df['Simulation_ID.string'] == int(
+        params['run_params']['NCP_RUN_SCENARIO_ID'])]
+    if df.empty:
+        raise Exception(
+            "Simulation_ID.string not found in LULCC_M_SIM_CONTROL_TABLE")
+    if len(df) > 1:
+        raise Exception(
+            "Simulation_ID.string not unique in LULCC_M_SIM_CONTROL_TABLE")
+    params['run_params']['NCP_RUN_RCP'] = df['Climate_scenario.string'].values[
+        0].upper()
+    # read Scenario_end.real,Step_length.real for use later
+    end_step = int(df['Scenario_end.real'].values[0])
+    step_length = int(df['Step_length.real'].values[0])
+
+    # Number workers
+    # slurm variables should take precedence
+    if params['other']['n_workers'] != -1:
+        if 'SLURM_CPUS_PER_TASK' in environ:
+            params['other']['n_workers'] = int(environ['SLURM_CPUS_PER_TASK'])
+        else:
+            params['other']['n_workers'] = cpu_count()
+
+    residential_year = (
+        params['run_params']['NCP_RUN_YEAR']
+        if int(params['run_params']['NCP_RUN_YEAR']) <= end_step
+        else end_step - step_length  # for the last, use second to last step
+    )
+    ## Rural residential path
+    params['data']['rur_res'] = join(
+        params['run_params']['NCP_RUN_INPUT_DIR'],
+        params['run_params']['NCP_RUN_SCENARIO_ID'],
+        f"rur_res_simID_{params['run_params']['NCP_RUN_SCENARIO_ID']}_year_"
+        f"{residential_year}.tif"
+    )
+    ## Urban residential path
+    params['data']['urb_res'] = join(
+        params['run_params']['NCP_RUN_INPUT_DIR'],
+        params['run_params']['NCP_RUN_SCENARIO_ID'],
+        f"urb_res_simID_{params['run_params']['NCP_RUN_SCENARIO_ID']}_year_"
+        f"{residential_year}.tif"
+    )
+
+    # Erosivity - based on current RCP, always 2060 (Erosivity_2060_RCP26.tif)
+    # 2060_RCP26 and 2060_RCP45 (latter also for RCP85)
+    # TODO: change for different time periods with new data if needed
+    erosivity_rcp = "26" if params['run_params'][
+                                'NCP_RUN_RCP'] == "RCP26" else "45"
+    params['data']['erosivity_path'] = join(
+        params['data']['erosivity_path'],
+        f"Erosivity_2060_RCP{erosivity_rcp}.tif"
+    )
+
+    # Evapotranspiration "etp_{year}_{rcp}.tif"
+    params['data']['eto'] = join(
+        params['data']['eto'],
+        f"etp_{params['run_params']['NCP_RUN_YEAR']}_"
+        f"{params['run_params']['NCP_RUN_RCP']}.tif"
+    )
+
+    # Yearly precipitation "Prec_{year}_{rcp}.tif"
+    params['data']['yearly_precipitation'] = join(
+        params['data']['yearly_precipitation'],
+        f"Prec_{params['run_params']['NCP_RUN_YEAR']}_"
+        f"{params['run_params']['NCP_RUN_RCP']}.tif"
+    )
+
+    # Monthly precipitation
 
 
-def load_params(check_params=None):
+def setup_params(cache_file: str, check_params=None) -> None:
+    """
+    Function to load and cache the parameters and save them in the cache
+    directory.
+    It will load the parameters from environment variable NCP_PARAMS_YML if set,
+    otherwise from ./40_NCPs_params.yml,
+    and save them to the cache file.
+
+    NCPS_PARAMS_YML is set to the cache directory,
+    so further calls to load_params will use the cached parameters.
+
+    :param cache_file: cache file path
+    :type cache_file: str
+    :param check_params: list of key lists to check for existence
+                         lists can be of any length > 0
+    :type check_params: List[List[str]]
+    :return: None
+    :rtype: None
+    """
+    params = load_params(check_params=check_params, add_run_params=True)
+
+    # Create the output directory if it does not exist
+    # makedirs(params['run_params']['NCP_RUN_OUTPUT_DIR'], exist_ok=True)
+    makedirs(dirname(cache_file), exist_ok=True)
+    # Cache the parameters
+    with open(cache_file, 'w') as stream:
+        YAML().dump(params, stream)
+
+
+def load_params(check_params=None, add_run_params=False):
     """
     Function to load the parameters from environment variable NCP_PARAMS_YML if
     set, otherwise from ./40_NCPs_params.yml, and return them as a dictionary.
@@ -87,6 +201,8 @@ def load_params(check_params=None):
     :param check_params: list of key lists to check for existence
                          lists can be of any length > 0
     :type check_params: List[List[str]]
+    :param add_run_params: whether to add the run parameters to the parameters
+    :type add_run_params: bool
     :return: parameters
     :rtype: dict
     """
@@ -94,20 +210,23 @@ def load_params(check_params=None):
     if check_params is None:
         check_params = list()
 
+    yaml = YAML()
+
     # Load the parameters from env var NCP_PARAMS_YML if set, otherwise from
     # ./40_NCPs_params.yml
     if environ['NCP_PARAMS_YML'] == "":
         print("NCP_PARAMS_YML environment variable is not set. "
               "Loading from ./40_NCPs_params.yml")
         with open(join(dirname(__file__), '40_NCPs_params.yml')) as stream:
-            params = safe_load(stream)
+            params = yaml.load(stream)
     else:
-        print("Loading NCP parameters from %s", environ['NCP_PARAMS_YML'])
+        print(f"Loading NCP parameters from {environ['NCP_PARAMS_YML']}")
         with open(environ['NCP_PARAMS_YML']) as stream:
-            params = safe_load(stream)
+            params = yaml.load(stream)
 
-    # Add the run parameters to the parameters dictionary
-    _add_run_params(params)
+    # Add the run parameters to the parameter dictionary
+    if add_run_params:
+        _add_run_params(params)
 
     # Check that all required parameters are present
     for param in check_params:
@@ -148,3 +267,10 @@ handler.setFormatter(formatter)
 # meaning only messages of level INFO and above will be logged. It also adds
 # the handler
 logging.basicConfig(level=logging.INFO, handlers=[handler])
+
+# If this script is run as the main program, it will cache the parameters
+# and save them in the cache directory.
+# The Cache file name needs to be passed as an argument
+if __name__ == '__main__':
+    setup_params(sys.argv[1])
+    logging.info(f"Cached parameters to {sys.argv[1]}")

@@ -15,8 +15,8 @@ script.dir <- dirname(sub(file.arg.name, "", initial.options[grep(file.arg.name,
 source(file.path(script.dir, "..", "load_params.R"))
 # Check all required parameters are set
 if (is.null(params$CAR$out_prefix)) { stop("params$CAR$out_prefix is not set") }
-if (is.null(params$run_params$NCP_RUN_LULC_MAP)) {
-  stop("params$run_params$NCP_RUN_LULC_MAP is not set")
+if (is.null(params$run_params$NCP_RUN_SCENARIO_ID)) {
+  stop("params$run_params$NCP_RUN_SCENARIO_ID is not set")
 }
 if (is.null(params$run_params$NCP_RUN_YEAR)) {
   stop("params$run_params$NCP_RUN_YEAR is not set")
@@ -27,13 +27,16 @@ if (is.null(params$run_params$NCP_RUN_OUTPUT_DIR)) {
 if (is.null(params$run_params$NCP_RUN_SCRATCH_DIR)) {
   stop("params$run_params$NCP_RUN_SCRATCH_DIR is not set")
 }
+if (is.null(params$data$lulc)) { stop("params$data$lulc is not set") }
 
 
 # inv_model_dir <- params$CAR$dir18 # folder containing invest models
-inv_model_dir <- file.path(params$run_params$NCP_RUN_SCRATCH_DIR, "CAR",
+inv_model_dir <- file.path(params$run_params$NCP_RUN_SCRATCH_DIR,
+                           params$run_params$NCP_RUN_SCENARIO_ID, "CAR",
                            params$run_params$NCP_RUN_YEAR, "Invest_models")
 # results <- params$CAR$res18 # folder to save results
-results <- file.path(params$run_params$NCP_RUN_OUTPUT_DIR, "CAR",
+results <- file.path(params$run_params$NCP_RUN_OUTPUT_DIR,
+                     params$run_params$NCP_RUN_SCENARIO_ID, "CAR",
                      params$run_params$NCP_RUN_YEAR)
 # n18 <- params$CAR$n18 # name of the final raster
 name_out <- paste(params$CAR$out_prefix, params$run_params$NCP_RUN_YEAR,

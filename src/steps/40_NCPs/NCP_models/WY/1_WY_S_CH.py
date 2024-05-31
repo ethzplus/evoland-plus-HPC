@@ -5,31 +5,65 @@
 # This script specifies the arguments for the InVEST Hydropower Water Yield
 # model and then runs it.
 
-import natcap.invest.hydropower.hydropower_water_yield
-import yaml, os
+import sys
+from os.path import join, dirname
+from shutil import rmtree
 
-# Load the parameters from ../40_NCPs_params.yml (relative to this file)
-with open(os.path.join(os.path.dirname(__file__), '..',
-                       '40_NCPs_params.yml')) as stream:
-    params = yaml.safe_load(stream)
+import natcap.invest.annual_water_yield
 
-print("InVEST WY model : initiated")
+sys.path.append(join(dirname(__file__), '..'))
+from load_params import load_params
+
+params = load_params(
+    check_params=[
+        ['run_params', 'NCP_RUN_SCENARIO_ID'],
+        ['run_params', 'NCP_RUN_YEAR'],
+        ['run_params', 'NCP_RUN_OUTPUT_DIR'],
+        ['data', 'lulc'],
+        ['data', 'depth_to_root_rest_layer'],
+        ['data', 'eto'],
+        ['data', 'pawc'],
+        ['data', 'yearly_precipitation'],
+        ['data', 'watersheds'],
+        ['data', 'sub_watersheds'],
+        ['WY', 'biophysical_table_path'],
+        # ['WY', 'do_scarcity_and_valuation'],
+        ['WY', 'seasonality_constant'],
+        ['other', 'n_workers'],
+    ]
+)
+
 args = {
+    'lulc_path': params['data']['lulc'],
     'biophysical_table_path': params['WY']['biophysical_table_path'],
     'depth_to_root_rest_layer_path': params['data']['depth_to_root_rest_layer'],
-    'do_scarcity_and_valuation': params['WY']['do_scarcity_and_valuation'],
+    # 'do_scarcity_and_valuation': params['WY']['do_scarcity_and_valuation'],
     'eto_path': params['data']['eto'],
-    'lulc_path': params['data']['lulcc2018'],
     'pawc_path': params['data']['pawc'],
-    'precipitation_path': params['data']['precipitation'],
-    'results_suffix': params['WY']['results_suffix'],
+    'precipitation_path': params['data']['yearly_precipitation'],
     'seasonality_constant': params['WY']['seasonality_constant'],
-    'sub_watersheds_path': params['data']['sub_watersheds'],
     'watersheds_path': params['data']['watersheds'],
-    'workspace_dir': params['paths']['workspace_dir'],
+    'sub_watersheds_path': params['data']['sub_watersheds'],
+    'n_workers': params['other']['n_workers'],
+    'workspace_dir': join(
+        params['run_params']['NCP_RUN_OUTPUT_DIR'],
+        params['run_params']['NCP_RUN_SCENARIO_ID'],
+        'WY',
+        params['run_params']['NCP_RUN_YEAR']),
 }
 
-print("...starting")
-
 if __name__ == '__main__':
-    natcap.invest.hydropower.hydropower_water_yield.execute(args)
+    print("WY: Starting Hydropower Water Yield model...")
+    natcap.invest.annual_water_yield.execute(args)
+    print("WY: ...done!")
+
+    if params['other']['remove_temp_files']:
+        # remove intermediate outputs
+        intermediate_output_dir = join(
+            params['run_params']['NCP_RUN_OUTPUT_DIR'],
+            params['run_params']['NCP_RUN_SCENARIO_ID'],
+            'WY',
+            params['run_params']['NCP_RUN_YEAR'], 'intermediate_outputs')
+        print(f"Removing intermediate outputs in {intermediate_output_dir}")
+        # delete folder
+        rmtree(intermediate_output_dir)

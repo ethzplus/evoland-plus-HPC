@@ -15,9 +15,10 @@ from load_params import load_params
 
 params = load_params(
     check_params=[
-        ['run_params', 'NCP_RUN_LULC_MAP'],
+        ['run_params', 'NCP_RUN_SCENARIO_ID'],
         ['run_params', 'NCP_RUN_YEAR'],
         ['run_params', 'NCP_RUN_SCRATCH_DIR'],
+        ['data', 'lulc'],
         ['POL', 'farm_vector_path'],
         ['POL', 'guild_table_path'],
         ['POL', 'landcover_biophysical_table_path'],
@@ -27,13 +28,15 @@ params = load_params(
 args = {
     # This dictionary contains the input parameters required to run the NDR model.
     # Each key-value pair specifies a parameter and its corresponding value.
-    'landcover_raster_path': params['run_params']['NCP_RUN_LULC_MAP'],
+    'landcover_raster_path': params['data']['lulc'],
     'farm_vector_path': params['POL']['farm_vector_path'],
     'guild_table_path': params['POL']['guild_table_path'],
     'landcover_biophysical_table_path': params['POL'][
         'landcover_biophysical_table_path'],
     'workspace_dir': join(
-        params['run_params']['NCP_RUN_SCRATCH_DIR'], 'POL',
+        params['run_params']['NCP_RUN_SCRATCH_DIR'],
+        params['run_params']['NCP_RUN_SCENARIO_ID'],
+        'POL',
         params['run_params']['NCP_RUN_YEAR']),
 }
 
