@@ -4,8 +4,8 @@ on:
     paths:
       - 'src/steps/20_FocalLULC/20_FocalPrep_setup.sh'
       - 'src/steps/20_FocalLULC/20_FocalPrep_env.yml'
-      - 'src/steps/40_NCPs/40_NCPs_setup.sh'
-      - 'src/steps/40_NCPs/40_NCPs_env.yml'
+#      - 'src/steps/40_NCPs/40_NCPs_setup.sh'
+#      - 'src/steps/40_NCPs/40_NCPs_env.yml'
   pull_request:
 
 name: "Build Environments"
@@ -21,8 +21,8 @@ jobs:
         setup_script:
           - name: 20_FocalPrep
             path: src/steps/20_FocalLULC/20_FocalPrep_setup.sh
-          - name: 40_NCPs
-            path: src/steps/40_NCPs/40_NCPs_setup.sh
+#          - name: 40_NCPs
+#            path: src/steps/40_NCPs/40_NCPs_setup.sh
     defaults:
       run:
         shell: bash -leo pipefail {0}

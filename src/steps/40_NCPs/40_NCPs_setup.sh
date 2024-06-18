@@ -14,7 +14,7 @@ log debug "Using requirement file: $SCRIPT_DIR/40_NCPs_env.yml"
 if [[ $CONDA_BIN == *conda ]]; then
     log warning "If conda has problems with the 40_NCPs_env.yml file, use micromamba instead, or add the libmamba solver (https://conda.github.io/conda-libmamba-solver/getting-started/)"
 fi
-$CONDA_BIN create -n ncps -c conda-forge --file "$SCRIPT_DIR"/40_NCPs_env.yml -y
+$CONDA_BIN env create -f "$SCRIPT_DIR"/40_NCPs_env.yml -y
 
 # Activate the conda environment
 log debug "Activating conda environment: ncps"
