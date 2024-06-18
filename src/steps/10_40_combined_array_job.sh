@@ -42,7 +42,7 @@ mkdir -p "$TMPDIR"
 source "$FUTURE_EI_BASE_DIR"/src/control_table_control.sh
 split_control_table
 log info "Got control table subset at $LULCC_M_SIM_CONTROL_TABLE"
-log debug "Table: $(cat $LULCC_M_SIM_CONTROL_TABLE)"
+log debug "Table: $(cat "$LULCC_M_SIM_CONTROL_TABLE")"
 
 #log info "Starting LULCC step"
 #source "$FUTURE_EI_BASE_DIR"/src/steps/10_LULCC/10_land_use.sh

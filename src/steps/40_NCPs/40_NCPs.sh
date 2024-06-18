@@ -28,6 +28,7 @@ for simulation_id in $simulation_ids; do
   # Instead of using the year from the control table, the available lulc output
   # layers are used $LULCC_CH_OUTPUT_BASE_DIR:
   # {simulation_id}/simulated_LULC_simID_{simulation_id}_year_{year}.tif
+  # shellcheck disable=SC2010
   years=$(ls "$LULCC_CH_OUTPUT_BASE_DIR/$simulation_id" | \
           grep -oP "simulated_LULC_simID_${simulation_id}_year_\K\d+(?=\.tif$)"\
           | sort -n)
