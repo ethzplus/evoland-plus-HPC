@@ -1,0 +1,11 @@
+lucode,usle_p,usle_c,LULC_name
+10,0.5,0.1,Urban
+11,0.5,0,Static
+12,1,0.0011,Open_Forest
+13,1,0.0011,Closed_Forest
+14,1,0.003,Shrubland
+15,0.52,0.344,Int_AG
+16,1,0.0903,Alp_Past
+17,0.68,0.0903,Grassland
+18,0.5,0.2188,Perm_crops
+19,1,0,Glacier

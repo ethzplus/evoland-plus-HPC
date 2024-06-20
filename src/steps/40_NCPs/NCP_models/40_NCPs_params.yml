@@ -1,0 +1,144 @@
+# Other Settings
+other:
+  scratch_dir: /scratch/.ncps-temp
+  remove_temp_files: false  # remove temp files in the output directory
+  # scratch dir is left untouched
+  # Number of workers for parallel processing in natcap.invest models
+  n_workers: 1  #'SLURM_CPUS_PER_TASK' and os.cpu_count() take precedence
+  # Unless parallel processing is deactivated using -1.
+
+# Run Params (are passed when calling the run_all_ncps.py script)
+run_params:
+  NCP_RUN_SCENARIO_ID:
+  NCP_RUN_YEAR:
+  NCP_RUN_RCP:
+  NCP_RUN_INPUT_DIR:
+  NCP_RUN_OUTPUT_DIR:
+  NCP_RUN_SCRATCH_DIR:
+
+# Data
+data:
+  # LULC               - CAR, FF, HAB, NDR, POL, SDR, WY
+  lulc: # from NCP_RUN_INPUT_DIR
+  # Rural residential  - HAB
+  rur_res: # from NCP_RUN_INPUT_DIR
+  # Urban residential  - HAB
+  urb_res: # from NCP_RUN_INPUT_DIR
+  # Production regions - CAR
+  prodreg: Data/PRODUCTION_REGIONS/PRODREG.shp
+  # DEM                - CAR, NDR
+  dem: Data/DEM_mean_LV95.tif
+  # DEM filled         - SDR
+  dem_filled: Data/DEM_meanLV95_filled.tif
+  # Wathersheds        - NDR, SDR, WY
+  watersheds: Data/watersheds/watersheds.shp
+  # Subwatersheds      - WY
+  sub_watersheds: Data/watersheds/Subwatersheds.shp
+  # ETO                - WY
+  eto: Data/evapotranspiration/
+  # PAWC               - WY
+  pawc: Data/Water_storage_capacity_100m_reclassified1.tif
+  # Erodibility path   - SDR
+  erodibility_path: Data/Kst_LV95_ch_nib.tif
+  # Erosivity path     - SDR
+  erosivity_path: Data/rainfall_erosivity/
+  # Precipitation      - WY, NDR
+  yearly_precipitation: Data/yearly_prec/
+  # Soil depth         - WY
+  depth_to_root_rest_layer: Data/rrd_100_mm_rexport.tif
+  # Precipitation avgs - FF
+  pavg_dir: Data/monthly_prec/
+  # Temperature avgs   - FF
+  tavg_dir: Data/monthly_temp/
+  # Soil texture       - FF
+  ph_raster: Data/ch_edaphic_eiv_descombes_pixel_r.tif
+
+
+# Projection Settings - change for different regions
+proj:
+  # CRS
+  crs: epsg:2056
+  # Extent
+  ext: [ 2480000, 2840000, 1070000, 1300000 ]
+  # Resolution
+  res: 100
+
+# NCP Params
+
+CAR:
+  # 1_CAR_S_CH.R
+  # 2_CAR_S_CH.py
+  bp_tables_dir:
+    Future-EI/src/steps/40_NCPs/NCP_models/CAR/BPTABLE/
+  # 3_CAR_S_CH.R
+  # output prefix
+  out_prefix: tot_c_cur_
+
+FF:
+  # 0_FF_ecocrop.R
+  crops_data:
+    Future-EI/src/steps/40_NCPs/NCP_models/FF/crops.txt
+  ecocrop_dir: Future-EI-Output/FF_preprocessing_ecocrop/
+
+HAB:
+  # 0_thread_layers_generation.R
+  # 1_HAB_S_CH.py
+  half_saturation_constant: 0.075
+  bp_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/
+  sensitivity_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/hab_sensitivity.csv
+  threats_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/threats.csv
+
+NDR:
+  # 1_NDR_S_CH.py
+  # Biophysical table
+  biophysical_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/NDR/BPTABLE/ndr_bptable_ds25_futei.csv
+  calc_n: true
+  calc_p: true
+  k_param: 2
+  # Suffix for output files
+  # Subsurface critical length
+  subsurface_critical_length_n: 100
+  # Subsurface effective retention
+  subsurface_eff_n: 0.75
+  # Threshold flow accumulation
+  threshold_flow_accumulation: 200
+
+POL:
+  # 1_POL_S_CH.py
+  # Farm vector path
+  farm_vector_path: ''
+  # Guild table path
+  guild_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/guild.csv
+  # Landcover biophysical table path
+  landcover_biophysical_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/pollination_bptable_ds25_futei.csv
+  # 2_POL_S_CH_aggregating.R
+
+SDR:
+  # 1_SDR_S_CH.py
+  # Biophysical table
+  biophysical_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/SDR/BPTABLE/bptable_SDR_v2_futei.csv
+  # Drainage path
+  ic_0_param: 0.4
+  k_param: 2
+  l_max: 100
+  # SDR max
+  sdr_max: 0.75
+  # Threshold flow accumulation
+  threshold_flow_accumulation: 200
+
+WY:
+  # 1_WY_S_CH.py
+  # Biophysical table
+  biophysical_table_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/WY/BPTABLE/wy_bptable_ds25_futei.csv
+  # Do scarcity and valuation
+  #  do_scarcity_and_valuation: False,
+  # Seasonality constant
+  seasonality_constant: 25

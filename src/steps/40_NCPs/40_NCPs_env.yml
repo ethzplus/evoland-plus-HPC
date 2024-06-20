@@ -6,6 +6,7 @@ dependencies:
   - r-remotes
   - r-codetools
   - gdal
+  - r-rgdal
   - proj
   - r-terra
   - r-raster
@@ -13,4 +14,53 @@ dependencies:
   - r-sf
   - natcap.invest
   - r-yaml
-  - pyyaml
+  - ruamel.yaml
+  - r-pak
+
+# # # Dependencies by NCP:
+#
+# #  CAR
+# r-terra
+# natcap.invest
+#
+# #  FF
+# r-terra
+# Recocrop https://github.com/cropmodels/Recocrop
+# r-data.table
+# r-sf
+# gdal
+# proj
+# #openmpi
+# #gcc
+#
+# #  HAB
+# natcap.invest
+#
+# #  ID
+# r-terra
+#
+# #  MED
+# r-terra
+# r-data.table
+# gdal
+# proj
+# #openmpi
+# #gcc
+#
+# #  NDR
+# natcap.invest
+#
+# #  PC
+# r-terra
+# r-data.table
+#
+# #  POL
+# natcap.invest
+# r-terra
+# r-raster
+#
+# #  SDR
+# natcap.invest
+#
+# #  WY
+# natcap.invest
