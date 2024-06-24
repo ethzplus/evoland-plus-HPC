@@ -119,9 +119,7 @@ run_scripts "$SCRIPT_DIR/POL/1_POL_S_CH.py" \
 ## SDR - Formation, protection and decontamination of soils
 ## Indicator: Erosion control by sediment retention
 log info "Running SDR - Erosion control by sediment retention"
-#run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
-# Does not terminate
-# First 9.4% in 15s, then no further task finishing in 2h
+run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
 
 ## WY - Regulation of freshwater quantity, location and timing
 ## Indicator: Annual water yield

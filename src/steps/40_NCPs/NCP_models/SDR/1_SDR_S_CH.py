@@ -45,12 +45,15 @@ args = {
     'lulc_path': params['data']['lulc'],
     'biophysical_table_path': params['SDR']['biophysical_table_path'],
     'dem_path': params['data']['dem_filled'],
+    # If SDR does not terminate, pass normal dem instead of filled dem.
+    # Filled dem can be found in the intermediate_outputs folder.
+    # Pass it here if you want to reuse it to save time.
     'erodibility_path': params['data']['erodibility_path'],
     'erosivity_path': params['data']['erosivity_path'],
     'ic_0_param': params['SDR']['ic_0_param'],
     'k_param': params['SDR']['k_param'],
     'l_max': params['SDR']['l_max'],
-    'n_workers': params['other']['n_workers'],
+    'n_workers': params['other']['n_workers'],  # most SDR can only use 1 worker
     'sdr_max': params['SDR']['sdr_max'],
     'threshold_flow_accumulation': params['SDR']['threshold_flow_accumulation'],
     'watersheds_path': params['data']['watersheds'],
