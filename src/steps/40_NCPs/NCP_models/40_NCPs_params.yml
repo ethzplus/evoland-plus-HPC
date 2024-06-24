@@ -29,7 +29,7 @@ data:
   # DEM                - CAR, NDR
   dem: Data/DEM_mean_LV95.tif
   # DEM filled         - SDR
-  dem_filled: Data/DEM_meanLV95_filled.tif
+  dem_filled: Data/DEM_mean_LV95_filled.tif
   # Wathersheds        - NDR, SDR, WY
   watersheds: Data/watersheds/watersheds.shp
   # Subwatersheds      - WY
