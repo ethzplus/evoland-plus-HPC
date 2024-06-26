@@ -44,8 +44,8 @@ split_control_table
 log info "Got control table subset at $LULCC_M_SIM_CONTROL_TABLE"
 log debug "Table: $(cat "$LULCC_M_SIM_CONTROL_TABLE")"
 
-#log info "Starting LULCC step"
-#source "$FUTURE_EI_BASE_DIR"/src/steps/10_LULCC/10_land_use.sh
+log info "Starting LULCC step"
+source "$FUTURE_EI_BASE_DIR"/src/steps/10_LULCC/10_land_use.sh
 
 log info "Starting NCPs step"
 source "$FUTURE_EI_BASE_DIR"/src/steps/40_NCPs/40_NCPs.sh
@@ -56,3 +56,24 @@ merge_control_table
 
 # With tail -f logs/10_40_combined_array_-*.out you can follow the progress of the job
 # To follow both .out and .err files, use tail -f logs/10_40_combined_array_-*.out logs/10_40_combined_array_-*.err
+
+# Resources example: For 1 configuration (part of array), Switzerland map
+# >>> seff 62996867
+# Nodes: 1
+# Cores per node: 2
+# CPU Utilized: 06:23:06
+# CPU Efficiency: 75.29% of 08:28:50 core-walltime
+# Job Wall-clock time: 04:14:25
+# Memory Utilized: 7.56 GB
+# Memory Efficiency: 75.58% of 10.00 GB
+
+# For 1080 configurations and 4:30h max runtime this would result in 203 days
+# of concurrent runtime. (Better assign a longer runtime to the job to avoid
+# job termination due to time limit.)
+#
+# When using the array job, we can decide how many configurations we want to run
+# in parallel. Slurm has a limit, which can be set by the cluster. To find out
+# the limit, use `scontrol show config | grep MaxArraySize` and consider the
+# resources available to the user.
+# In our example, using 40 configurations in parallel, the runtime would be
+# reduced to just above 5 days.

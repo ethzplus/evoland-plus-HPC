@@ -76,9 +76,10 @@ fi
 # ------------------------------------------------------------------------------
 
 # Set and copy NCP_PARAMS_YML to NCP_RUN_OUTPUT_DIR
-new_ncp_params_path="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/run_ncp_params.yml"
+new_ncp_params_path="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/run_ncp_params_$NCP_RUN_YEAR.yml"
 python "$SCRIPT_DIR/load_params.py" "$new_ncp_params_path"
 export NCP_PARAMS_YML
+NCP_PARAMS_YML_BASE=$NCP_PARAMS_YML
 NCP_PARAMS_YML=$new_ncp_params_path
 
 
@@ -129,3 +130,5 @@ run_scripts "$SCRIPT_DIR/WY/1_WY_S_CH.py"
 # ------------------------------------------------------------------------------
 
 log info "All NCPs have been run"
+
+NCP_PARAMS_YML=$NCP_PARAMS_YML_BASE

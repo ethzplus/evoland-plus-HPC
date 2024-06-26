@@ -45,11 +45,11 @@ args = {
     'watersheds_path': params['data']['watersheds'],
     'sub_watersheds_path': params['data']['sub_watersheds'],
     'n_workers': params['other']['n_workers'],
-    'workspace_dir': join(
+    'workspace_dir': (work_dir := join(
         params['run_params']['NCP_RUN_OUTPUT_DIR'],
         params['run_params']['NCP_RUN_SCENARIO_ID'],
         'WY',
-        params['run_params']['NCP_RUN_YEAR']),
+        params['run_params']['NCP_RUN_YEAR'])),
 }
 
 if __name__ == '__main__':
@@ -59,11 +59,7 @@ if __name__ == '__main__':
 
     if params['other']['remove_temp_files']:
         # remove intermediate outputs
-        intermediate_output_dir = join(
-            params['run_params']['NCP_RUN_OUTPUT_DIR'],
-            params['run_params']['NCP_RUN_SCENARIO_ID'],
-            'WY',
-            params['run_params']['NCP_RUN_YEAR'], 'intermediate_outputs')
+        intermediate_output_dir = join(work_dir, 'intermediate_outputs')
         print(f"Removing intermediate outputs in {intermediate_output_dir}")
         # delete folder
         rmtree(intermediate_output_dir)
