@@ -3,7 +3,13 @@
 # For each simulation and year, run the NCP models
 # Uses run_all_ncps.sh <NCP_RUN_SCENARIO_ID> <NCP_RUN_YEAR> <NCP_RUN_INPUT_DIR> <NCP_RUN_OUTPUT_DIR> <NCP_RUN_SCRATCH_DIR>
 # If called separately for testing, source the bash_common.sh script first
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# $FUTURE_EI_BASE_DIR must be passed, as this script is used in array jobs
+if [ -z "$FUTURE_EI_BASE_DIR" ]; then
+  echo "FUTURE_EI_BASE_DIR is not defined. Exiting."
+  exit 1
+fi
+source "$FUTURE_EI_BASE_DIR"/src/bash_common.sh
 log info "Starting NCPs step"
 # Scenario IDs are taken from the simulation control table,
 # which is found at $LULCC_M_SIM_CONTROL_TABLE (might be subset for array job)
@@ -40,7 +46,7 @@ for simulation_id in $simulation_ids; do
   for year in $years; do
     log info "Running NCPs for simulation ID $simulation_id and year $year"
     # Run the NCP models
-    source "$SCRIPT_DIR"/NCP_models/run_all_ncps.sh \
+    source "$FUTURE_EI_BASE_DIR"/src/steps/40_NCPs/NCP_models/run_all_ncps.sh \
            "$simulation_id" "$year" \
            "$LULCC_CH_OUTPUT_BASE_DIR" \
            "$NCP_OUTPUT_BASE_DIR" \

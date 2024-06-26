@@ -1,6 +1,9 @@
 #!/bin/bash
 # File for loading bash variables
 
+set -e  # Stop script if any command fails in parent or child scripts
+set -o pipefail  # Return exit status of the last command in the pipe that failed
+
 # Make sure only sourced once
 if [ -n "$BASH_COMMON_LOADED" ]; then
     return

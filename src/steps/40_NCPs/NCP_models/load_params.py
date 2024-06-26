@@ -114,7 +114,7 @@ def _add_run_params(params: dict) -> None:
 
     residential_year = (
         params['run_params']['NCP_RUN_YEAR']
-        if int(params['run_params']['NCP_RUN_YEAR']) <= end_step
+        if int(params['run_params']['NCP_RUN_YEAR']) < end_step
         else end_step - step_length  # for the last, use second to last step
     )
     ## Rural residential path

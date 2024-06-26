@@ -64,7 +64,7 @@ pol_sum <- sum(p_list)
 nx <- minmax(pol_sum)
 rn <- (pol_sum - nx[1, ]) / (nx[2, ] - nx[1, ]) # nolint
 
-writeRaster(rn, file.path(out_dir, "POL_S_CH.tif"))
+writeRaster(rn, file.path(out_dir, "POL_S_CH.tif"), overwrite = TRUE)
 print("POL_S_CH.tif created")
 
 # Remove temporary files not explicitly needed,

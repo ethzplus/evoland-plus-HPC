@@ -97,12 +97,16 @@ carbon_process_3 <- function(ind_dir, proj, raster_out) {
   # extend to the extent of the final raster
   bind <- terra::extend(bind, c(proj$ext))
 
-  terra::writeRaster(bind, raster_out, overwrite = TRUE)
+  cat(paste("Saving final raster to ", raster_out, "\n"))
 
-  cat(paste("Final raster saved to ", raster_out, "\n"))
+  terra::writeRaster(bind, raster_out, overwrite = TRUE)
 }
 
 #--- Applying for each period
+
+if (!dir.exists(results)) {
+  dir.create(results, recursive = TRUE)
+}
 
 carbon_process_3(
   inv_model_dir,
