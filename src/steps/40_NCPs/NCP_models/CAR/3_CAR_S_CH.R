@@ -43,8 +43,7 @@ inv_model_dir <- file.path(
 )
 results <- file.path(
   params$run_params$NCP_RUN_OUTPUT_DIR,
-  params$run_params$NCP_RUN_SCENARIO_ID, "CAR",
-  params$run_params$NCP_RUN_YEAR
+  params$run_params$NCP_RUN_SCENARIO_ID, "CAR"
 )
 name_out <- paste(params$CAR$out_prefix, params$run_params$NCP_RUN_YEAR,
   sep = ""
