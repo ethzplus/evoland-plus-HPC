@@ -6,8 +6,9 @@
 # model and then runs it.
 
 import sys
+from os import listdir
 from os.path import join, dirname
-from shutil import rmtree
+from shutil import rmtree, move
 
 import natcap.invest.annual_water_yield
 
@@ -59,7 +60,12 @@ if __name__ == '__main__':
 
     if params['other']['remove_temp_files']:
         # remove intermediate outputs
-        intermediate_output_dir = join(work_dir, 'intermediate_outputs')
+        intermediate_output_dir = join(work_dir, 'intermediate')
         print(f"Removing intermediate outputs in {intermediate_output_dir}")
         # delete folder
         rmtree(intermediate_output_dir)
+
+    # move work_dir/output to work_dir to simplify the output structure
+    for f in listdir(join(work_dir, 'output')):
+        move(join(work_dir, 'output', f), join(work_dir, f))
+    rmtree(join(work_dir, 'output'))

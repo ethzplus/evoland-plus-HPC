@@ -9,6 +9,7 @@
 
 import logging
 import sys
+from os import listdir, remove
 from os.path import join, dirname
 from shutil import rmtree
 
@@ -57,11 +58,11 @@ args = {
     'sdr_max': params['SDR']['sdr_max'],
     'threshold_flow_accumulation': params['SDR']['threshold_flow_accumulation'],
     'watersheds_path': params['data']['watersheds'],
-    'workspace_dir': join(
+    'workspace_dir': (work_dir := join(
         params['run_params']['NCP_RUN_OUTPUT_DIR'],
         params['run_params']['NCP_RUN_SCENARIO_ID'],
         'SDR',
-        params['run_params']['NCP_RUN_YEAR']),
+        params['run_params']['NCP_RUN_YEAR'])),
 }
 
 if __name__ == '__main__':
@@ -71,11 +72,13 @@ if __name__ == '__main__':
 
     if params['other']['remove_temp_files']:
         # remove intermediate outputs
-        intermediate_output_dir = join(
-            params['run_params']['NCP_RUN_OUTPUT_DIR'],
-            params['run_params']['NCP_RUN_SCENARIO_ID'],
-            'SDR',
-            params['run_params']['NCP_RUN_YEAR'], 'intermediate_outputs')
+        intermediate_output_dir = join(work_dir, 'intermediate_outputs')
         print(f"Removing intermediate outputs in {intermediate_output_dir}")
         # delete folder
         rmtree(intermediate_output_dir)
+
+        # Only keep watershed_results_sdr.* files, delete *tif files from folder
+        print("Removing *.tif files from work_dir")
+        tif_files = [f for f in listdir(work_dir) if f.endswith('.tif')]
+        for f in tif_files:
+            remove(join(work_dir, f))
