@@ -111,17 +111,29 @@ function merge_control_table() {
     # Set a trap to remove the lockfile on exit
     trap 'rm -f "$lockfile"; echo "Trap: Removed lockfile $lockfile"; exit $?' INT TERM EXIT
 
-    # Create new output file, so processes can work in parallel and concurrently
-    cp "$LULCC_M_SIM_CONTROL_TABLE_FULL" "$LULCC_M_SIM_CONTROL_TABLE_FULL.out"
-    LULCC_M_SIM_CONTROL_TABLE_FULL="$LULCC_M_SIM_CONTROL_TABLE_FULL.out"
-    # Overwrite the extracted rows in the full simulation control file with the
+    # Create new output file if it does not exist, so processes can work in
+    # parallel and concurrently
+    # at $FUTURE_EI_OUTPUT_DIR/basename($LULCC_M_SIM_CONTROL_TABLE_FULL)
+    dest_table="$FUTURE_EI_OUTPUT_DIR/$(basename "$LULCC_M_SIM_CONTROL_TABLE_FULL")"
+    if [ ! -f "$dest_table" ]; then
+        cp "$LULCC_M_SIM_CONTROL_TABLE_FULL" "$dest_table"
+    fi
+    LULCC_M_SIM_CONTROL_TABLE_FULL="$dest_table"
+    # Replace the extracted rows in the full simulation control file with the
     # rows from the temporary simulation control file
+    # 1. Delete the rows from LULCC_START_ROW to LULCC_END_ROW-1
     sed -i "$LULCC_START_ROW,$((LULCC_END_ROW-1))"d "$LULCC_M_SIM_CONTROL_TABLE_FULL"
-    # delete header in temporary simulation control file
+    # sed -i: edit file in place
+    #      d: delete the specified lines (from start_row to end_row-1)
+    # 2. delete header in temporary simulation control file
     sed -i 1d "$LULCC_M_SIM_CONTROL_TABLE"
-    # copy all rows from LULCC_M_SIM_CONTROL_TABLE to
-    # LULCC_M_SIM_CONTROL_TABLE_FULL at the correct position
+    # sed -i: edit file in place
+    #     1d: delete the first line (header)
+    # 3. copy all rows from LULCC_M_SIM_CONTROL_TABLE to
+    # LULCC_M_SIM_CONTROL_TABLE_FULL at the corresponding position
     sed -i "$((LULCC_START_ROW-1)) r $LULCC_M_SIM_CONTROL_TABLE" "$LULCC_M_SIM_CONTROL_TABLE_FULL"
+    # sed -i: edit file in place
+    #      r: read file and append to the line (start_row-1)
 
     # Remove lockfile
     rm "$lockfile"
