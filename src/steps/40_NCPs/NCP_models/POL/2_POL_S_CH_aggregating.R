@@ -46,13 +46,13 @@ files <- list.files(data_folder, pattern = "supply", full.names = TRUE)
 out_dir <- file.path(
   params$run_params$NCP_RUN_OUTPUT_DIR,
   params$run_params$NCP_RUN_SCENARIO_ID,
-  "POL",
-  params$run_params$NCP_RUN_YEAR
+  "POL"
 )
 # Create the output directory if it does not exist
 if (!dir.exists(out_dir)) {
   dir.create(out_dir, recursive = TRUE)
 }
+name_out <- paste("POL_S_CH_", params$run_params$NCP_RUN_YEAR, ".tif", sep = "")
 
 # Read and stack the rasters from the list of file paths into a single raststack
 p_list <- rast(files)
@@ -62,10 +62,10 @@ pol_sum <- sum(p_list)
 
 # Normalize the summed raster values to a range of 0 to 1
 nx <- minmax(pol_sum)
-rn <- (pol_sum - nx[1, ]) / (nx[2, ] - nx[1, ]) # nolint
+rn <- (pol_sum - nx[1,]) / (nx[2,] - nx[1,]) # nolint
 
-writeRaster(rn, file.path(out_dir, "POL_S_CH.tif"), overwrite = TRUE)
-print("POL_S_CH.tif created")
+writeRaster(rn, file.path(out_dir, name_out), overwrite = TRUE)
+print(paste("Pollination supply layer created: ", file.path(out_dir, name_out)))
 
 # Remove temporary files not explicitly needed,
 # as they are stored in the scratch directory

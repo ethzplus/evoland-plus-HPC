@@ -54,10 +54,10 @@ eco_maps <- rast(list.files(
 ))
 results <- file.path(
   params$run_params$NCP_RUN_OUTPUT_DIR,
-  params$run_params$NCP_RUN_SCENARIO_ID, "FF",
-  params$run_params$NCP_RUN_YEAR
+  params$run_params$NCP_RUN_SCENARIO_ID, "FF"
 )
 dir.create(results, showWarnings = FALSE, recursive = TRUE)
+name_out <- paste("FF_S_CH_", params$run_params$NCP_RUN_YEAR, ".tif", sep = "")
 
 # Reclassify agriculture categories of landuse to 1, rest to 0
 # TODO: needs change to use the LULCC classes
@@ -87,5 +87,5 @@ nx <- minmax(ff_agr_masked)
 rn <- (ff_agr_masked - nx[1, ]) / (nx[2, ] - nx[1, ])
 
 # Export
-writeRaster(rn, file.path(results, "FF_S_CH.tif"), overwrite = TRUE)
-print(paste("Exported FF_S_CH.tif to", results))
+writeRaster(rn, file.path(results, name_out), overwrite = TRUE)
+print(paste("FF supply layer created: ", file.path(results, name_out)))

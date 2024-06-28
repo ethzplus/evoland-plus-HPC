@@ -8,7 +8,7 @@
 import sys
 from os import makedirs, symlink, unlink
 from os.path import join, isdir, dirname, relpath, islink
-from shutil import copyfile
+from shutil import copyfile, rmtree
 
 sys.path.append(join(dirname(__file__), '..'))
 from load_params import load_params
@@ -94,3 +94,10 @@ if __name__ == '__main__':
     print("HAB: Starting Habitat Quality model...")
     natcap.invest.habitat_quality.execute(args)
     print("HAB: ...done!")
+
+    if params['other']['remove_temp_files']:
+        # remove intermediate outputs
+        intermediate_output_dir = join(out_dir, 'intermediate')
+        print(f"Removing intermediate outputs in {intermediate_output_dir}")
+        # delete folder
+        rmtree(intermediate_output_dir)

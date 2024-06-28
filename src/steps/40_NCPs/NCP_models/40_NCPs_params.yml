@@ -1,7 +1,7 @@
 # Other Settings
 other:
   scratch_dir: /scratch/.ncps-temp
-  remove_temp_files: false  # remove temp files in the output directory
+  remove_temp_files: true  # remove temp files in the output directory
   # scratch dir is left untouched
   # Number of workers for parallel processing in natcap.invest models
   n_workers: 1  #'SLURM_CPUS_PER_TASK' and os.cpu_count() take precedence
