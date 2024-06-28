@@ -41,6 +41,7 @@ mkdir -p "$TMPDIR"
 # Split the control table
 source "$FUTURE_EI_BASE_DIR"/src/control_table_control.sh
 split_control_table
+mark_finished_lulcc
 log info "Got control table subset at $LULCC_M_SIM_CONTROL_TABLE"
 log debug "Table: $(cat "$LULCC_M_SIM_CONTROL_TABLE")"
 

@@ -84,6 +84,68 @@ function split_control_table() {
 }
 
 : "
+mark_finished_lulcc - Function to mark finished LULCC calculations
+
+When rerunning a cancelled/failed job, one might not want to rerun all LULCC
+calculations. This function marks the finished LULCC calculations in the
+simulation control table.
+
+For each row in LULCC_M_SIM_CONTROL_TABLE, the corresponding LULCC output
+directory is checked for the presence of the LULC maps. If all maps are
+present, the row is marked as finished, so it will not be rerun.
+
+Reads the Simulation_num., Scenario_start.real, Scenario_end.real,
+and Step_length.real columns from the simulation control table.
+Each output directory is expected to contain the following files:
+- simulated_LULC_simID_{simulation_id}_year_{year}.tif (for each year)
+- rur_res_simID_{simulation_id}_year_{year}.tif (for each year except the last)
+- urb_res_simID_{simulation_id}_year_{year}.tif (for each year except the last)
+Resulting in the following number of files:
+- ((Scenario_end - Scenario_start) / Step_length) * 3 + 1 files
+
+Uses the environment variables:
+    FUTURE_EI_OUTPUT_DIR      - Path to the output directory
+    LULCC_CH_OUTPUT_BASE_DIR  - Subdirectory of the LULCC output
+"
+function mark_finished_lulcc() {
+    log info "Marking finished LULCC calculations"
+    # Iterate over the rows in the simulation control table, skipping the header
+    # The file looks like this:
+    # Simulation_num.,Scenario_ID.string,Simulation_ID.string,Model_mode.string,Scenario_start.real,Scenario_end.real,Step_length.real,Parallel_TPC.string,Pop_scenario.string,Econ_scenario.string,Climate_scenario.string,Spatial_interventions.string,EI_interventions.string,Deterministic_trans.string,Completed.string,EI_ID.string
+    # 1,BAU,1,Simulation,2020,2060,5,N,Ref,Ref_Central,rcp45,Y,Y,Y,N,1
+    # 2,BAU,2,Simulation,2020,2060,5,N,Ref,Ref_Central,rcp45,Y,Y,Y,N,2
+    # ...
+    tmpfile=$(mktemp)
+    awk -F, -v output_dir="$LULCC_CH_OUTPUT_BASE_DIR" '
+    BEGIN {OFS = ","}
+    NR == 1 {print; next}
+    {
+        sim_id = $3
+        # Check if the lulc directory exists
+        lulc_dir = output_dir "/" sim_id
+        if (system("[ -d " lulc_dir " ]") != 0) {
+            print
+            next
+        }
+        # Calculate the number of expected LULC maps
+        start = $5
+        end = $6
+        step = $7
+        num_maps = ((end - start) / step) * 3 + 1
+        # Check if the LULC maps are present
+        cmd = "find " lulc_dir " -maxdepth 1 -type f -name \"*_simID_" sim_id "_year_*.tif\" | wc -l"
+        cmd | getline num_lulc_maps
+        close(cmd)
+        # Check if the number of LULC maps is correct
+        if (num_lulc_maps == num_maps) {
+            # Mark the row as completed
+            $(NF-1) = "Y"
+        }
+        print
+    }' "$LULCC_M_SIM_CONTROL_TABLE" > "$tmpfile" && mv "$tmpfile" "$LULCC_M_SIM_CONTROL_TABLE"
+}
+
+: "
 merge_control_table - Function to merge the control table
 
 Merge the temporary control table chunks back into the original control table.
