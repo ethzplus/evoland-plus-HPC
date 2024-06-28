@@ -89,43 +89,83 @@ log info "Running all NCPs: Scenario ID=$NCP_RUN_SCENARIO_ID, Year=$NCP_RUN_YEAR
 
 ## CAR - Regulation of climate
 ## Indicator: Carbon sequestration
-log info "Running CAR - Carbon sequestration"
-run_scripts "$SCRIPT_DIR/CAR/1_CAR_S_CH.R" \
-            "$SCRIPT_DIR/CAR/2_CAR_S_CH.py" \
-            "$SCRIPT_DIR/CAR/3_CAR_S_CH.R"
+CAR_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/CAR/tot_c_cur_$NCP_RUN_YEAR.tif"
+if [ ! -f "$CAR_output_file" ]; then
+    log info "Running CAR - Carbon sequestration"
+    run_scripts "$SCRIPT_DIR/CAR/1_CAR_S_CH.R" \
+                "$SCRIPT_DIR/CAR/2_CAR_S_CH.py" \
+                "$SCRIPT_DIR/CAR/3_CAR_S_CH.R"
+else
+    log info "Skipping CAR - Carbon sequestration as $CAR_output_file already exists"
+fi
 
 ## FF - Food and feed
 ## Indicator: Crop production potential (`ecocrop`)
-log info "Running FF - Crop production potential"
-# needs FF/data_preparation/0_monthly_average_dataprep.R from prepare_ncps.sh
-run_scripts "$SCRIPT_DIR/FF/1_FF_aggregate_masking.R"
+FF_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/FF/FF_S_CH_$NCP_RUN_YEAR.tif"
+if [ ! -f "$FF_output_file" ]; then
+    log info "Running FF - Crop production potential"
+    # needs FF/data_preparation/0_monthly_average_dataprep.R from prepare_ncps.sh
+    run_scripts "$SCRIPT_DIR/FF/1_FF_aggregate_masking.R"
+else
+    log info "Skipping FF - Crop production potential as $FF_output_file already exists"
+fi
 
 ## HAB - Habitat creation and maintenance
 ## Indicator: Habitat quality index
-log info "Running HAB - Habitat quality index"
-run_scripts "$SCRIPT_DIR/HAB/0_HAB_threat_layers_generation.R" \
-            "$SCRIPT_DIR/HAB/1_HAB_S_CH.py"
+HAB_output_folder="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/HAB/$NCP_RUN_YEAR"
+if [ ! -f "$HAB_output_folder/deg_sum_c.tif" ] || [ ! -f "$HAB_output_folder/quality_c.tif" ]; then
+    log info "Running HAB - Habitat quality index"
+    run_scripts "$SCRIPT_DIR/HAB/0_HAB_threat_layers_generation.R" \
+                "$SCRIPT_DIR/HAB/1_HAB_S_CH.py"
+else
+    log info "Skipping HAB - Habitat quality index as $HAB_output_folder/deg_sum_c.tif and $HAB_output_folder/quality_c.tif already exist"
+fi
 
 ## NDR - Nutrient Delivery Ratio
 ## Indicator: Annual nutrient retention by vegetation
-log info "Running NDR - Annual nutrient retention by vegetation"
-run_scripts "$SCRIPT_DIR/NDR/1_NDR_S_CH.py"
+NDR_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/NDR/$NCP_RUN_YEAR/watershed_results_ndr.gpkg"
+if [ ! -f "$NDR_output_file" ]; then
+    log info "Running NDR - Annual nutrient retention by vegetation"
+    run_scripts "$SCRIPT_DIR/NDR/1_NDR_S_CH.py"
+else
+    log info "Skipping NDR - Annual nutrient retention by vegetation as $NDR_output_file already exists"
+fi
 
 ## POL - Pollination and dispersal of seeds
 ## Indicator: Habitat abundance for pollinators
-log info "Running POL - Habitat abundance for pollinators"
-run_scripts "$SCRIPT_DIR/POL/1_POL_S_CH.py" \
-            "$SCRIPT_DIR/POL/2_POL_S_CH_aggregating.R"
+POL_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/POL/POL_S_CH_$NCP_RUN_YEAR.tif"
+if [ ! -f "$POL_output_file" ]; then
+    log info "Running POL - Habitat abundance for pollinators"
+    run_scripts "$SCRIPT_DIR/POL/1_POL_S_CH.py" \
+                "$SCRIPT_DIR/POL/2_POL_S_CH_aggregating.R"
+else
+    log info "Skipping POL - Habitat abundance for pollinators as $POL_output_file already exists"
+fi
 
 ## SDR - Formation, protection and decontamination of soils
 ## Indicator: Erosion control by sediment retention
-log info "Running SDR - Erosion control by sediment retention"
-run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
+SDR_output_files="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/SDR/$NCP_RUN_YEAR/"
+if [ ! -f "$SDR_output_files/watershed_results_sdr.shp" ] ||
+   [ ! -f "$SDR_output_files/watershed_results_sdr.shx" ] ||
+   [ ! -f "$SDR_output_files/watershed_results_sdr.dbf" ] ||
+   [ ! -f "$SDR_output_files/watershed_results_sdr.prj" ]; then
+    log info "Running SDR - Erosion control by sediment retention"
+    run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
+else
+    log info "Skipping SDR - Erosion control by sediment retention as $SDR_output_files/watershed_results_sdr.* already exist"
+fi
 
 ## WY - Regulation of freshwater quantity, location and timing
 ## Indicator: Annual water yield
-log info "Running WY - Annual water yield"
-run_scripts "$SCRIPT_DIR/WY/1_WY_S_CH.py"
+WY_output_folder="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/WY/$NCP_RUN_YEAR"
+if [ ! find "$WY_output_folder/watershed_results_wyield.*" -type f | wc -l -ge 5 ] ||
+   [ ! find "$WY_output_folder/subwatershed_results_wyield.*" -type f | wc -l -ge 5 ] ||
+   [ ! -d "$WY_output_folder/per_pixel" ]; then
+    log info "Running WY - Annual water yield"
+    run_scripts "$SCRIPT_DIR/WY/1_WY_S_CH.py"
+else
+    log info "Skipping WY - Annual water yield as $WY_output_folder/watershed_results_wyield.* and $WY_output_folder/subwatershed_results_wyield.* and $WY_output_folder/per_pixel already exist"
+fi
 
 # ------------------------------------------------------------------------------
 
