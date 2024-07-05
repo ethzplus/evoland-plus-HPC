@@ -47,7 +47,7 @@ log debug "Table: $(cat "$LULCC_M_SIM_CONTROL_TABLE")"
 
 # Start Dinamica at different times, to avoid startup conflicts
 # sleep for (SLURM_ARRAY_TASK_ID mod 50) seconds
-wait_time=$(( $SLURM_ARRAY_TASK_ID % 50 ))
+wait_time=$(( SLURM_ARRAY_TASK_ID % 50 ))
 log info "Sleeping for $wait_time seconds"
 sleep $wait_time
 

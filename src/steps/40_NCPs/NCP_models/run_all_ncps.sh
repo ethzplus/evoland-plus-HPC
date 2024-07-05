@@ -158,8 +158,8 @@ fi
 ## WY - Regulation of freshwater quantity, location and timing
 ## Indicator: Annual water yield
 WY_output_folder="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/WY/$NCP_RUN_YEAR"
-if [ ! find "$WY_output_folder/watershed_results_wyield.*" -type f | wc -l -ge 5 ] ||
-   [ ! find "$WY_output_folder/subwatershed_results_wyield.*" -type f | wc -l -ge 5 ] ||
+if [ "$(find "$WY_output_folder/watershed_results_wyield.*" -type f | wc -l)" -lt 5 ] ||
+   [ "$(find "$WY_output_folder/subwatershed_results_wyield.*" -type f | wc -l)" -lt 5 ] ||
    [ ! -d "$WY_output_folder/per_pixel" ]; then
     log info "Running WY - Annual water yield"
     run_scripts "$SCRIPT_DIR/WY/1_WY_S_CH.py"
