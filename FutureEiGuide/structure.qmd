@@ -12,7 +12,7 @@ flowchart TD
   Focal --> NSDM
   LULCC --> NCPs[NCPs: Nature Contributions to People Estimation]
   NSDM --> AggSp(Species Maps Aggregation)
-  NSDM -->> NCPs
+  NSDM -.-> NCPs
   NCPs --> AggNCPs(NCP Clustering)
 ```
 
