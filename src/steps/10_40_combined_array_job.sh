@@ -41,8 +41,15 @@ mkdir -p "$TMPDIR"
 # Split the control table
 source "$FUTURE_EI_BASE_DIR"/src/control_table_control.sh
 split_control_table
+mark_finished_lulcc
 log info "Got control table subset at $LULCC_M_SIM_CONTROL_TABLE"
 log debug "Table: $(cat "$LULCC_M_SIM_CONTROL_TABLE")"
+
+# Start Dinamica at different times, to avoid startup conflicts
+# sleep for (SLURM_ARRAY_TASK_ID mod 50) seconds
+wait_time=$(( SLURM_ARRAY_TASK_ID % 50 ))
+log info "Sleeping for $wait_time seconds"
+sleep $wait_time
 
 log info "Starting LULCC step"
 source "$FUTURE_EI_BASE_DIR"/src/steps/10_LULCC/10_land_use.sh
