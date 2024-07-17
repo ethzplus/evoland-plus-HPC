@@ -72,3 +72,15 @@ FocalLULCC:
   Parallel: True
   Depth: 2
   NWorkers: 0
+  
+# LULC check
+CheckLULCC:
+  WorkDir: ~/Future-EI/
+  HistoricalDir:
+  InputDir: /scratch/check_lulcc/in #TO DO: Are LULC layers moved to the FocalLULCC: InputDir
+  OutputDir: /scratch/check_lulcc/out
+  BaseName: LULCC_intensity_analysis
+  Parallel: True
+  Depth: 2 #TO DO: is this needed?
+  NWorkers: 0
+
