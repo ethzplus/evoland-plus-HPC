@@ -9,3 +9,5 @@ dependencies:
   - r-future.apply
   - r-yaml
   - r-readxl
+  - r-dplyr
+  - r-tidyr

@@ -10,32 +10,22 @@
 #' @config $FUTURE_EI_CONFIG_FILE (yaml file)
 #' @date 2024-07-16,
 #' @author Benjamin Black, Carlson Büth
+#' @note This script uses code by OpenLand
+#' @references Reginal Exavier and Peter Zeilhofer. OpenLand: Software for
+#' Quantitative Analysis and Visualization of Land Use and Cover Change.
+#' The R Journal, v. 12, n. 2, p. 359–371, 2021.
+#' https://doi.org/10.32614/RJ-2021-021.
+#'
 #'
 #' @docType script
 #'
-
-# TESTING VALUES
-# config <- list(InputDir = "X:/CH_ValPar.CH/03_workspaces/07_Modeling/LULCC_CH_HPC/lulcc_output",
-#                OutputDir = "X:/CH_ValPar.CH/03_workspaces/07_Modeling/LULCC_CH_HPC/check_lulcc",
-#                BaseName = "LULCC_intensity_analysis",
-#                Parallel = FALSE)
-# 
-# bash_vars <- list(LULCC_M_CLASS_AGG ="X:/CH_ValPar.CH/03_workspaces/07_Modeling/LULCC_CH/Tools/LULC_class_aggregation.xlsx")
-# folder = "X:/CH_ValPar.CH/03_workspaces/07_Modeling/LULCC_CH_HPC/lulcc_output"
-# save_folder <- "X:/CH_ValPar.CH/03_workspaces/07_Modeling/LULCC_CH_HPC/check_lulcc"
-# base_name <- "LULCC_intensity_analysis"
-# # scenario_name <- basename(folder)
-# # map_years <- stringr::str_match(basename(map_paths), "_(\\d{4})(_|\\.)")[, 2]
-# # map_stack <- stack(map_paths)
-# # names(map_stack) <- paste0("_", map_years)
-# # input_rasters <- map_stack
-# #pixelresolution <- 100
-# lulc_agg <- "X:/CH_ValPar.CH/03_workspaces/07_Modeling/LULCC_CH/Tools/LULC_class_aggregation.xlsx"
 
 
 # Load libraries
 packs <- c("raster", "yaml", "future", "future.apply", "stringr", "readxl")
 invisible(lapply(packs, require, character.only = TRUE))
+
+options(future.rng.onMisuse = "ignore")
 
 ## Functions
 
@@ -49,8 +39,8 @@ invisible(lapply(packs, require, character.only = TRUE))
 #' (number of changes).
 #'
 #'
-#' @param input_rasters The path for the Raster* directory or list of Raster* to be
-#' analysed.
+#' @param input_rasters The path for the Raster* directory or list of Raster* to
+#' be analysed.
 #'
 #'
 #' @return DF: frequency and % of cumulative pixel-wise change values
@@ -62,7 +52,8 @@ invisible(lapply(packs, require, character.only = TRUE))
 #' \donttest{
 #' url <- "https://zenodo.org/record/3685230/files/SaoLourencoBasin.rda?download=1"
 #' temp <- tempfile()
-#' download.file(url, temp, mode = "wb") # downloading the SaoLourencoBasin dataset
+#' download.file(url, temp, mode = "wb")
+#' # downloading the SaoLourencoBasin dataset
 #' load(temp)
 #' # the acc_changes() function, with the SaoLourencoBasin dataset
 #' acc_changes(SaoLourencoBasin)
@@ -98,7 +89,7 @@ acc_changes <- function(input_rasters) {
 
   #sum rasters in stack
   sumraster <- sum(raster::stack(difflist))
-  
+
   # empty values for columns
   Freq <- Var1 <- NULL
 
@@ -109,7 +100,7 @@ acc_changes <- function(input_rasters) {
   df_values <- dplyr::mutate(data.frame(df01_values),
                              Var1 = as.character(Var1),
                              Var1 = as.integer(Var1),
-                             Percent = Freq/sum(Freq)*100)
+                             Percent = Freq / sum(Freq) * 100)
   names(df_values) <- c("Cumulative_changes", "Npixels", "Percent")
   return(df_values)
 
@@ -120,8 +111,8 @@ acc_changes <- function(input_rasters) {
 #' Calculate contingency tables over a time series of rasters and then
 #' calculate measures of intensity analysis
 #'
-#' @param input_rasters Rasterstack* object. See \cr \code{\link[raster]{raster}} for more information about
-#' supported file types.
+#' @param input_rasters Rasterstack* object. See \cr
+#' \code{\link[raster]{raster}} for more information about supported file types.
 #' @param pixelresolution numeric. The pixel spatial resolution in meter.
 #'
 #' @docType methods
@@ -265,120 +256,146 @@ acc_changes <- function(input_rasters) {
 #'
 
 intensityAnalysis <- function(
-    input_rasters, 
-    pixelresolution = 100
-    ){
+  input_rasters,
+  pixelresolution = 100
+) {
 
-    # helper function to compute the cross table of two rasters and set the column names
-    table_cross <- function(x, y) {
-      contengency <- raster::crosstab(x, y, long = TRUE, progress = "text")
-      contengency %>% dplyr::mutate(Year_from = colnames(contengency)[1],
-                                    Year_to = colnames(contengency)[2]) %>%
-        dplyr::rename(
-          From = colnames(contengency)[1],
-          To = colnames(contengency)[2],
-          QtPixel = colnames(contengency)[3]
-        ) %>% dplyr::mutate(From = as.integer(From), To = as.integer(To))
-    }
-
-    # calculate contingency table between initial and final year rasters
-    table_one <- table_cross(input_rasters[[1]], input_rasters[[raster::nlayers(input_rasters)]])
-    # if there are only two layers then the multi-step table is the same as single step
-    if (raster::nlayers(input_rasters) == 2) {
-      table_multi <- table_one
-    }else { # else if there are > 2 rasters then calculate contingency tables between all pairs of rasters 
-      input_rasters_multi <- raster::unstack(input_rasters)
-      table_multi <- Reduce(rbind,
-                            mapply(function(x, y)
-                              table_cross(x, y), input_rasters_multi[1:(length(input_rasters_multi) - 1)],
-                              input_rasters_multi[2:length(input_rasters_multi)], SIMPLIFY = FALSE))
-    }
-    
-    oneStep <-  table_one %>% dplyr::arrange(Year_from) %>%
-          tidyr::separate(Year_from, c("strings01", "yearFrom"), sep = "_") %>%
-          tidyr::separate(Year_to, c("strings02", "yearTo"), sep = "_") %>%
-          dplyr::select(-strings01, -strings02) %>%
-          dplyr::mutate(yearFrom = as.integer(yearFrom), yearTo = as.integer(yearTo),
-                        Interval = yearTo - yearFrom) %>%
-          tidyr::unite("Period", c("yearFrom", "yearTo"), sep = "-", remove = FALSE) %>%
-          dplyr::select(Period, From, To, QtPixel, Interval, yearFrom, yearTo)
-      
-    multiStep <- table_multi %>% dplyr::arrange(Year_from) %>%
-          tidyr::separate(Year_from, c("strings01", "yearFrom"), sep = "_") %>%
-          tidyr::separate(Year_to, c("strings02", "yearTo"), sep = "_") %>%
-          dplyr::select(-strings01, -strings02) %>%
-          dplyr::mutate(yearFrom = as.integer(yearFrom), yearTo = as.integer(yearTo),
-                        Interval = yearTo - yearFrom) %>%
-          tidyr::unite("Period", c("yearFrom", "yearTo"), sep = "-", remove = FALSE) %>%
-          dplyr::select(Period, From, To, QtPixel, Interval, yearFrom, yearTo)
-
-    # calculate the total time interval and the total pixelValue in the rasters
-    allinterval <- as.numeric(dplyr::last(multiStep$yearTo)) - as.numeric(dplyr::first(multiStep$yearFrom))
-    areaTotal <-multiStep %>% dplyr::group_by(Period) %>% dplyr::summarise(QtPixel = sum(QtPixel))
-    
-    #convert areaTotal to vector
-    totalArea <- unlist(areaTotal[1, "QtPixel"])
-    
-    # Select columns
-    lulc <- multiStep %>%
-      dplyr::select(Period, From, To, QtPixel, Interval)
-    
-    # convert period to factor
-    lulc$Period <-factor(as.factor(lulc$Period), levels = rev(levels(as.factor(lulc$Period))))
-
-    # ---- Interval analysis (time points) ----
-    # EQ1 - St ----
-
-    eq1 <- lulc %>% dplyr::filter(From != To) %>%
-      dplyr::group_by(Period, Interval) %>% dplyr::summarise(intch_QtPixel = sum(QtPixel)) %>% # interval change:intch_QtPixel
-      dplyr::mutate(
-        PercentChange = (intch_QtPixel / totalArea) * 100,
-        St = (intch_QtPixel / (Interval * totalArea)) * 100
+  # helper function to compute the cross table of two rasters and set the column names
+  table_cross <- function(x, y) {
+    contengency <- raster::crosstab(x, y, long = TRUE, progress = "text")
+    contengency %>%
+      dplyr::mutate(Year_from = colnames(contengency)[1],
+                    Year_to = colnames(contengency)[2]) %>%
+      dplyr::rename(
+        From = colnames(contengency)[1],
+        To = colnames(contengency)[2],
+        QtPixel = colnames(contengency)[3]
       ) %>%
-      dplyr::select(1, 4, 5)
+      dplyr::mutate(From = as.integer(From), To = as.integer(To))
+  }
 
-    # EQ2 - U ----
-    eq2 <- lulc %>% dplyr::filter(From != To) %>%
-      dplyr::summarise(num02 = sum(QtPixel)) %>% # all area change for the whole period Y1 to YT
-      dplyr::mutate(U = (num02 / (allinterval * totalArea)) * 100)
+  # calculate contingency table between initial and final year rasters
+  table_one <- table_cross(input_rasters[[1]], input_rasters[[raster::nlayers(input_rasters)]])
+  # if there are only two layers then the multi-step table is the same as single step
+  if (raster::nlayers(input_rasters) == 2) {
+    table_multi <- table_one
+  }else { # else if there are > 2 rasters then calculate contingency tables between all pairs of rasters
+    input_rasters_multi <- raster::unstack(input_rasters)
+    table_multi <- Reduce(rbind,
+                          mapply(function(x, y)
+                                   table_cross(x, y), input_rasters_multi[1:(length(input_rasters_multi) - 1)],
+                                 input_rasters_multi[2:length(input_rasters_multi)], SIMPLIFY = FALSE))
+  }
 
-    level01 <-eq1 %>% dplyr::mutate(U = eq2[[2]]) # Type = ifelse(St > U, "Fast", "Slow"))
+  oneStep <- table_one %>%
+    dplyr::arrange(Year_from) %>%
+    tidyr::separate(Year_from, c("strings01", "yearFrom"), sep = "_") %>%
+    tidyr::separate(Year_to, c("strings02", "yearTo"), sep = "_") %>%
+    dplyr::select(-strings01, -strings02) %>%
+    dplyr::mutate(yearFrom = as.integer(yearFrom), yearTo = as.integer(yearTo),
+                  Interval = yearTo - yearFrom) %>%
+    tidyr::unite("Period", c("yearFrom", "yearTo"), sep = "-", remove = FALSE) %>%
+    dplyr::select(Period, From, To, QtPixel, Interval, yearFrom, yearTo)
 
-    # ---- Categorical analysis (LULC class) ----
-    # EQ3 - Gtj ----
-    num03 <- lulc %>% dplyr::filter(From != To) %>%
-      dplyr::group_by(Period, To, Interval) %>% dplyr::summarise(num03 = sum(QtPixel)) # gross gain category in time point Yt+1
+  multiStep <- table_multi %>%
+    dplyr::arrange(Year_from) %>%
+    tidyr::separate(Year_from, c("strings01", "yearFrom"), sep = "_") %>%
+    tidyr::separate(Year_to, c("strings02", "yearTo"), sep = "_") %>%
+    dplyr::select(-strings01, -strings02) %>%
+    dplyr::mutate(yearFrom = as.integer(yearFrom), yearTo = as.integer(yearTo),
+                  Interval = yearTo - yearFrom) %>%
+    tidyr::unite("Period", c("yearFrom", "yearTo"), sep = "-", remove = FALSE) %>%
+    dplyr::select(Period, From, To, QtPixel, Interval, yearFrom, yearTo)
 
-    denom03 <-lulc %>% dplyr::group_by(Period, To) %>% dplyr::summarise(denom03 = sum(QtPixel)) # total area category in time point Yt+1
+  # calculate the total time interval and the total pixelValue in the rasters
+  allinterval <- as.numeric(dplyr::last(multiStep$yearTo)) - as.numeric(dplyr::first(multiStep$yearFrom))
+  areaTotal <- multiStep %>%
+    dplyr::group_by(Period) %>%
+    dplyr::summarise(QtPixel = sum(QtPixel))
 
-    eq3 <-num03 %>% dplyr::left_join(denom03, by = c("Period", "To")) %>%
-      dplyr::mutate(Gtj = (num03 / (denom03 * Interval)) * 100) %>%
-      dplyr::left_join(eq1[c(1,3)], by = "Period") %>% dplyr::select(1,2,3,4,6,7) %>%
-      dplyr::rename("GG_pixel" = "num03")
+  #convert areaTotal to vector
+  totalArea <- unlist(areaTotal[1, "QtPixel"])
 
-    # EQ4 -   Lti ---------
-    num04 <- lulc %>% dplyr::filter(From != To) %>%
-      dplyr::group_by(Period, From, Interval) %>% dplyr::summarise(num04 = sum(QtPixel)) # gross loss of category i in time point Yt
+  # Select columns
+  lulc <- multiStep %>%
+    dplyr::select(Period, From, To, QtPixel, Interval)
 
-    denom04 <-lulc %>% dplyr::group_by(Period, From) %>% dplyr::summarise(denom04 = sum(QtPixel)) # total area of the category in time point Yt
+  # convert period to factor
+  lulc$Period <- factor(as.factor(lulc$Period), levels = rev(levels(as.factor(lulc$Period))))
 
-    eq4 <- num04 %>% dplyr::left_join(denom04, by = c("Period", "From")) %>%
-      dplyr::mutate(Lti = (num04 / (denom04 * Interval)) * 100) %>%
-      dplyr::left_join(eq1[c(1,3)], by = "Period") %>% dplyr::select(1,2,3,4,6,7) %>%
-      dplyr::rename("GL_pixel" = "num04")
-    
-    # ---- Stationarity testing ----
+  # ---- Interval analysis (time points) ----
+  # EQ1 - St ----
 
-    # ---- Categorical gain ----
-    st_lv2_gain <-
-      eq3 %>% dplyr::filter(Gtj > St) %>% dplyr::group_by(To) %>%
+  eq1 <- lulc %>%
+    dplyr::filter(From != To) %>%
+    dplyr::group_by(Period, Interval) %>%
+    dplyr::summarise(intch_QtPixel = sum(QtPixel)) %>% # interval change:intch_QtPixel
+    dplyr::mutate(
+      PercentChange = (intch_QtPixel / totalArea) * 100,
+      St = (intch_QtPixel / (Interval * totalArea)) * 100
+    ) %>%
+    dplyr::select(1, 4, 5)
+
+  # EQ2 - U ----
+  eq2 <- lulc %>%
+    dplyr::filter(From != To) %>%
+    dplyr::summarise(num02 = sum(QtPixel)) %>% # all area change for the whole period Y1 to YT
+    dplyr::mutate(U = (num02 / (allinterval * totalArea)) * 100)
+
+  level01 <- eq1 %>% dplyr::mutate(U = eq2[[2]]) # Type = ifelse(St > U, "Fast", "Slow"))
+
+  # ---- Categorical analysis (LULC class) ----
+  # EQ3 - Gtj ----
+  num03 <- lulc %>%
+    dplyr::filter(From != To) %>%
+    dplyr::group_by(Period, To, Interval) %>%
+    dplyr::summarise(num03 = sum(QtPixel)) # gross gain category in time point Yt+1
+
+  denom03 <- lulc %>%
+    dplyr::group_by(Period, To) %>%
+    dplyr::summarise(denom03 = sum(QtPixel)) # total area category in time point Yt+1
+
+  eq3 <- num03 %>%
+    dplyr::left_join(denom03, by = c("Period", "To")) %>%
+    dplyr::mutate(Gtj = (num03 / (denom03 * Interval)) * 100) %>%
+    dplyr::left_join(eq1[c(1, 3)], by = "Period") %>%
+    dplyr::select(1, 2, 3, 4, 6, 7) %>%
+    dplyr::rename("GG_pixel" = "num03")
+
+  # EQ4 -   Lti ---------
+  num04 <- lulc %>%
+    dplyr::filter(From != To) %>%
+    dplyr::group_by(Period, From, Interval) %>%
+    dplyr::summarise(num04 = sum(QtPixel)) # gross loss of category i in time point Yt
+
+  denom04 <- lulc %>%
+    dplyr::group_by(Period, From) %>%
+    dplyr::summarise(denom04 = sum(QtPixel)) # total area of the category in time point Yt
+
+  eq4 <- num04 %>%
+    dplyr::left_join(denom04, by = c("Period", "From")) %>%
+    dplyr::mutate(Lti = (num04 / (denom04 * Interval)) * 100) %>%
+    dplyr::left_join(eq1[c(1, 3)], by = "Period") %>%
+    dplyr::select(1, 2, 3, 4, 6, 7) %>%
+    dplyr::rename("GL_pixel" = "num04")
+
+  # ---- Stationarity testing ----
+
+  # ---- Categorical gain ----
+  st_lv2_gain <-
+    eq3 %>%
+      dplyr::filter(Gtj > St) %>%
+      dplyr::group_by(To) %>%
       dplyr::summarise(
         Gain = dplyr::n(),
         N = length(unique(eq3$Period)),
         Stationarity = "Active Gain",
         Test = ifelse(Gain == N, "Y", "N")
-      ) %>% rbind(
-        eq3 %>% dplyr::filter(Gtj < St) %>% dplyr::group_by(To) %>%
+      ) %>%
+      rbind(
+        eq3 %>%
+          dplyr::filter(Gtj < St) %>%
+          dplyr::group_by(To) %>%
           dplyr::summarise(
             Gain = dplyr::n(),
             N = length(unique(eq3$Period)),
@@ -387,16 +404,21 @@ intensityAnalysis <- function(
           )
       )
 
-    # ---- Categorical loss ----
-    st_lv2_loss <-
-      eq4 %>% dplyr::filter(Lti > St) %>% dplyr::group_by(From) %>%
+  # ---- Categorical loss ----
+  st_lv2_loss <-
+    eq4 %>%
+      dplyr::filter(Lti > St) %>%
+      dplyr::group_by(From) %>%
       dplyr::summarise(
         Loss = dplyr::n(),
         N = length(unique(eq4$Period)),
         Stationarity = "Active Loss",
         Test = ifelse(Loss == N, "Y", "N")
-      ) %>% rbind(
-        eq4 %>% dplyr::filter(Lti < St) %>% dplyr::group_by(From) %>%
+      ) %>%
+      rbind(
+        eq4 %>%
+          dplyr::filter(Lti < St) %>%
+          dplyr::group_by(From) %>%
           dplyr::summarise(
             Loss = dplyr::n(),
             N = length(unique(eq4$Period)),
@@ -405,16 +427,18 @@ intensityAnalysis <- function(
           )
       )
 
-    # Combine outputs into list
-    intensity_tables <- list(lulc_table = lulc,
-                             interval_lvl = level01,
-                             category_lvlGain = list(categoryData = eq3,
-                                                    categoryStationarity = st_lv2_gain),
-                             category_lvlLoss = list(categoryData = eq4,
-                                                     categoryStationarity = st_lv2_loss)
-      )
-    return(intensity_tables)
-  } # close function
+  # Combine outputs into list
+  intensity_tables <- list(lulc_table = lulc,
+                           interval_lvl = level01,
+                           category_lvlGain = list(categoryData = eq3,
+                                                   categoryStationarity = st_lv2_gain),
+                           category_lvlLoss = list(categoryData = eq4,
+                                                   categoryStationarity = st_lv2_loss)
+  )
+  return(intensity_tables)
+}
+
+# close function
 
 #' simulation_intensity_analysis: 
 #' 
@@ -449,10 +473,15 @@ simulation_intensity_analysis <- function(
 
   # Empty vector to store warnings
   warnings <- c()
-  
+
   # Get all maps - tif or rds
   map_paths <- list.files(folder, full.names = TRUE)
   map_paths <- map_paths[grepl(".tif|.rds|.grd", map_paths)]
+  # filter for 'simulated_LULC_simID_{simid}_year_2030.tif'
+  map_paths <- map_paths[grepl("simulated_LULC_", map_paths)]
+  # sort after years
+  map_paths <- map_paths[order(as.numeric(stringr::str_match(basename(map_paths), "_(\\d{4})(_|\\.)")[, 2]))]
+  print(map_paths)
   # If no maps found, return
   if (length(map_paths) == 0) {
     cat(paste0("No maps found in ", folder, ". Skipping folder.\n"))
@@ -463,43 +492,43 @@ simulation_intensity_analysis <- function(
     cat(paste0("Only one map found in ", folder, " so intensity analysis is not possible. Skipping folder.\n"))
     return()
   }
-  
+
   # Match year in map name by _(\d{4})(_|\.) and extract first capture group
   map_years <- stringr::str_match(basename(map_paths), "_(\\d{4})(_|\\.)")[, 2]
   # Load maps as raster stack
   map_stack <- stack(map_paths)
   # Rename layers to _year convention required by OpenLand::contingencyTable()
   names(map_stack) <- paste0("_", map_years)
-  
+
   # Test if any rasters are empty
-  if(any(is.na(minValue(map_stack)))) {
+  if (any(is.na(minValue(map_stack)))) {
     warnings <- c(warnings, paste0("Folder contains empty raster(s)"))
   }
-  
+
   #calculate pixel-wise cumulative changes
   pixel_cum_changes <- acc_changes(map_stack)
-  
+
   #check that the number of pixels changing 5 times or more is not more than
-  if(any(pixel_cum_changes[pixel_cum_changes$Cumulative_changes >= 5,]$Npixels > 1000)){
+  if (any(pixel_cum_changes[pixel_cum_changes$Cumulative_changes >= 5,]$Npixels > 1000)) {
     warnings <- c(warnings, paste0("The simulation contains more than 1000 pixels that are changing 5 times or more over the time steps"))
   }
-  
+
   # Load LULC aggregation table
   lulc_agg <- readxl::read_xlsx(lulc_agg)
   #create a raster attribute table
   lulc_rat <- data.frame(ID = sort(unique(values(map_stack[[1]]))))
-  lulc_rat$lulc_name <- unlist(sapply(lulc_rat$ID, function(y) unique(unlist(lulc_agg[lulc_agg$Aggregated_ID == y, "Class_abbreviation"])),simplify = TRUE))
-  
+  # lulc_rat$lulc_name <- unlist(sapply(lulc_rat$ID, function(y) unique(unlist(lulc_agg[lulc_agg$Aggregated_ID == y, "Class_abbreviation"])), simplify = TRUE))
+
   # Perform intensity analysis
   Sim_IA <- intensityAnalysis(
     input_rasters = map_stack,
     pixelresolution = 100
   )
-  
+
   # Add From/RTo class names to SIM_IA$lulc_table
-  Sim_IA$lulc_table$From_name <- unlist(sapply(Sim_IA$lulc_table$From, function(y) unique(unlist(lulc_rat[lulc_rat$ID == y, "lulc_name"])),simplify = TRUE))
-  Sim_IA$lulc_table$To_name <- unlist(sapply(Sim_IA$lulc_table$To, function(y) unique(unlist(lulc_rat[lulc_rat$ID == y, "lulc_name"])),simplify = TRUE))
-  
+  # Sim_IA$lulc_table$From_name <- unlist(sapply(Sim_IA$lulc_table$From, function(y) unique(unlist(lulc_rat[lulc_rat$ID == y, "lulc_name"])), simplify = TRUE))
+  # Sim_IA$lulc_table$To_name <- unlist(sapply(Sim_IA$lulc_table$To, function(y) unique(unlist(lulc_rat[lulc_rat$ID == y, "lulc_name"])), simplify = TRUE))
+
   # Check that all values in SIM_IA$interval_lvl$PercentChange are greater than 0 and less than 5
   if (any(Sim_IA$interval_lvl$PercentChange == 0)) {
     warnings <- c(warnings, "Warning: Some values of total areal LULC class change between the time steps are 0%, Check the data.")
@@ -507,15 +536,15 @@ simulation_intensity_analysis <- function(
   if (any(Sim_IA$interval_lvl$PercentChange > 5)) {
     warnings <- c(warnings, "Warning: Some values of total areal  LULC class change between the time steps are greater than 5%, Check the data.")
   }
-  
+
   # Append pixel-wise cumulative changes to SIM_IA
   Sim_IA$pixel_cum_changes <- pixel_cum_changes
-  
+
   # Append scenario name to base name
   base_name <- paste0(base_name, "_", scenario_name)
   # Assure folder exists
   dir.create(save_folder, recursive = TRUE, showWarnings = FALSE)
-  
+
   # Save IA results as rds
   saveRDS(Sim_IA, file.path(save_folder, paste0(base_name, ".rds")))
   cat("Saved Intensity Analysis results as ", file.path(save_folder, paste0(base_name, ".rds")), "\n")
@@ -569,8 +598,8 @@ check_lulc_simulations <- function(
   subfolders <- list.dirs(folder, recursive = FALSE, full.names = TRUE)
   # For each subfolder
   if (parallel == FALSE) {
-  cat(paste0("Performing Intensity Analysis for ", length(subfolders),
-             " subfolders in ", folder, " ...\n"))
+    cat(paste0("Performing Intensity Analysis for ", length(subfolders),
+               " subfolders in ", folder, " ...\n"))
     progress <- utils::txtProgressBar(
       min = 0,
       max = length(subfolders),
@@ -587,11 +616,12 @@ check_lulc_simulations <- function(
       config$NWorkers
     )
     cat(paste0("Performing Intensity Analysis for ", length(subfolders),
-             " subfolders in ", folder, " in parallel with ", n_workers, " workers...\n"))
+               " subfolders in ", folder, " in parallel with ", n_workers,
+               " workers...\n"))
     future::plan(future::multisession, workers = n_workers)
   }
-    # Shuffle `map_paths` to distribute memory load
-    Simulation_warnings <- future.apply::future_sapply(
+  # Shuffle `map_paths` to distribute memory load
+  Simulation_warnings <- future.apply::future_sapply(
     # nolint start: indentation_linter
     subfolders,
     function(subfolder) {
@@ -604,31 +634,26 @@ check_lulc_simulations <- function(
         scenario_name = basename(subfolder),
         lulc_agg = lulc_agg
       )
-        if (parallel == FALSE) {
-          # Update progress bar
-          utils::setTxtProgressBar(
-            progress,
-            value = utils::getTxtProgressBar(progress) + 1
-          )
-        }
+      if (parallel == FALSE) {
+        # Update progress bar
+        utils::setTxtProgressBar(
+          progress,
+          value = utils::getTxtProgressBar(progress) + 1
+        )
+      }
       return(sim_warnings)
     })
+
+  # Print message if warnings contain anything other than 'No warnings'
+  if (any(Simulation_warnings != "No warnings.")) {
+    cat("Warnings found in intensity analysis of LULC simulations, printing warnings:\n")
+    print(Simulation_warnings)
+    # Save warnings
+    saveRDS(Simulation_warnings, file.path(config$OutputDir, "Simulation_warnings.rds"))
+  } else {
+    cat("No warnings found in intensity analysis of LULC simulations, results have been saved anyway\n")
+  }
   
-    # Print message if warnings contain anything other than 'No warnings'
-    if(any(Simulation_warnings != "No warnings.")){
-        cat("Warnings found in intensity analysis of LULC simulations, printing warnings:\n")
-        print(Simulation_warnings)
-        # Save warnings
-        saveRDS(Simulation_warnings, file.path(config$OutputDir, "Simulation_warnings.rds"))
-      } else {
-        cat("No warnings found in intensity analysis of LULC simulations, results have been saved anyway\n")
-    }
-  
-  
-  
-  
-  
-  return(Folder_warnings)
   # nolint end: indentation_linter
 }
 
@@ -648,22 +673,23 @@ config <- yaml.load_file(config_file)
 bash_vars <- config$bash_variables # general bash variables
 config <- config$CheckLULCC # only FocalLULCC
 
-# if InputDir is not set, use bash variable LULCC_CH_OUTPUT_SIM_DIR
+# if InputDir is not set, use bash variable
+# FUTURE_EI_OUTPUT_DIR/LULCC_CH_OUTPUT_BASE_DIR
 if (is.null(config$InputDir) || config$InputDir == "") {
-  config$InputDir <- bash_vars$LULCC_CH_OUTPUT_SIM_DIR
+  config$InputDir <- file.path(bash_vars$FUTURE_EI_OUTPUT_DIR, bash_vars$LULCC_CH_OUTPUT_BASE_DIR)
 }
-# if OutputDir is not set, use bash variable FOCAL_OUTPUT_SIM_DIR
+# if OutputDir is not set, use bash variable CHECK_LULCC_OUTPUT_DIR
 if (is.null(config$OutputDir) || config$OutputDir == "") {
-  config$OutputDir <- bash_vars$CHECKLULCC_OUTPUT_DIR
+  config$OutputDir <- file.path(bash_vars$FUTURE_EI_OUTPUT_DIR, bash_vars$CHECK_LULCC_OUTPUT_DIR)
 }
 
 # Check if InputDir is now set
 if (is.null(config$InputDir) || config$InputDir == "") {
-  stop("InputDir nor LULCC_CH_OUTPUT_SIM_DIR set in FUTURE_EI_CONFIG_FILE")
+  stop("InputDir nor LULCC_CH_OUTPUT_BASE_DIR set in FUTURE_EI_CONFIG_FILE")
 }
 # Check if InputDir exists
 if (!dir.exists(config$InputDir)) {
-  stop("InputDir does not exist")
+  stop(cat("InputDir does not exist: ", config$InputDir, "\n"))
 }
 # Check if InputDir has subfolders
 # - otherwise just this folder will be processed
@@ -674,7 +700,7 @@ if (length(list.dirs(config$InputDir, recursive = FALSE)) == 0) {
 }
 # Check if OutputDir is set
 if (is.null(config$OutputDir) || config$OutputDir == "") {
-  stop("OutputDir nor FOCAL_OUTPUT_SIM_DIR set in FUTURE_EI_CONFIG_FILE")
+  stop("OutputDir nor CHECK_LULCC_OUTPUT_DIR set in FUTURE_EI_CONFIG_FILE")
 }
 # Check if OutputDir exists and create if not
 if (!dir.exists(config$OutputDir)) {
@@ -691,7 +717,7 @@ if (is.null(bash_vars$LULCC_M_CLASS_AGG) || bash_vars$LULCC_M_CLASS_AGG == "") {
 
 cat("Performing Intensity Analysis on LULC simulations\n")
 
-cat("Working directory set to:", getwd(), "\n")
+cat("Working directory is:", getwd(), "\n")
 cat("Input directory set to:", config$InputDir, "\n")
 cat("Output directory set to:", config$OutputDir, "\n")
 cat("Base name set to:", config$BaseName, "\n")
@@ -704,7 +730,7 @@ check_lulc_simulations(
   save_folder = config$OutputDir,
   base_name = config$BaseName,
   parallel = config$Parallel,
-  lulc_agg = bash_vars$LULCC_M_CLASS_AGG
+  lulc_agg = file.path(bash_vars$LULCC_CH_HPC_DIR, bash_vars$LULCC_M_CLASS_AGG)
 )
 
 cat("Done performing itnensity analysis for LULC simulations!\n")
