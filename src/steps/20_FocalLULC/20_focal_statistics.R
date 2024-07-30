@@ -66,24 +66,7 @@ focal_stats <- function(
 
   # Loop over layers calculating focal
   sapply(as.list(seg_raster), function(lyr, ...) {
-    focal_lyr <- terra::focal(
-      x = lyr,
-      w = focal_mat,
-      fun = fun,
-      na.rm = TRUE,
-      na.policy = "omit",
-      ...
-    )
     layer_name <- paste0(base_name, "_reg", names(lyr), "_", radius)
-    # Reformatting
-    # Round to percent
-    focal_lyr <- round(focal_lyr * 100)
-    # Set storage mode to integer
-    storage.mode(focal_lyr[]) <- "integer"
-    # Name layer
-    names(focal_lyr) <- layer_name
-    # Convert back to raster
-    focal_lyr <- raster::raster(focal_lyr)
     # convert file name to folder structure
     # a_b_c_d -> c(a, b, c, d) -> a/b/c (OS specific)
     layer_folder <- as.list(strsplit(layer_name, "_")[[1]])
@@ -94,9 +77,31 @@ focal_stats <- function(
     save_folder <- file.path(save_folder, dirname(layer_folder))
     # Assure folder exists
     dir.create(save_folder, recursive = TRUE, showWarnings = FALSE)
-
+    save_path <- file.path(save_folder, paste0(layer_name, ".rds"))
+    # if save_path exists and overwrite is FALSE, skip
+    if (file.exists(save_path) && !config$Overwrite) {
+      cat("Layer ", names(lyr), " already exists. Skipping...\n")
+      return()
+    }
+    focal_lyr <- terra::focal(
+      x = lyr,
+      w = focal_mat,
+      fun = fun,
+      na.rm = TRUE,
+      na.policy = "omit",
+      ...
+    )
+    # Reformatting
+    # Round to percent
+    focal_lyr <- round(focal_lyr * 100)
+    # Set storage mode to integer
+    storage.mode(focal_lyr[]) <- "integer"
+    # Name layer
+    names(focal_lyr) <- layer_name
+    # Convert back to raster
+    focal_lyr <- raster::raster(focal_lyr)
     # Save layer as rds
-    saveRDS(focal_lyr, file.path(save_folder, paste0(layer_name, ".rds")))
+    saveRDS(focal_lyr, save_path)
     # Save to tif - terra::writeRaster(focal_lyr, paste0(layer_path, ".tif"))
     cat("Saved layer ", names(lyr), " to ", layer_folder, "!\n")
   })
@@ -133,8 +138,8 @@ map_to_predictor <- function(
 ) {
   # Load map
   map <- terra::rast(map_path)
-  # Match year in map name by _(\d{4})(_|\.) and extract first capture group
-  year <- stringr::str_match(basename(map_path), "_(\\d{4})(_|\\.)")[, 2]
+  # match by 'year_' and extract the year
+  year <- stringr::str_match(basename(map_path), "year_(\\d{4})")[, 2]
   base_name <- paste0(base_name, "_", year, "_", scenario_name)
 
   # Skip if radius is smaller than resolution of map
@@ -323,22 +328,24 @@ config <- yaml.load_file(config_file)
 bash_vars <- config$bash_variables # general bash variables
 config <- config$FocalLULCC # only FocalLULCC
 
-# if InputDir is not set, use bash variable LULCC_CH_OUTPUT_SIM_DIR
+# if InputDir is not set, use bash variable LULCC_CH_OUTPUT_BASE_DIR
 if (is.null(config$InputDir) || config$InputDir == "") {
-  config$InputDir <- bash_vars$LULCC_CH_OUTPUT_SIM_DIR
+  config$InputDir <- file.path(bash_vars$FUTURE_EI_OUTPUT_DIR,
+                               bash_vars$LULCC_CH_OUTPUT_BASE_DIR)
 }
-# if OutputDir is not set, use bash variable FOCAL_OUTPUT_SIM_DIR
+# if OutputDir is not set, use bash variable FOCAL_OUTPUT_BASE_DIR
 if (is.null(config$OutputDir) || config$OutputDir == "") {
-  config$OutputDir <- bash_vars$FOCAL_OUTPUT_SIM_DIR
+  config$OutputDir <- file.path(bash_vars$FUTURE_EI_OUTPUT_DIR,
+                                bash_vars$FOCAL_OUTPUT_BASE_DIR)
 }
 
 # Check if InputDir is now set
 if (is.null(config$InputDir) || config$InputDir == "") {
-  stop("InputDir nor LULCC_CH_OUTPUT_SIM_DIR set in FUTURE_EI_CONFIG_FILE")
+  stop("InputDir nor LULCC_CH_OUTPUT_BASE_DIR set in FUTURE_EI_CONFIG_FILE")
 }
 # Check if InputDir exists
 if (!dir.exists(config$InputDir)) {
-  stop("InputDir does not exist")
+  stop(cat("InputDir does not exist: ", config$InputDir, "\n"))
 }
 # Check if InputDir has subfolders
 # - otherwise just this folder will be processed
@@ -349,7 +356,7 @@ if (length(list.dirs(config$InputDir, recursive = FALSE)) == 0) {
 }
 # Check if OutputDir is set
 if (is.null(config$OutputDir) || config$OutputDir == "") {
-  stop("OutputDir nor FOCAL_OUTPUT_SIM_DIR set in FUTURE_EI_CONFIG_FILE")
+  stop("OutputDir nor FOCAL_OUTPUT_BASE_DIR set in FUTURE_EI_CONFIG_FILE")
 }
 # Check if OutputDir exists and create if not
 if (!dir.exists(config$OutputDir)) {
@@ -362,7 +369,6 @@ if (is.null(config$BaseName) || config$BaseName == "") {
 
 cat("Calculating focal statistics for LULC preparation\n")
 
-cat("Working directory set to:", getwd(), "\n")
 cat("Input directory set to:", config$InputDir, "\n")
 cat("Output directory set to:", config$OutputDir, "\n")
 cat("Base name set to:", config$BaseName, "\n")
