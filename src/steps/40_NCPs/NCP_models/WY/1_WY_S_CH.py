@@ -7,7 +7,7 @@
 
 import sys
 from os import listdir
-from os.path import join, dirname
+from os.path import join, dirname, exists, isdir
 from shutil import rmtree, move
 
 import natcap.invest.annual_water_yield
@@ -67,5 +67,8 @@ if __name__ == '__main__':
 
     # move work_dir/output to work_dir to simplify the output structure
     for f in listdir(join(work_dir, 'output')):
+        # remove join(work_dir, f) if directory and already exists
+        if exists(join(work_dir, f)) and isdir(join(work_dir, f)):
+            rmtree(join(work_dir, f))
         move(join(work_dir, 'output', f), join(work_dir, f))
     rmtree(join(work_dir, 'output'))

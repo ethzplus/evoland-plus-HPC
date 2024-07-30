@@ -63,14 +63,13 @@ bash_variables:
 
 # Focal LULC
 FocalLULCC:
-  WorkDir: ~/Future-EI/
-  HistoricalDir:
-  InputDir: /scratch/focal_lulcc/in
-  OutputDir: /scratch/focal_lulcc/out
-  BaseName: ch_lulc_agg11_present_pixel
+  InputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/LULCC_CH_OUTPUT_BASE_DIR
+  OutputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/FOCAL_OUTPUT_BASE_DIR
+  BaseName: ch_lulc_agg11_future_pixel  # Underscores will be split into folders
   RadiusList: [ 100, 200, 500, 1500, 3000 ]
   WindowType: circle
   FocalFunction: mean
+  Overwrite: False # False -> skip if output exists, True -> overwrite
   Parallel: True
   NWorkers: 0  # 0 means use all available cores
   
