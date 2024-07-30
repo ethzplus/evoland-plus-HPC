@@ -61,9 +61,9 @@ name_out <- paste("FF_S_CH_", params$run_params$NCP_RUN_YEAR, ".tif", sep = "")
 
 # Reclassify agriculture categories of landuse to 1, rest to 0
 # the first two numbers describe a range and the third the new value
-m<-c(0,15,0,
-     15,19,1,
-     19,Inf,0)
+m <- c(0, 15, 0,
+       15, 19, 1,
+       19, Inf, 0)
 
 m1 <- matrix(m, byrow = TRUE, ncol = 3)
 lulc_agr <- classify(lulc, m1)

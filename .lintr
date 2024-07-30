@@ -1,0 +1,5 @@
+exclusions: list(
+    "src/steps/11_CheckLULCC/11_CheckLULCC.R" = list(
+      object_usage_linter = Inf
+    )
+  )

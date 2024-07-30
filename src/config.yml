@@ -76,8 +76,8 @@ FocalLULCC:
   
 # LULC check
 CheckLULCC:
-  InputDir:
-  OutputDir:
+  InputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/LULCC_CH_OUTPUT_BASE_DIR
+  OutputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/CHECK_LULCC_OUTPUT_DIR
   BaseName: LULCC_intensity_analysis
   Parallel: True
   NWorkers: 0  # 0 means use all available cores
