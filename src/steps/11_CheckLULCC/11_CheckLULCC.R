@@ -111,7 +111,6 @@ acc_changes <- function(input_rasters) {
 #'
 #' @param input_rasters Rasterstack* object. See \cr
 #' \code{\link[raster]{raster}} for more information about supported file types.
-#' @param pixelresolution numeric. The pixel spatial resolution in meter.
 #'
 #' @docType methods
 #' @import dplyr
@@ -261,8 +260,7 @@ acc_changes <- function(input_rasters) {
 #'
 
 intensity_analysis <- function(
-  input_rasters,
-  pixelresolution = 100
+  input_rasters
 ) {
 
   # helper function to compute the cross table of
@@ -298,17 +296,6 @@ intensity_analysis <- function(
         input_rasters_multi[2:length(input_rasters_multi)], SIMPLIFY = FALSE)
     )
   }
-
-  one_step <- table_one %>%
-    dplyr::arrange(Year_from) %>%
-    tidyr::separate(Year_from, c("strings01", "yearFrom"), sep = "_") %>%
-    tidyr::separate(Year_to, c("strings02", "yearTo"), sep = "_") %>%
-    dplyr::select(-strings01, -strings02) %>%
-    dplyr::mutate(yearFrom = as.integer(yearFrom), yearTo = as.integer(yearTo),
-                  Interval = yearTo - yearFrom) %>%
-    tidyr::unite("Period", c("yearFrom", "yearTo"),
-                 sep = "-", remove = FALSE) %>%
-    dplyr::select(Period, From, To, QtPixel, Interval, yearFrom, yearTo)
 
   multi_step <- table_multi %>%
     dplyr::arrange(Year_from) %>%
@@ -542,8 +529,7 @@ simulation_intensity_analysis <- function(
 
   # Perform intensity analysis
   sim_ia <- intensity_analysis(
-    input_rasters = map_stack,
-    pixelresolution = 100
+    input_rasters = map_stack
   )
 
   # Check that all values in sim_ia$interval_lvl$PercentChange are greater than
