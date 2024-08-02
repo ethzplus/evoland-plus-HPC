@@ -37,11 +37,13 @@ export NCP_RUN_YEAR
 export NCP_RUN_INPUT_DIR
 export NCP_RUN_OUTPUT_DIR
 export NCP_RUN_SCRATCH_DIR
+export LULCC_M_EI_LAYER_DIR
 NCP_RUN_SCENARIO_ID=$1
 NCP_RUN_YEAR=$2
 NCP_RUN_INPUT_DIR=$3
 NCP_RUN_OUTPUT_DIR=$4
 NCP_RUN_SCRATCH_DIR=$5
+LULCC_M_EI_LAYER_DIR=$6
 
 # Check if the input scenario ID is a number
 if ! [[ "$NCP_RUN_SCENARIO_ID" =~ ^[0-9]+$ ]]; then
@@ -175,6 +177,16 @@ if [ ! -f "$WY_output_folder/watershed_results_wyield.shp" ] ||
     run_scripts "$SCRIPT_DIR/WY/1_WY_S_CH.py"
 else
     log info "Skipping WY - Annual water yield as $WY_output_folder/watershed_results_wyield.* and $WY_output_folder/subwatershed_results_wyield.* and $WY_output_folder/per_pixel already exist"
+fi
+
+## REC - Recreation potential
+## Indicator: Recreation potential (RP) provided by ecosystems
+REC_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/REC/REC_S_CH_$NCP_RUN_YEAR.tif"
+if [ ! -f "$REC_output_file" ]; then
+    log info "Running REC - Recreation potential"
+    run_scripts "$SCRIPT_DIR/REC/1_REC.R"
+else
+    log info "Skipping REC - Recreation potential as $REC_output_file already exists"
 fi
 
 # ------------------------------------------------------------------------------

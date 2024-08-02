@@ -50,7 +50,8 @@ for simulation_id in $simulation_ids; do
            "$simulation_id" "$year" \
            "$LULCC_CH_OUTPUT_BASE_DIR" \
            "$NCP_OUTPUT_BASE_DIR" \
-           "$NCP_SCRATCH_BASE_DIR"
+           "$NCP_SCRATCH_BASE_DIR"\
+           "$LULCC_M_EI_LAYER_DIR"
   done
 done
 log info "Finished NCPs step"

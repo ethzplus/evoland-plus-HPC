@@ -108,7 +108,7 @@ if (!dir.exists(results)) {
 }
 
 carbon_process_3(
-  inv_model_dir,
-  params$proj,
-  file.path(results, paste(name_out, ".tif", sep = ""))
+  ind_dir = inv_model_dir,
+  proj =params$proj,
+  raster_out = file.path(results, paste(name_out, ".tif", sep = ""))
 )

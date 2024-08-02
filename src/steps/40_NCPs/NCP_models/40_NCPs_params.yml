@@ -15,6 +15,7 @@ run_params:
   NCP_RUN_INPUT_DIR:
   NCP_RUN_OUTPUT_DIR:
   NCP_RUN_SCRATCH_DIR:
+  LULCC_M_EI_LAYER_DIR:
 
 # Data
 data:
@@ -52,6 +53,8 @@ data:
   tavg_dir: Data/monthly_temp/
   # Soil texture       - FF
   ph_raster: Data/ch_edaphic_eiv_descombes_pixel_r.tif
+  # distance to lakes rasters:
+  distlakes_path: Data/distlakes.tif #TODO: Need to get this raster from Nathan
 
 
 # Projection Settings - change for different regions
@@ -142,3 +145,12 @@ WY:
   #  do_scarcity_and_valuation: False,
   # Seasonality constant
   seasonality_constant: 25
+  
+REC: 
+  # 1_REC.R
+  # lulc naturality lookup table
+  lutable_nat_path:
+    Future-EI/src/steps/40_NCPs/NCP_models/REC/lutable_naturality.csv
+
+  
+
