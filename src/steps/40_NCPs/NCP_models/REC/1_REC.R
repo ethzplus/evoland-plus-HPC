@@ -1,16 +1,14 @@
 #####
 #
-# The aim of this script is to reclassify the Land-use map for the carbon
-# storage NCP mapping, based on altitude (DEM) and production region of
-# Switzerland.
-# The outputs are one land-use map per Region/elevation.
+#This script produces an RP indicator as a normalized aggregate (sum) of
+#three landscape characteristics maps:
+# 1.Degree of naturalness (DN): Calculated by applying a naturalness score from
+#NCP_models/REC/lutable_naturality.csv to each LULC class within the simulated land-use map.
+#2.Natural protected areas (NP): a binary map of 0=outside of protected areas, 1=inside of protected areas
+#3. Water components (W):Calculated by computing inverse relative distance to lake coasts, 
+#getting the highest value at lake coast and a decreasing value for 2km. 
+# The output is a single map of Recreation potential.
 #
-# The scipt loads elevation (DEM) and land-use/land-cover (LULC) data,
-# reclassifies the DEM into altitude classes, and intersects it with
-# production regions.
-# The script then reclassifies the LULC data into specific categories and
-# creates LULC rasters for each region based on the intersection of elevation
-# and production regions.
 #
 #####
 
