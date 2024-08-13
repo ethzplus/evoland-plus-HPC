@@ -68,7 +68,7 @@ lutable_nat <- read.csv(params$REC$lutable_nat_path, header = TRUE, sep = ",")
 m <- as.matrix(lutable_nat[, c("LULC", "HABITAT")])
 
 # Reclassify the LULC raster
-nc <- classify(lulc, m1)
+nc <- classify(lulc, m)
 
 
 # 2) Natural/protected areas -------------------------------------------------
