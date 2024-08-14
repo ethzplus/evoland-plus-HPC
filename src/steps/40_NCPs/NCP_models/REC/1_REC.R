@@ -3,7 +3,7 @@
 # three landscape characteristics maps:
 #
 # 1.Degree of naturalness (DN): Calculated by applying a naturalness score from
-# NCP_models/REC/lutable_naturality.csv to each LULC class within the
+# NCP_models/REC/BPTABLE/lutable_naturality.csv to each LULC class within the
 # simulated land-use map.
 #
 # 2.Natural protected areas (NP): a binary map of 0=outside of protected
@@ -75,17 +75,11 @@ nc <- classify(lulc, m)
 
 current_p_a_path <-
   list.files(
-    file.path(
-      params$run_params$LULCC_M_EI_LAYER_DIR,
-      "Future_EI",
-      paste0("EI_ID", params$run_params$NCP_RUN_SCENARIO_ID),
-      params$run_params$NCP_RUN_YEAR
-    ),
-    pattern = ".tif", full.names = TRUE
+    params$run_params$LULCC_M_EI_LAYER_DIR, pattern = ".tif", full.names = TRUE
   )
 
 # Exclude tif.ovr files
-current_p_a_path <- current_p_a_path[!grepl(".ovr", Current_PA_path)]
+current_p_a_path <- current_p_a_path[!grepl(".ovr", current_p_a_path)]
 
 # Load the protected areas shapefile
 pa <- terra::rast(current_p_a_path)

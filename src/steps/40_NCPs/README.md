@@ -141,7 +141,7 @@ and then runs it.
 This script produces an RP indicator as a normalized aggregate (sum) of
 three landscape characteristics maps:
 1.Degree of naturalness (DN): Calculated by applying a naturalness score from
-NCP_models/REC/lutable_naturality.csv to each LULC class within the simulated land-use map.
+NCP_models/REC/BPTABLE/lutable_naturality.csv to each LULC class within the simulated land-use map.
 2.Natural protected areas (NP): a binary map of 0=outside of protected areas, 1=inside of protected areas
 3. Water components (W):Calculated by computing inverse relative distance to lake coasts, 
 getting the highest value at lake coast and a decreasing value for 2km. 

@@ -11,11 +11,11 @@ other:
 run_params:
   NCP_RUN_SCENARIO_ID:
   NCP_RUN_YEAR:
-  NCP_RUN_RCP:
+  NCP_RUN_RCP:  # programmatically set in load_params.py
   NCP_RUN_INPUT_DIR:
   NCP_RUN_OUTPUT_DIR:
   NCP_RUN_SCRATCH_DIR:
-  LULCC_M_EI_LAYER_DIR:
+  LULCC_M_EI_LAYER_DIR:  # set in load_params.py (uses config.yml)
 
 # Data
 data:
@@ -145,12 +145,9 @@ WY:
   #  do_scarcity_and_valuation: False,
   # Seasonality constant
   seasonality_constant: 25
-  
-REC: 
+
+REC:
   # 1_REC.R
   # lulc naturality lookup table
   lutable_nat_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/REC/lutable_naturality.csv
-
-  
-
+    Future-EI/src/steps/40_NCPs/NCP_models/REC/BPTABLE/lutable_naturality.csv

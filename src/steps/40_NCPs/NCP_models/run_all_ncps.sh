@@ -37,13 +37,11 @@ export NCP_RUN_YEAR
 export NCP_RUN_INPUT_DIR
 export NCP_RUN_OUTPUT_DIR
 export NCP_RUN_SCRATCH_DIR
-export LULCC_M_EI_LAYER_DIR
 NCP_RUN_SCENARIO_ID=$1
 NCP_RUN_YEAR=$2
 NCP_RUN_INPUT_DIR=$3
 NCP_RUN_OUTPUT_DIR=$4
 NCP_RUN_SCRATCH_DIR=$5
-LULCC_M_EI_LAYER_DIR=$6
 
 # Check if the input scenario ID is a number
 if ! [[ "$NCP_RUN_SCENARIO_ID" =~ ^[0-9]+$ ]]; then

@@ -73,6 +73,14 @@ def _add_run_params(params: dict) -> None:
         ['NCP_RUN_SCENARIO_ID', 'NCP_RUN_YEAR', 'NCP_RUN_INPUT_DIR',
          'NCP_RUN_OUTPUT_DIR', 'NCP_RUN_SCRATCH_DIR']
     }
+    # Set the LULC_M_EI_LAYER_DIR
+    params['run_params']['LULCC_M_EI_LAYER_DIR'] = join(
+        environ['LULCC_CH_HPC_DIR'],
+        environ['LULCC_M_EI_LAYER_DIR'],
+        "Future_EI",
+        f"EI_ID{params['run_params']['NCP_RUN_SCENARIO_ID']}",
+        params['run_params']['NCP_RUN_YEAR']
+    )
     ## Set lulc path
     # {NCP_RUN_INPUT_DIR}/{NCP_RUN_SCENARIO_ID}/simulated_LULC_simID_{NCP_RUN_SCENARIO_ID}_year_{NCP_RUN_YEAR}.tif
     params['data']['lulc'] = join(

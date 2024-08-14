@@ -86,6 +86,7 @@ output_files = [
     "SDR/{year}/watershed_results_sdr.shx",
     "SDR/{year}/watershed_results_sdr.dbf",
     "SDR/{year}/watershed_results_sdr.prj",
+    "REC/REC_S_CH_{year}.tif",
     "WY/{year}/watershed_results_wyield.shp",
     "WY/{year}/watershed_results_wyield.shx",
     "WY/{year}/watershed_results_wyield.dbf",
