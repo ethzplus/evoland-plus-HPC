@@ -123,12 +123,16 @@ fi
 
 ## NDR - Nutrient Delivery Ratio
 ## Indicator: Annual nutrient retention by vegetation
-NDR_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/NDR/$NCP_RUN_YEAR/watershed_results_ndr.gpkg"
-if [ ! -f "$NDR_output_file" ]; then
+NDR_output_folder="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/NDR/$NCP_RUN_YEAR"
+#if [ ! -f "$NDR_output_file" ]; then
+if [ ! -f "$NDR_output_folder/n_subsurface_export.tif" ] ||
+   [ ! -f "$NDR_output_folder/n_surface_export.tif" ] ||
+   [ ! -f "$NDR_output_folder/n_total_export.tif" ] ||
+   [ ! -f "$NDR_output_folder/p_surface_export.tif" ]; then
     log info "Running NDR - Annual nutrient retention by vegetation"
     run_scripts "$SCRIPT_DIR/NDR/1_NDR_S_CH.py"
 else
-    log info "Skipping NDR - Annual nutrient retention by vegetation as $NDR_output_file already exists"
+    log info "Skipping NDR - Annual nutrient retention by vegetation as $NDR_output_folder/n_subsurface_export.tif and $NDR_output_folder/n_surface_export.tif and $NDR_output_folder/n_total_export.tif and $NDR_output_folder/p_surface_export.tif already exist"
 fi
 
 ## POL - Pollination and dispersal of seeds
@@ -145,10 +149,13 @@ fi
 ## SDR - Formation, protection and decontamination of soils
 ## Indicator: Erosion control by sediment retention
 SDR_output_files="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/SDR/$NCP_RUN_YEAR/"
-if [ ! -f "$SDR_output_files/watershed_results_sdr.shp" ] ||
-   [ ! -f "$SDR_output_files/watershed_results_sdr.shx" ] ||
-   [ ! -f "$SDR_output_files/watershed_results_sdr.dbf" ] ||
-   [ ! -f "$SDR_output_files/watershed_results_sdr.prj" ]; then
+if [ ! -f "$SDR_output_files/sed_deposition.tif" ] ||
+   [ ! -f "$SDR_output_files/sed_retention_index.tif" ] ||
+   [ ! -f "$SDR_output_files/stream.tif" ] ||
+   [ ! -f "$SDR_output_files/rkls.tif" ] ||
+   [ ! -f "$SDR_output_files/sed_export.tif" ] ||
+   [ ! -f "$SDR_output_files/sed_retention.tif" ] ||
+   [ ! -f "$SDR_output_files/usle.tif" ]; then
     log info "Running SDR - Erosion control by sediment retention"
     run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
 else

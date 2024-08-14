@@ -53,8 +53,8 @@ data:
   tavg_dir: Data/monthly_temp/
   # Soil texture       - FF
   ph_raster: Data/ch_edaphic_eiv_descombes_pixel_r.tif
-  # distance to lakes rasters:
-  distlakes_path: Data/distlakes.tif #TODO: Need to get this raster from Nathan
+  # Distance to lakes  - REC
+  distlakes_path: Data/distlakes.tif
 
 
 # Projection Settings - change for different regions

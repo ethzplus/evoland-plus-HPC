@@ -78,8 +78,8 @@ if __name__ == '__main__':
         # delete folder
         rmtree(intermediate_output_dir)
 
-        # Only keep watershed_results_ndr.gpkg, delete *tif files from folder
-        print("Removing *.tif files from work_dir")
-        tif_files = [f for f in listdir(work_dir) if f.endswith('.tif')]
-        for f in tif_files:
+        # Only keep *.tif files, delete all other files from folder
+        print("Removing all files except *.tif from work_dir")
+        non_tif_files = [f for f in listdir(work_dir) if not f.endswith('.tif')]
+        for f in non_tif_files:
             remove(join(work_dir, f))
