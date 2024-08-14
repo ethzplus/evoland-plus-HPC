@@ -491,7 +491,6 @@ simulation_intensity_analysis <- function(
   map_paths <- map_paths[order(as.numeric(
     stringr::str_match(basename(map_paths), "_(\\d{4})(_|\\.)")[, 2]
   ))]
-  print(map_paths)
   # If no maps found, return
   if (length(map_paths) == 0) {
     cat(paste0("No maps found in ", folder, ". Skipping folder.\n"))

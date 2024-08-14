@@ -2,6 +2,8 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - 'src/steps/11_CheckLULCC/11_CheckLULCC_setup.sh'
+      - 'src/steps/11_CheckLULCC/11_checklulcc_env.yml'
       - 'src/steps/20_FocalLULC/20_FocalPrep_setup.sh'
       - 'src/steps/20_FocalLULC/20_FocalPrep_env.yml'
 #      - 'src/steps/40_NCPs/40_NCPs_setup.sh'
@@ -19,6 +21,8 @@ jobs:
     strategy:
       matrix:
         setup_script:
+          - name: 11_CheckLULCC
+            path: src/steps/11_CheckLULCC/11_CheckLULCC_setup.sh
           - name: 20_FocalPrep
             path: src/steps/20_FocalLULC/20_FocalPrep_setup.sh
 #          - name: 40_NCPs
