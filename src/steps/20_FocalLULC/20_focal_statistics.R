@@ -187,6 +187,8 @@ folder_to_predictors <- function(
   # Get all maps - tif or rds
   map_paths <- list.files(folder, full.names = TRUE)
   map_paths <- map_paths[grepl(".tif|.rds|.grd", map_paths)]
+  # filter for 'simulated_LULC_simID_{simid}_year_2030.tif'
+  map_paths <- map_paths[grepl("simulated_LULC_", map_paths)]
   # If no maps found, return
   if (length(map_paths) == 0) {
     cat(paste0("No maps found in ", folder, ". Skipping folder.\n"))
@@ -220,29 +222,37 @@ folder_to_predictors <- function(
     # nolint start: indentation_linter
     sample(map_paths),
     function(map) {
-      cat(paste0("Calculating focal statistics for map ", map, "...\n"))
-      # For each combination
-      for (combination in combinations) {
-        cat(paste0("Calculating focal statistics for combination ",
-                   paste(combination, collapse = ", "), "...\n"))
-        do.call( # Convert map to predictor
-          map_to_predictor,
-          c(
-            list(map_path = map),
-            list(save_folder = save_folder),
-            list(base_name = base_name),
-            list(scenario_name = scenario_name),
-            combination
+      tryCatch({
+        cat(paste0("Calculating focal statistics for map ", map, "...\n"))
+        # For each combination
+        for (combination in combinations) {
+          cat(paste0("Calculating focal statistics for combination ",
+                     paste(combination, collapse = ", "), "...\n"))
+          do.call( # Convert map to predictor
+            map_to_predictor,
+            c(
+              list(map_path = map),
+              list(save_folder = save_folder),
+              list(base_name = base_name),
+              list(scenario_name = scenario_name),
+              combination
+            )
           )
-        )
-        if (parallel == FALSE) {
-          # Update progress bar
-          utils::setTxtProgressBar(
-            progress,
-            value = utils::getTxtProgressBar(progress) + 1
-          )
+          if (parallel == FALSE) {
+            # Update progress bar
+            utils::setTxtProgressBar(
+              progress,
+              value = utils::getTxtProgressBar(progress) + 1
+            )
+          }
         }
-      }
+      }, error = function(e) {
+        cat(paste0("Error processing map ", map, ": ", e$message, "\n",
+                   "Continuing with next map...\n"))
+      }, warning = function(w) {
+        cat(paste0("Warning processing map ", map, ": ", w$message, "\n",
+                   "Continuing with next map...\n"))
+      })
     })
   # nolint end: indentation_linter
 }
