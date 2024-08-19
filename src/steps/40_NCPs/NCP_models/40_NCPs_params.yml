@@ -15,7 +15,7 @@ run_params:
   NCP_RUN_INPUT_DIR:
   NCP_RUN_OUTPUT_DIR:
   NCP_RUN_SCRATCH_DIR:
-  LULCC_M_EI_LAYER_DIR:  # set in load_params.py (uses config.yml)
+  LULCC_M_EI_LAYER_DIR:  # set in load_params.py (uses config.yml)  # SDR
 
 # Data
 data:

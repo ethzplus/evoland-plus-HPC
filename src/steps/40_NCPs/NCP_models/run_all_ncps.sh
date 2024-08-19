@@ -124,7 +124,6 @@ fi
 ## NDR - Nutrient Delivery Ratio
 ## Indicator: Annual nutrient retention by vegetation
 NDR_output_folder="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/NDR/$NCP_RUN_YEAR"
-#if [ ! -f "$NDR_output_file" ]; then
 if [ ! -f "$NDR_output_folder/n_subsurface_export.tif" ] ||
    [ ! -f "$NDR_output_folder/n_surface_export.tif" ] ||
    [ ! -f "$NDR_output_folder/n_total_export.tif" ] ||
@@ -159,7 +158,8 @@ if [ ! -f "$SDR_output_files/sed_deposition.tif" ] ||
     log info "Running SDR - Erosion control by sediment retention"
     run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
 else
-    log info "Skipping SDR - Erosion control by sediment retention as $SDR_output_files/watershed_results_sdr.* already exist"
+    log info "Skipping SDR - Erosion control by sediment retention as
+    $SDR_output_files/sed_deposition.tif sed_retention_index.tif stream.tif rkls.tif sed_export.tif sed_retention.tif usle.tif already exist"
 fi
 
 ## WY - Regulation of freshwater quantity, location and timing

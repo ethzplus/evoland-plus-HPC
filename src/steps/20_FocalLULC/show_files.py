@@ -26,7 +26,7 @@ path/to/focal_output/base/name/ (9 year folders, 2020, 2025, ..., 2060)
 ```
 
 In total, there should be {n_years} * {n_sims} * {n_regs} * {n_files} files.
-9 * 1080 * 11 * 5 = 534600 files (59400 for each year).
+9 * 1080 * 10 * 5 = 486000 files (54000 for each year).
 
 The script will return the percentage of finished files for each year
 in a table.
@@ -150,7 +150,7 @@ def main():
     base_name = sys.argv[2]
     year_list = list(range(2020, 2061, 5))
     scenario_id_list = list(range(1, 1081))
-    reg_list = [f"reg{i}" for i in [1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
+    reg_list = [f"reg{i}" for i in [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]]
     window_size_list = [100, 200, 500, 1500, 3000]
 
     check_files(output_dir, base_name, year_list, scenario_id_list, reg_list,

@@ -230,64 +230,16 @@ def check_files(scenario_dir):
         print("No scenarios with missing files found.")
 
 
-def histogram(filename):
-    """Read numbers from file and give back histogram of counts."""
-    hist = {}
-    with open(filename, 'r') as f:
-        for line in f:
-            # match number after ': '
-            match = re.search(r': (\d+)', line)
-            if match:
-                num = int(match.group(1))
-                hist[num] = hist.get(num, 0) + 1
-    return hist
-
-
-def plot_histogram(hist):
-    import subprocess
-    gnuplot = subprocess.Popen(['gnuplot'], stdin=subprocess.PIPE)
-    gnuplot.stdin.write(b"set term dumb\n")
-    gnuplot.stdin.write(b"plot '-' with boxes\n")
-    for num, count in sorted(hist.items()):
-        gnuplot.stdin.write(f"{num} {count}\n".encode())
-    gnuplot.stdin.write(b"e\n")
-    gnuplot.stdin.flush()
-    gnuplot.stdin.close()
-
-
 def main():
     if len(sys.argv) > 2:
-        print(f"Usage: {sys.argv[0]} <filename>")
+        print(f"Usage: {sys.argv[0]} <ncp_output_dir>")
         sys.exit(1)
-    if len(sys.argv) == 1:
-        if input("Do you want to execute 'find' command to generate "
-                 f"file_numbers.txt in the current directory {os.getcwd()}"
-                 "? (y/n)").lower() == 'y':
-            print("Executing 'find' command...")
-            os.system('for dir in */; do echo -n "$dir: "; '
-                      'find "$dir" -type f | wc -l; '
-                      'done | sort > file_numbers.txt')
-            filename = './file_numbers.txt'
-        else:
-            sys.exit(0)
+    if len(sys.argv) == 2:
+        check_files(sys.argv[1])
     else:
-        filename = sys.argv[1]
-
-    if not os.path.isfile(filename):
-        print(f"File '{filename}' not found.")
-        sys.exit(1)
-
-    hist = histogram(filename)
-    for num, count in sorted(hist.items()):
-        print(f"{num}: {count}")
-
-    print("Do you want to plot histogram in console with gnuplot? (y/n)")
-    if input().lower() == 'y':
-        plot_histogram(hist)
-
-    print("Do you want to check files in scenarios? (y/n)")
-    if input().lower() == 'y':
-        check_files(os.path.dirname(filename))
+        print(f"Checking files in current directory {os.getcwd()}, "
+              "should be .../ncp_output")
+        check_files(os.getcwd())
 
 
 if __name__ == '__main__':
