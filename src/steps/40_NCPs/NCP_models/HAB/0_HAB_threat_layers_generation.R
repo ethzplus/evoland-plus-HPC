@@ -66,7 +66,7 @@ threat_hab <- function(lulc, rur_res, urb_res, out_fold) {
     14, 15, 1,
     15, 17, 0,
     17, 18, 1,
-    18, 21, 0
+    18, 19, 0
   )
   mc1 <- matrix(c1, ncol = 3, byrow = TRUE)
   crop <- terra::classify(lulc, mc1) # nolint
@@ -85,13 +85,16 @@ threat_hab <- function(lulc, rur_res, urb_res, out_fold) {
   r1 <- c(
     0, 9, 0,
     9, 10, 1,
-    10, 21, 0
+    10, 19, 0
   )
 
   mr1 <- matrix(r1, ncol = 3, byrow = TRUE)
   rures <- terra::classify(rur_lulc, mr1)
   # filling gaps with 0 on entire extent
   exp_rr <- terra::classify(rures, cbind(NA, 0))
+
+  # set original NA values back to NA
+  exp_rr <- terra::mask(exp_rr, lulc, maskvalue = NA)
 
   # Export
   terra::writeRaster(
@@ -110,6 +113,9 @@ threat_hab <- function(lulc, rur_res, urb_res, out_fold) {
   urbres <- terra::classify(urb_lulc, mr1)
   # filling gaps with 0 on all extent
   exp_ur <- terra::classify(urbres, cbind(NA, 0))
+
+  # set original NA values back to NA
+  exp_ur <- terra::mask(exp_ur, lulc, maskvalue = NA)
 
   # Export
   terra::writeRaster(

@@ -71,7 +71,7 @@ lulc_agr <- classify(lulc, m1)
 # adapt extent
 lulc_agr <- crop(lulc_agr, ext(eco_maps[[1]]))
 lulc_agr <- extend(lulc_agr, ext(eco_maps[[1]]))
-crs(lulc_agr) <- crs(params$proj$crs)
+crs(lulc_agr) <- params$proj$crs
 
 # Mask for agricultural areas and apply a mean
 ff_agr <- mean(eco_maps)

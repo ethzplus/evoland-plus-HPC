@@ -92,8 +92,8 @@ carbon_process_3 <- function(ind_dir, proj, raster_out) {
   }
 
   terra::crs(bind) <- proj$crs
-  # extend to the extent of the final raster
-  bind <- terra::extend(bind, c(proj$ext))
+  # Enlargen to the extent of the final raster
+  bind <- terra::extend(bind, ext(proj$ext)) # nolint
 
   cat(paste("Saving final raster to ", raster_out, "\n"))
 

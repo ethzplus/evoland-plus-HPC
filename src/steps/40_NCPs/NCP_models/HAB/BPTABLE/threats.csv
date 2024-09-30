@@ -1,4 +1,4 @@
-THREAT;MAX_DIST;WEIGHT;DECAY;CUR_PATH
+threat;max_dist;weight;decay;cur_path
 crop_c;1;0.68;linear;./crop_c.tif
 rures_c;0.6;0.5;exponential;./rures_c.tif
 urban_c;0.6;1;exponential;./urban_c.tif

@@ -111,6 +111,13 @@ else
 fi
 
 ## HAB - Habitat creation and maintenance
+# check natcap version for quickfix hint if needed
+# (natcap.invest.__version__ < 3.14.0)
+show_hint=$(python -c "from natcap.invest import __version__; from packaging.version import Version; print(Version(__version__) < Version('3.14.0'))")
+if [ "$show_hint" = "True" ]; then
+    log warning "As you have a natcap version < 3.14.0, you might need to apply a quickfix to the package source code.
+    Find it in 'src/steps/40_NCPs/NCP_models/HAB/1_HAB_S_CH.py'."
+fi
 ## Indicator: Habitat quality index
 HAB_output_folder="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/HAB/$NCP_RUN_YEAR"
 if [ ! -f "$HAB_output_folder/deg_sum_c.tif" ] || [ ! -f "$HAB_output_folder/quality_c.tif" ]; then
@@ -148,12 +155,12 @@ fi
 ## SDR - Formation, protection and decontamination of soils
 ## Indicator: Erosion control by sediment retention
 SDR_output_files="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/SDR/$NCP_RUN_YEAR/"
-if [ ! -f "$SDR_output_files/sed_deposition.tif" ] ||
-   [ ! -f "$SDR_output_files/sed_retention_index.tif" ] ||
-   [ ! -f "$SDR_output_files/stream.tif" ] ||
-   [ ! -f "$SDR_output_files/rkls.tif" ] ||
+if [ ! -f "$SDR_output_files/avoided_erosion.tif" ] ||
+   [ ! -f "$SDR_output_files/avoided_export.tif" ] ||
+   [ ! -f "$SDR_output_files/sed_deposition.tif" ] ||
    [ ! -f "$SDR_output_files/sed_export.tif" ] ||
-   [ ! -f "$SDR_output_files/sed_retention.tif" ] ||
+   [ ! -f "$SDR_output_files/stream.tif" ] ||
+   [ ! -f "$SDR_output_files/rkls.tif" ]
    [ ! -f "$SDR_output_files/usle.tif" ]; then
     log info "Running SDR - Erosion control by sediment retention"
     run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"

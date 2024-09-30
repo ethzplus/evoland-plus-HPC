@@ -10,7 +10,6 @@
 
 
 library(terra)
-library(raster)
 
 # Load the parameters into env by sourcing the ../load_params.R script
 initial_options <- commandArgs(trailingOnly = FALSE)
@@ -34,7 +33,7 @@ if (is.null(params$run_params$NCP_RUN_OUTPUT_DIR)) {
 }
 
 data_folder <- file.path(
-  params$run_params$NCP_RUN_SCRATCH_DIR,
+  params$run_params$NCP_RUN_OUTPUT_DIR,
   params$run_params$NCP_RUN_SCENARIO_ID,
   "POL",
   params$run_params$NCP_RUN_YEAR
@@ -64,7 +63,7 @@ pol_sum <- sum(p_list)
 nx <- minmax(pol_sum)
 rn <- (pol_sum - nx[1,]) / (nx[2,] - nx[1,]) # nolint
 
-writeRaster(rn, file.path(out_dir, name_out), overwrite = TRUE)
+terra::writeRaster(rn, file.path(out_dir, name_out), overwrite = TRUE)
 print(paste("Pollination supply layer created: ", file.path(out_dir, name_out)))
 
 # Remove temporary files not explicitly needed,
