@@ -5,6 +5,7 @@
 log debug "Using scratch for output folders:"
 output_dirs=(
     LULCC_CH_OUTPUT_BASE_DIR
+    CHECK_LULCC_OUTPUT_DIR
     NCP_OUTPUT_BASE_DIR
     NSDM_OUTPUT_BASE_DIR
     FOCAL_OUTPUT_BASE_DIR

@@ -87,7 +87,8 @@ def _add_run_params(params: dict) -> None:
     from pandas import read_csv
     df = read_csv(environ['LULCC_M_SIM_CONTROL_TABLE'],
                   usecols=["Simulation_ID.string", "Climate_scenario.string",
-                           "Scenario_end.real", "Step_length.real"])
+                           "Scenario_end.real", "Step_length.real",
+                           "EI_ID.string"])
     # get the Climate_scenario.string only where
     # NCP_RUN_SCENARIO_ID==Simulation_ID.string, should be unique
     df = df[df['Simulation_ID.string'] == int(
@@ -130,6 +131,16 @@ def _add_run_params(params: dict) -> None:
         params['run_params']['NCP_RUN_SCENARIO_ID'],
         f"urb_res_simID_{params['run_params']['NCP_RUN_SCENARIO_ID']}_year_"
         f"{residential_year}.tif"
+    )
+
+    # Set the LULC_M_EI_LAYER_DIR
+    # use EI_ID from LULCC_M_SIM_CONTROL_TABLE instead of
+    params['run_params']['LULCC_M_EI_LAYER_DIR'] = join(
+        environ['LULCC_CH_HPC_DIR'],
+        environ['LULCC_M_EI_LAYER_DIR'],
+        "Future_EI",
+        f"EI_ID{df['EI_ID.string'].values[0]}",
+        params['run_params']['NCP_RUN_YEAR']
     )
 
     # Erosivity - based on current RCP, always 2060 (Erosivity_2060_RCP26.tif)

@@ -9,6 +9,8 @@ bash_variables:
   FUTURE_EI_OUTPUT_DIR: ~/Future-EI-Output
   # Output Directories are relative to the $FUTURE_EI_OUTPUT_DIR
   LULCC_CH_OUTPUT_BASE_DIR: /lulcc_output # Location of all scenario folders, named by IDs
+  # LULCC Check
+  CHECK_LULCC_OUTPUT_DIR: /lulcc_check
   # Focal Prep
   FOCAL_OUTPUT_BASE_DIR: /focal_output
   # NCP
@@ -69,5 +71,13 @@ FocalLULCC:
   FocalFunction: mean
   Overwrite: False # False -> skip if output exists, True -> overwrite
   Parallel: True
-  Depth: 2
-  NWorkers: 0
+  NWorkers: 0  # 0 means use all available cores
+  
+# LULC check
+CheckLULCC:
+  InputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/LULCC_CH_OUTPUT_BASE_DIR
+  OutputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/CHECK_LULCC_OUTPUT_DIR
+  BaseName: LULCC_intensity_analysis
+  Parallel: True
+  NWorkers: 0  # 0 means use all available cores
+

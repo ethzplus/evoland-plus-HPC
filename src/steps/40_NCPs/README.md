@@ -10,6 +10,7 @@ The categories of the NCPs are taken from the [IPBES](https://www.ipbes.net/).
 - [POL: Pollination and dispersal of seeds](#pol-pollination-and-dispersal-of-seeds)
 - [SDR: Formation, protection and decontamination of soils](#sdr-formation-protection-and-decontamination-of-soils)
 - [WY: Regulation of freshwater quantity, location and timing](#wy-regulation-of-freshwater-quantity-location-and-timing)
+- [REC: Recreation potential (RP) provided by ecosystems](#rec-recreation-potential-provided-by-ecosystems)
 
 ## CAR: Regulation of climate
 
@@ -130,3 +131,17 @@ sent to the console and how it is formatted.
 [`1_WY_S_CH.py`](NCP_models/WY/1_WY_S_CH.py):
 This script specifies the arguments for the InVEST Hydropower Water Yield model
 and then runs it.
+
+## REC: Recreation potential
+
+#### Indicator: Recreation potential (RP) provided by ecosystems
+
+[`1_REC.R`](NCP_models/REC/1_REC.R)
+
+This script produces an RP indicator as a normalized aggregate (sum) of
+three landscape characteristics maps:
+1.Degree of naturalness (DN): Calculated by applying a naturalness score from
+NCP_models/REC/BPTABLE/lutable_naturality.csv to each LULC class within the simulated land-use map.
+2.Natural protected areas (NP): a binary map of 0=outside of protected areas, 1=inside of protected areas
+3. Water components (W):Calculated by computing inverse relative distance to lake coasts, 
+getting the highest value at lake coast and a decreasing value for 2km. 

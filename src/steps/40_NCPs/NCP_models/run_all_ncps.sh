@@ -123,12 +123,15 @@ fi
 
 ## NDR - Nutrient Delivery Ratio
 ## Indicator: Annual nutrient retention by vegetation
-NDR_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/NDR/$NCP_RUN_YEAR/watershed_results_ndr.gpkg"
-if [ ! -f "$NDR_output_file" ]; then
+NDR_output_folder="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/NDR/$NCP_RUN_YEAR"
+if [ ! -f "$NDR_output_folder/n_subsurface_export.tif" ] ||
+   [ ! -f "$NDR_output_folder/n_surface_export.tif" ] ||
+   [ ! -f "$NDR_output_folder/n_total_export.tif" ] ||
+   [ ! -f "$NDR_output_folder/p_surface_export.tif" ]; then
     log info "Running NDR - Annual nutrient retention by vegetation"
     run_scripts "$SCRIPT_DIR/NDR/1_NDR_S_CH.py"
 else
-    log info "Skipping NDR - Annual nutrient retention by vegetation as $NDR_output_file already exists"
+    log info "Skipping NDR - Annual nutrient retention by vegetation as $NDR_output_folder/n_subsurface_export.tif and $NDR_output_folder/n_surface_export.tif and $NDR_output_folder/n_total_export.tif and $NDR_output_folder/p_surface_export.tif already exist"
 fi
 
 ## POL - Pollination and dispersal of seeds
@@ -145,14 +148,18 @@ fi
 ## SDR - Formation, protection and decontamination of soils
 ## Indicator: Erosion control by sediment retention
 SDR_output_files="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/SDR/$NCP_RUN_YEAR/"
-if [ ! -f "$SDR_output_files/watershed_results_sdr.shp" ] ||
-   [ ! -f "$SDR_output_files/watershed_results_sdr.shx" ] ||
-   [ ! -f "$SDR_output_files/watershed_results_sdr.dbf" ] ||
-   [ ! -f "$SDR_output_files/watershed_results_sdr.prj" ]; then
+if [ ! -f "$SDR_output_files/sed_deposition.tif" ] ||
+   [ ! -f "$SDR_output_files/sed_retention_index.tif" ] ||
+   [ ! -f "$SDR_output_files/stream.tif" ] ||
+   [ ! -f "$SDR_output_files/rkls.tif" ] ||
+   [ ! -f "$SDR_output_files/sed_export.tif" ] ||
+   [ ! -f "$SDR_output_files/sed_retention.tif" ] ||
+   [ ! -f "$SDR_output_files/usle.tif" ]; then
     log info "Running SDR - Erosion control by sediment retention"
     run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
 else
-    log info "Skipping SDR - Erosion control by sediment retention as $SDR_output_files/watershed_results_sdr.* already exist"
+    log info "Skipping SDR - Erosion control by sediment retention as
+    $SDR_output_files/sed_deposition.tif sed_retention_index.tif stream.tif rkls.tif sed_export.tif sed_retention.tif usle.tif already exist"
 fi
 
 ## WY - Regulation of freshwater quantity, location and timing
@@ -175,6 +182,16 @@ if [ ! -f "$WY_output_folder/watershed_results_wyield.shp" ] ||
     run_scripts "$SCRIPT_DIR/WY/1_WY_S_CH.py"
 else
     log info "Skipping WY - Annual water yield as $WY_output_folder/watershed_results_wyield.* and $WY_output_folder/subwatershed_results_wyield.* and $WY_output_folder/per_pixel already exist"
+fi
+
+## REC - Recreation potential
+## Indicator: Recreation potential (RP) provided by ecosystems
+REC_output_file="$NCP_RUN_OUTPUT_DIR/$NCP_RUN_SCENARIO_ID/REC/REC_S_CH_$NCP_RUN_YEAR.tif"
+if [ ! -f "$REC_output_file" ]; then
+    log info "Running REC - Recreation potential"
+    run_scripts "$SCRIPT_DIR/REC/1_REC.R"
+else
+    log info "Skipping REC - Recreation potential as $REC_output_file already exists"
 fi
 
 # ------------------------------------------------------------------------------

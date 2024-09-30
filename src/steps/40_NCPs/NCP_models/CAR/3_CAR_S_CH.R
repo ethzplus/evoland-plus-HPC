@@ -45,18 +45,17 @@ results <- file.path(
   params$run_params$NCP_RUN_OUTPUT_DIR,
   params$run_params$NCP_RUN_SCENARIO_ID, "CAR"
 )
-name_out <- paste(params$CAR$out_prefix, params$run_params$NCP_RUN_YEAR,
-  sep = ""
-)
+name_out <-
+  paste(params$CAR$out_prefix, params$run_params$NCP_RUN_YEAR, sep = "")
 
 # Function to apply for each time period
 
 carbon_process_3 <- function(ind_dir, proj, raster_out) {
   # for each folder in list_dirs, search file matching 'tot_c_cur_*.tif'
-  list_files <- list.files(ind_dir,
-    full.names = TRUE, recursive = TRUE,
-    pattern = "tot_c_cur_"
-  )
+  list_files <-
+    list.files(
+      ind_dir, full.names = TRUE, recursive = TRUE, pattern = "tot_c_cur_"
+    )
   # exclude all files inside tot_c_united
   list_files <- list_files[!grepl("tot_c_united", list_files)]
 
@@ -108,7 +107,7 @@ if (!dir.exists(results)) {
 }
 
 carbon_process_3(
-  inv_model_dir,
-  params$proj,
-  file.path(results, paste(name_out, ".tif", sep = ""))
+  ind_dir = inv_model_dir,
+  proj = params$proj,
+  raster_out = file.path(results, paste(name_out, ".tif", sep = ""))
 )
