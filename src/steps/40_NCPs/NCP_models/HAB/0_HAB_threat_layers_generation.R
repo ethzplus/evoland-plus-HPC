@@ -94,8 +94,8 @@ threat_hab <- function(lulc, rur_res, urb_res, out_fold) {
   exp_rr <- terra::classify(rures, cbind(NA, 0))
 
   # set original NA values back to NA
-  exp_rr <- mask(exp_rr, lulc, maskvalue = NA)
-  
+  exp_rr <- terra::mask(exp_rr, lulc, maskvalue = NA)
+
   # Export
   terra::writeRaster(
     exp_rr, file.path(out_fold, "rures_c.tif"),
@@ -115,8 +115,8 @@ threat_hab <- function(lulc, rur_res, urb_res, out_fold) {
   exp_ur <- terra::classify(urbres, cbind(NA, 0))
 
   # set original NA values back to NA
-  exp_ur <- mask(exp_ur, lulc, maskvalue = NA)
-  
+  exp_ur <- terra::mask(exp_ur, lulc, maskvalue = NA)
+
   # Export
   terra::writeRaster(
     exp_ur, file.path(out_fold, "urban_c.tif"),
@@ -134,5 +134,3 @@ if (!dir.exists(out_fold)) {
 }
 #### Run the function on the input data
 threat_hab(lulc, rur_res, urb_res, out_fold)
-
-
