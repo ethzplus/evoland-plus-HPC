@@ -130,12 +130,12 @@ clip_and_reclassify <- function(lulc, out) {
     b <- terra::crop(lulc_r, a)
     c <- terra::mask(b, a)
 
-    # Sets the NA (missing data) flag value to 255
-    terra::NAflag(c) <- 255
+    # Sets the NaN (not a number) flag value to 0
+    c <- terra::subst(c, NaN, 0)
 
     # saving the data
     filename <- file.path(out, paste(name, ".tif", sep = ""))
-    terra::writeRaster(c, filename, overwrite = TRUE, NAflag = 255)
+    terra::writeRaster(c, filename, overwrite = TRUE)
     print(paste0(
       formatC(i, width = nchar(nrow(list_reg_elev)), flag = "0"),
       "/", nrow(list_reg_elev), ": created ", name

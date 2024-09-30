@@ -94,6 +94,13 @@ if __name__ == '__main__':
     print("HAB: Starting Habitat Quality model...")
     natcap.invest.habitat_quality.execute(args)
     print("HAB: ...done!")
+    # NOTE: For natcap.invest 3.13.0
+    # There is a bug which lowers also the path of the threat layers
+    # Hotfix in habitat_quality.py line 384 (execute function):
+    # Change from:
+    #             args['threats_table_path'], 'THREAT', to_lower=True,
+    # to:
+    #             args['threats_table_path'], 'threat', to_lower=False,
 
     if params['other']['remove_temp_files']:
         # remove intermediate outputs

@@ -1,15 +1,17 @@
 #!/bin/bash
 #SBATCH --job-name="10_40_combined_array"
 #SBATCH -n 1                  # Number of cores requested
-#SBATCH --cpus-per-task=4     # Number of CPUs per task
-#SBATCH --time=0:20:00        # Runtime
-#SBATCH --mem-per-cpu=4G      # Memory per cpu in GB (see also --mem)
+#SBATCH --cpus-per-task=2     # Number of CPUs per task
+#SBATCH --time=7-00:00:00        # Runtime
+#SBATCH --mem-per-cpu=2G
 #SBATCH --tmp=2G              # https://scicomp.ethz.ch/wiki/Using_local_scratch
 #SBATCH --output="logs/10_40_combined_array-%j.out"
 #SBATCH --error="logs/10_40_combined_array-%j.err"
 #SBATCH --mail-type=ALL       # Mail events (NONE, BEGIN, END, FAIL, ALL)
 ## Array job
-#SBATCH --array=1-2           # Number of array jobs - step size needs to be 1
+##SBATCH --array=1-1      # start-end%num_parallel
+#SBATCH --array=1-216%12      # start-end%num_parallel
+#        ! step size needs to be 1
 
 echo "Current working directory: $(pwd)"
 # $FUTURE_EI_BASE_DIR must be passed defined for array job, bash_common.sh

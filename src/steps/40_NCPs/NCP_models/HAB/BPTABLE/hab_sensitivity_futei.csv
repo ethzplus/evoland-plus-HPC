@@ -1,4 +1,5 @@
-"lucode","HABITAT","pr_rd_c","sc_rd_c","urban_c","rures_c","crop_c","LULC_name"
+LULC,"HABITAT","pr_rd_c","sc_rd_c","urban_c","rures_c","crop_c","NAME"
+0,"0","0","0","0","0","0","empty"
 10,"0","0","0","0","0","0","Urban"
 11,"0","0","0","0","0","0","Static"
 12,"1","0.86","0.82","0.6","0.5","0.3","Open_Forest"

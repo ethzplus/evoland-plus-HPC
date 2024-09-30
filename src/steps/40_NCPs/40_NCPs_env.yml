@@ -12,7 +12,7 @@ dependencies:
   - r-raster
   - r-data.table
   - r-sf
-  - natcap.invest
+  - natcap.invest>=3.13.0
   - r-yaml
   - ruamel.yaml
   - r-pak
