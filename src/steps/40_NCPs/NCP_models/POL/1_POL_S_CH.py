@@ -34,7 +34,7 @@ args = {
     'landcover_biophysical_table_path': params['POL'][
         'landcover_biophysical_table_path'],
     'workspace_dir': join(
-        params['run_params']['NCP_RUN_OUTPUT_DIR'],
+        params['run_params']['NCP_RUN_SCRATCH_DIR'],
         params['run_params']['NCP_RUN_SCENARIO_ID'],
         'POL',
         params['run_params']['NCP_RUN_YEAR']),

@@ -33,7 +33,7 @@ if (is.null(params$run_params$NCP_RUN_OUTPUT_DIR)) {
 }
 
 data_folder <- file.path(
-  params$run_params$NCP_RUN_OUTPUT_DIR,
+  params$run_params$NCP_RUN_SCRATCH_DIR,
   params$run_params$NCP_RUN_SCENARIO_ID,
   "POL",
   params$run_params$NCP_RUN_YEAR
