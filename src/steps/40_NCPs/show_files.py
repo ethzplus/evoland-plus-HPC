@@ -86,12 +86,12 @@ output_files = [
     "NDR/{year}/p_surface_export.tif",
     "POL/POL_S_CH_{year}.tif",
     "REC/REC_S_CH_{year}.tif",
+    "SDR/{year}/avoided_erosion.tif",
+    "SDR/{year}/avoided_export.tif",
     "SDR/{year}/sed_deposition.tif",
-    "SDR/{year}/sed_retention_index.tif",
+    "SDR/{year}/sed_export.tif",
     "SDR/{year}/stream.tif",
     "SDR/{year}/rkls.tif",
-    "SDR/{year}/sed_export.tif",
-    "SDR/{year}/sed_retention.tif",
     "SDR/{year}/usle.tif",
     "WY/{year}/watershed_results_wyield.shp",
     "WY/{year}/watershed_results_wyield.shx",
@@ -201,8 +201,8 @@ def check_files(scenario_dir):
         print(
             file.ljust(41),
             f"{cov * 100:.2f}%".ljust(10),
-            ", ".join(missing_sim_ids[file][:10]) + (
-                ", ..." if len(missing_sim_ids[file]) > 10 else "")
+            ", ".join(list(set(missing_sim_ids[file]))[:10]) + (
+                ", ..." if len(set(missing_sim_ids[file])) > 10 else "")
         )
     print("-" * 60)
     print("Total".ljust(41),
@@ -244,3 +244,24 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# unexpected_files.txt can be used to delete unexpected files
+# the straight forward method would be (sensitive to spaces in file names):
+#   cat unexpected_files.txt | xargs -d '\n' rm
+# This can take long, as each file is deleted sequentially.
+# A faster way is to use parallel:
+#   cat unexpected_files.txt | parallel rm
+# This will delete multiple files in parallel, which can be faster.
+# Additionally showing a loading bar can be done with:
+#   cat unexpected_files.txt | parallel --bar rm
+# Including -d '\n' in the parallel command is not necessary, as it is the default.
+# One can specify the number of jobs to run in parallel with -j <number>. In a
+# slurm job with 8 cpu cores, one could use -j 8 to use all cores.
+# Choosing a higher number of jobs can be faster, but can also lead to a
+# significant load on the system, which can slow down other processes.
+
+# After deleting, there are empty directories left.
+# These can be removed with:
+#   find . -type d -empty -delete
+# To see that the directories are deleted, one can add -print to the command:
+#   find . -type d -empty -delete -print
