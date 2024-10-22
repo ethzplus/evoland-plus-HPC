@@ -5,11 +5,11 @@ source "$SCRIPT_DIR/../../bash_common.sh"
 # Check LULCC Preparation
 
 # Create conda environment
-log info "Creating conda environment: check_lulc"
+log info "Creating conda environment: summarisation"
 log debug "Using conda from: $CONDA_BIN"
-log debug "Using requirement file: $SCRIPT_DIR/11_checklulcc_env.yml"
-$CONDA_BIN env create -f "$SCRIPT_DIR"/11_checklulcc_env.yml
+log debug "Using requirement file: $SCRIPT_DIR/50_Summarisation_env.yml"
+$CONDA_BIN env create -f "$SCRIPT_DIR"/50_Summarisation_env.yml
 
 # Activate the conda environment
-log debug "Activating conda environment: check_lulc"
-source "$SCRIPT_DIR/../../de_activate.sh" check_lulc 1
+log debug "Activating conda environment: Summarisation"
+source "$SCRIPT_DIR/../../de_activate.sh" Summarisation 1
