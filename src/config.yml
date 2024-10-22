@@ -20,6 +20,8 @@ bash_variables:
   NSDM_OUTPUT_BASE_DIR: /nsdm_outputs
   # Species Aggregation
   SPAGG_OUTPUT_BASE_DIR: /spagg_output
+  # sUMMARISATION
+  SUMMARISATION_OUTPUT_DIR: /summarisation_output
 
   SIM_ID: # simulation id, can be used to look up in control table, set automatically
   # Variables for the docker container
@@ -80,4 +82,16 @@ CheckLULCC:
   BaseName: LULCC_intensity_analysis
   Parallel: True
   NWorkers: 0  # 0 means use all available cores
+  
+# Summarisation
+Summarisation:
+  InputDir:  # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
+  OutputDir:  # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
+  Parallel: True
+  NWorkers: 0  # 0 means use all available cores
+  Sim_control_table: ~/LULCC_CH_HPC/Tools/Simulation_control.csv
+  EI_interventions_table: Tools/EI_interventions.csv
+  NCPs_to_summarise: [ 'HAB', 'CAR', 'FF', 'NDR', 'POL', 'REC', 'SDR', 'WY']
+  NCP_file_names: {CAR: tot_c_cur, FF : FF_S_CH, HAB : quality_c, NDR : n_total_export, POL : POL_S_CH, REC : REC_S_CH, SDR : avoided_erosion, WY : per_pixel/wyield}
+  NCP_nesting: {CAR : FALSE, FF : FALSE, HAB : TRUE, NDR : TRUE, POL : FALSE, REC : FALSE, SDR : TRUE, WY : TRUE}
 

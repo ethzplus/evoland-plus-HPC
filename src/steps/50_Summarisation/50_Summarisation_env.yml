@@ -1,0 +1,16 @@
+name: Summarisation
+channels:
+  - conda-forge
+dependencies:
+  - r-raster~=3.6_26
+  - r-codetools
+  - r-stringr
+  - r-future
+  - r-future.apply
+  - r-yaml
+  - r-readxl
+  - r-dplyr
+  - r-tidyr
+  - r-terra
+  - r-data.table
+  - r-GGally
