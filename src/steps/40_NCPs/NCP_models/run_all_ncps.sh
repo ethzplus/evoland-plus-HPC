@@ -166,7 +166,7 @@ if [ ! -f "$SDR_output_files/avoided_erosion.tif" ] ||
     run_scripts "$SCRIPT_DIR/SDR/1_SDR_S_CH.py"
 else
     log info "Skipping SDR - Erosion control by sediment retention as
-    $SDR_output_files/sed_deposition.tif sed_retention_index.tif stream.tif rkls.tif sed_export.tif sed_retention.tif usle.tif already exist"
+    $SDR_output_files/avoided_erosion.tif, avoided_export.tif, sed_deposition.tif, sed_export.tif, stream.tif, rkls.tif and usle.tif already exist"
 fi
 
 ## WY - Regulation of freshwater quantity, location and timing
