@@ -125,7 +125,7 @@ ecocrop_models <- function(crops, ta, pr, ph, use_crs, out_dir) {
       m_name,
       tavg = ta, prec = pr, ph = ph, wopt = list(names = c_name)
     )
-    terra::crs(pred) <- terra::crs(use_crs)
+    terra::crs(pred) <- use_crs
     # Export the prediction
     ex_name <- paste(c_name, ".tif", sep = "")
     terra::writeRaster(pred, file.path(out_dir, ex_name), overwrite = TRUE)
