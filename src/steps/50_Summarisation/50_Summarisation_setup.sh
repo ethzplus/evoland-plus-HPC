@@ -5,11 +5,16 @@ source "$SCRIPT_DIR/../../bash_common.sh"
 # Check LULCC Preparation
 
 # Create conda environment
-log info "Creating conda environment: summarisation"
+log info "Creating conda environment: ncp_summarisation"
 log debug "Using conda from: $CONDA_BIN"
 log debug "Using requirement file: $SCRIPT_DIR/50_Summarisation_env.yml"
 $CONDA_BIN env create -f "$SCRIPT_DIR"/50_Summarisation_env.yml
 
 # Activate the conda environment
-log debug "Activating conda environment: Summarisation"
-source "$SCRIPT_DIR/../../de_activate.sh" Summarisation 1
+log debug "Activating conda environment: ncp_summarisation"
+source "$SCRIPT_DIR/../../de_activate.sh" ncp_summarisation 1
+
+# Not tracked in the environment.yml file:
+# SSIMmap       : https://cloud.r-project.org/web/packages/SSIMmap/
+log info "Installing SSIMmap R package"
+R -e "pak::pkg_install(c('SSIMmap'), upgrade = FALSE)"

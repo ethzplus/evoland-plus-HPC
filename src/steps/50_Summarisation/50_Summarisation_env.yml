@@ -1,4 +1,4 @@
-name: Summarisation
+name: ncp_summarisation
 channels:
   - conda-forge
 dependencies:
@@ -14,4 +14,7 @@ dependencies:
   - r-terra
   - r-data.table
   - r-GGally
-  - r-SSIMmap
+  - r-pak
+  - r-sf
+  - proj
+  - gdal
