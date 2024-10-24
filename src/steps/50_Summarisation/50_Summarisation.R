@@ -307,9 +307,9 @@ calc_layer_summaries <- function(
         cat("Recalculation of summary is set to TRUE, calculating Summary stats for", NCP, "\n")
       }
 
-      #if Recalc_normalised_layers is TRUE, then identify which layers exist
+      #if Recalc_normalised_layers is FALSE, then identify which layers exist
       #already and remove them from the df
-      if(Recalc_normalised_layers == TRUE){
+      if(Recalc_normalised_layers == FALSE){
 
         cat("Recalculation of normalised layers is set to FALSE, identifying which layers already exist for", NCP, "\n")
 
@@ -324,14 +324,18 @@ calc_layer_summaries <- function(
         NCP_layer_paths <- NCP_layer_paths[!NCP_layer_paths$Exists,]
 
         cat("Existing layers have been removed from the list to be normalized, performing normalization of remaining layers \n")
-      } else if(Recalc_normalised_layers == FALSE){
+      } else if(Recalc_normalised_layers == TRUE){
         cat("Recalculation of normalised layers is set to TRUE, normalising all layers in NCP_layer_paths \n")
       }
 
-      # Loop over sequence of NCP layer paths, normalise the layer values 
-      # with the global min/max values and then calculate sum, mean, median, mode
-      # std of the normalised values. 
-      NCP_sum_stats <- future_lapply(1:nrow(NCP_layer_paths), function(i){
+      if(nrow(NCP_layer_paths) == 0){
+        cat("Recalculation of normalised layers is set to FALSE and all layers already exist for", NCP, "skipping to next NCP \n")
+      }else{
+        
+        # Loop over sequence of NCP layer paths, normalise the layer values 
+        # with the global min/max values and then calculate sum, mean, median, mode
+        # std of the normalised values. 
+        NCP_sum_stats <- future_lapply(1:nrow(NCP_layer_paths), function(i){
 
         # use trycatch to handle missing or corrupt files
         Layer_info_stat <- tryCatch({
@@ -383,11 +387,11 @@ calc_layer_summaries <- function(
         return(Layer_info_stat)
       })
 
-      # Save the results for the current NCP
-      saveRDS(NCP_sum_stats, file = NCP_sum_stats_path)
-      cat("Summary stats for", NCP, "have been saved to", NCP_sum_stats_path, "\n")
+        # Save the results for the current NCP
+        saveRDS(NCP_sum_stats, file = NCP_sum_stats_path)
+        cat("Summary stats for", NCP, "have been saved to", NCP_sum_stats_path, "\n")
     }
-
+    }
   })
 
   # if parallel == TRUE set back to sequential processing
@@ -1227,7 +1231,7 @@ calc_layer_summaries(
     NCP_normalisation_dir = NCP_normalisation_dir,
     NCP_summary_stats_dir = NCP_summary_stats_dir,
     NCP_summarisation_dir = NCP_summarisation_dir,
-    Recalc_summary = TRUE,
+    Recalc_summary = FALSE,
     Recalc_normalised_layers = FALSE,
     Save_normalised_layers = FALSE,
     Sim_ctrl_tbl = Sim_ctrl_tbl,
