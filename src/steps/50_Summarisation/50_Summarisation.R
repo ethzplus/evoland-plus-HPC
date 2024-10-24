@@ -21,7 +21,7 @@
 
 # Load libraries
 packs <- c("stringr", "terra", "future", "future.apply",
-           "data.table", "tidyverse", "yaml")
+           "data.table", "tidyr", "yaml", "dplyr")
 invisible(lapply(packs, require, character.only = TRUE))
 
 options(future.rng.onMisuse = "ignore")
