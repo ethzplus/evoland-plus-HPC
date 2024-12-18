@@ -1,5 +1,20 @@
 #!/bin/bash
-# File for loading bash variables
+# -----------------------------------------------------------------------------
+# Common bash script for all scripts in the project
+#
+# This script should be sourced in all bash scripts in the project to ensure
+# that all common variables and functions are available.
+#
+# - Set -e -o pipefail (stop script at first error and return exit status)
+# - Make sure this script is only sourced once ($BASH_COMMON_LOADED)
+# - Ensure that `yq` is installed (used for config.yml parsing)
+# - Load bash_variables from config.yml
+# - Add logging (src/logging.sh) for `log debug|info|warning|error`
+# - Set CONDA_BIN to micromamba/mamba/conda
+# - Make sure TMPDIR is set (used by Dinamica EGO and conda)
+# - Load preparation script (src/steps/00_Preparation.sh)
+#   - Set up output and scratch directories
+# -----------------------------------------------------------------------------
 
 set -e  # Stop script if any command fails in parent or child scripts
 set -o pipefail  # Return exit status of the last command in the pipe that failed
@@ -30,13 +45,14 @@ source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/loggin
 log debug "Loaded logging"
 
 # Find out if micromamba > mamba > conda is installed and set bin path
+# Also initialize shell hook
 export CONDA_BIN
 if [ -f "$MAMBA_EXE" ]; then
     # $MAMBA_EXE points to either micromamba or mamba
     CONDA_BIN=$MAMBA_EXE
     eval "$($CONDA_BIN shell hook -s bash)"
     log debug "Using mamba at $CONDA_BIN"
-elif [ -x "$(command -v conda)" ]; then
+elif [ -x "$(command -v conda)" ]; then  # alternative check for conda
     CONDA_BIN=$(which conda)
     eval "$($CONDA_BIN shell.bash hook)"
     log debug "Using conda at $CONDA_BIN"
