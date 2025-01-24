@@ -7,7 +7,7 @@
 #SBATCH --tmp=2G              # https://scicomp.ethz.ch/wiki/Using_local_scratch
 #SBATCH --output="logs/20_focal_statistics-%j.out"
 #SBATCH --error="logs/20_focal_statistics-%j.err"
-#SBATCH --mail-type=ALL       # Mail events (NONE, BEGIN, END, FAIL, ALL)
+#SBATCH --mail-type=NONE       # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
 echo "Current working directory: $(pwd)"
 source "/cluster/project/eawag/p01002/Future-EI/src/de_activate.sh" focal_lulc 1

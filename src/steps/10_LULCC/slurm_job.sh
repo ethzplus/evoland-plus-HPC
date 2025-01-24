@@ -18,7 +18,9 @@ export DINAMICA_EGO_7_MAX_DETECTED_CORES
 DINAMICA_EGO_7_MAX_DETECTED_CORES=$SLURM_CPUS_PER_TASK
 
 echo "Current working directory: $(pwd)"
-source /cluster/project/eawag/p01002/Future-EI/src/bash_common.sh
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+echo "Running script from: $SCRIPT_DIR"
+source "$SCRIPT_DIR/../../bash_common.sh"
 
 # Run the land use change model
 source /cluster/project/eawag/p01002/Future-EI/src/steps/10_LULCC/10_land_use.sh

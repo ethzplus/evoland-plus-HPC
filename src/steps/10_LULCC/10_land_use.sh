@@ -11,9 +11,9 @@ log debug "SLURM_JOB_CPUS_PER_NODE: $SLURM_JOB_CPUS_PER_NODE"
 
 # Transfer simulation input parameters - prepare
 
-# Assure Apptainer (/Singularity) or Docker is available
-if ! (command -v apptainer &> /dev/null || command -v docker &> /dev/null); then
-    log error "Neither Apptainer nor Docker is available. Please install one of them and make sure it is available in the PATH."
+# Assure Apptainer (/Singularity) is available
+if ! (command -v apptainer &> /dev/null); then
+    log error "Apptainer is not available. Please install it and make sure it is available in the PATH."
     return
 fi
 # Assure LULCC_CH_HPC_DIR is set
@@ -30,15 +30,9 @@ lulcc_docker_image="$LULCC_DOCKER_NAMESPACE/$LULCC_DOCKER_REPO:$LULCC_DOCKER_VER
 
 # Run the container, preferably with Apptainer
 log info "Running Docker image $lulcc_docker_image with $LULCC_CH_HPC_DIR mounted to /model"
-if command -v apptainer &> /dev/null; then
-    log debug "Using Apptainer from $(command -v apptainer) with container $APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
-    log info "apptainer run --bind \"$FUTURE_EI_OUTPUT_DIR:/tmp,$LULCC_CH_HPC_DIR\":/model \"$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif\""
-    apptainer run --bind "$FUTURE_EI_OUTPUT_DIR:/tmp,$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
-else
-    log debug "Using docker from $(command -v docker)"
-    log warning "Docker support is experimental and may not work as expected."
-    docker run -v "$LULCC_CH_HPC_DIR":/model -it "$lulcc_docker_image"
-fi
+log debug "Using Apptainer from $(command -v apptainer) with container $APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
+log info "apptainer run --bind \"$FUTURE_EI_OUTPUT_DIR:/tmp,$LULCC_CH_HPC_DIR\":/model \"$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif\""
+apptainer run --bind "$FUTURE_EI_OUTPUT_DIR:/tmp,$LULCC_CH_HPC_DIR":/model "$APPTAINER_CONTAINERDIR/${LULCC_DOCKER_REPO}_${LULCC_DOCKER_VERSION}.sif"
 
 # Check for ERROR in control table csv ($LULCC_M_SIM_CONTROL_TABLE)
 log debug "Loading simulation control file: $LULCC_M_SIM_CONTROL_TABLE"
