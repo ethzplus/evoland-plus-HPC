@@ -1,0 +1,26 @@
+# Pipeline
+
+The Future-EI pipeline consists out of various scripts that can be found in
+the `src` directory.
+For each included step of @fig-pipeline, there is a subdirectory in `src/steps`.
+
+This part is structured as follows:
+
+- [Setup](setup.html)
+- Steps
+  - [LULCC](10_LULCC.html)
+  - [Check LULCC](11_CheckLULCC.html)
+  - [Focals](20_FocalLULC.html)
+  - [NCP](40_NCPs.html)
+- [Running the pipeline](running.html)
+
+
+The task of the Future-EI pipeline is to streamline the process,
+so that varying the climate scenarios and other parameters can be carried out
+efficiently.
+Introducing parallelization
+through [SLURM](https://slurm.schedmd.com/overview.html) batch jobs, and
+adding HPC compatibility, are the main tasks of the pipeline.
+Meanwhile, the pipeline keeps track of the intermediate results,
+a centralized configuration file, and the execution of each step.
+Details on the individual steps are given in the following sections.

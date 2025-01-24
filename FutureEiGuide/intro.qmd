@@ -1,5 +1,18 @@
 # Introduction
 
-This is a book created from markdown and executable code.
+Details on the background on the Future-EI pipeline
 
-- @mayer2023, @black2023, @adde2023
+- Motivation
+- Why
+- Climate Scenarios
+  - many → high computational demand
+- Cite @mayer2023, @black2023, @adde2023
+- Related work
+
+Structure of the next sections:
+
+- The [Introduction](#introduction) you read
+- [Structure](structure.html) gives an overview of the pipeline
+- [Pipeline](pipeline/) describes the setup and steps in detail
+- [Summary](summary.html) concludes the guide
+- [References](references.html) list all cited works

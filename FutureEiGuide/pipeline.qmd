@@ -1,5 +1,0 @@
-# Pipeline
-
-The pipeline consists out of a `SLURM` batch job as structured in @fig-pipeline.
-To refresh: a `SLURM` _batch job_ consists out of one or more _steps_,
-each consisting out of one or more _tasks_, which of each can use one or more CPU cores.

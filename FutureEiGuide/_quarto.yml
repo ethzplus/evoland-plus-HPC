@@ -4,19 +4,26 @@ project:
 book:
   title: "Future-EI"
   author: "Carlson Büth and Benjamin Black"
-  date: "9/22/2023" # TODO: update date
+  date: "24/1/2025" # TODO: update date
   chapters:
     - index.qmd
     - intro.qmd
     - structure.qmd
-    - pipeline.qmd
-    - setup.qmd
+    - part: pipeline/index.qmd
+      chapters:
+        - pipeline/setup.qmd
+        - pipeline/10_LULCC.qmd
+        - pipeline/11_CheckLULCC.qmd
+        - pipeline/20_FocalLULC.qmd
+        - pipeline/40_NCPs.qmd
+        - pipeline/running.qmd
+    - 50_further_steps.qmd
     - summary.qmd
     - references.qmd
   # favicon: images/favicon.png
   repo-url: https://github.com/cbueth/Future-EI
   issue-url: https://github.com/cbueth/Future-EI/issues/new/choose
-  repo-actions: [edit, issue, source]
+  repo-actions: [source, issue]
   repo-subdir: FutureEiGuide
   authority: Planning of Landscape and Urban Systems – PLUS (ETH Zurich)
   language: en
@@ -27,6 +34,8 @@ bibliography: references.bib
 format:
   html:
     theme: cosmo
+    link-external-icon: true
+    link-external-newwindow: true
   pdf:
     documentclass: scrreprt
 

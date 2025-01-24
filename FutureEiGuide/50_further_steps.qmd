@@ -1,0 +1,13 @@
+# Further Steps
+
+Upon completing the four steps, we obtain LULC layers, focal windows, and NCP.
+These outputs can be further analyzed and utilized for additional processes,
+such as species distribution modeling.
+
+In our scenario, we have incorporated a fifth step that leverages the same
+repository structure and configuration as the previous steps.
+The code for this step is located in a different repository,
+which ensures that the workflow remains consistent and manageable.
+This additional step allows for more comprehensive analysis and
+extends the capabilities of the initial four steps,
+providing a robust framework for further research and application.
