@@ -7,11 +7,11 @@ bash_variables:
   FUTURE_EI_LOG_LEVEL: debug
   FUTURE_EI_CONFIG_FILE: ~/Future-EI/src/config.yml
   FUTURE_EI_OUTPUT_DIR: ~/Future-EI-Output
-  # Output Directories are relative to the $FUTURE_EI_OUTPUT_DIR
+  # Subsequent Output Directories are all relative to the $FUTURE_EI_OUTPUT_DIR
   LULCC_CH_OUTPUT_BASE_DIR: /lulcc_output # Location of all scenario folders, named by IDs
   # LULCC Check
   CHECK_LULCC_OUTPUT_DIR: /lulcc_check
-  # Focal Prep
+  # Focal LULC Prep
   FOCAL_OUTPUT_BASE_DIR: /focal_output
   # NCP
   NCP_OUTPUT_BASE_DIR: /ncp_output
@@ -26,7 +26,7 @@ bash_variables:
   LULCC_DOCKER_NAMESPACE: cbueth
   LULCC_DOCKER_REPO: lulcc
   LULCC_DOCKER_VERSION: 0.3.0
-  # Dinamica
+  # Dinamica log level options
   # UNCONDITIONAL=0, ERROR=1, WARNING=2, RESULT=3,
   # INFO=4, INFO2=5, DEBUG=6, DEBUG2=7
   DINAMICA_EGO_CLI_LOG_LEVEL: 7
