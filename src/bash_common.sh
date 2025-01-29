@@ -5,21 +5,22 @@
 # This script should be sourced in all bash scripts in the project to ensure
 # that all common variables and functions are available.
 #
-# - Set -e -o pipefail (stop script at first error and return exit status)
-# - Make sure this script is only sourced once ($BASH_COMMON_LOADED)
-# - Ensure that `yq` is installed (used for config.yml parsing)
-# - Load bash_variables from config.yml
-# - Add logging (src/logging.sh) for `log debug|info|warning|error`
-# - Set CONDA_BIN to micromamba/mamba/conda
-# - Make sure TMPDIR is set (used by Dinamica EGO and conda)
-# - Load preparation script (src/steps/00_Preparation.sh)
-#   - Set up output and scratch directories
+# This script is performing the following operations:
+# - Setting -e -o pipefail (stop script at first error and return exit status)
+# - Making sure this script is only sourced once ($BASH_COMMON_LOADED)
+# - Ensuring that `yq` is installed (used for config.yml parsing)
+# - Loading bash_variables from config.yml
+# - Adding logging (src/logging.sh) for `log debug|info|warning|error`
+# - Setting CONDA_BIN to micromamba/mamba/conda
+# - Making sure TMPDIR is set (used by Dinamica EGO and conda)
+# - Loading preparation script (src/steps/00_Preparation.sh)
+# - Setting up output and scratch directories
 # -----------------------------------------------------------------------------
 
 set -e  # Stop script if any command fails in parent or child scripts
 set -o pipefail  # Return exit status of the last command in the pipe that failed
 
-# Make sure only sourced once
+# Make sure this script is only sourced once
 if [ -n "$BASH_COMMON_LOADED" ]; then
     return
 else
@@ -69,6 +70,7 @@ else
     log debug "TMPDIR already set to $TMPDIR"
 fi
 
+# Load and source preparation script
 preparation_script="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )/steps/00_Preparation.sh"
 # shellcheck source=src/steps/00_Preparation.sh
 source "$preparation_script"
