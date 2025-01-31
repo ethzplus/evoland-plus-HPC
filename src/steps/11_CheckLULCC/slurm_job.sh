@@ -9,6 +9,11 @@
 #SBATCH --error="logs/11_check_lulcc-%j.err"
 #SBATCH --mail-type=NONE       # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
+# Intensity Analysis Slurm Job
+# ----------------------------
+# This script is used to run intensity analysis
+# on all 10_LULCC output land use maps.
+
 echo "Current working directory: $(pwd)"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "Running script from: $SCRIPT_DIR"

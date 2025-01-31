@@ -13,6 +13,12 @@
 #SBATCH --array=1-216%12      # start-end%num_parallel
 #        ! step size needs to be 1
 
+# LULCC and NCPs combined array job
+# ---------------------------------
+# This script is used to run the LULCC and NCPs steps in parallel.
+# The control table is split into parts and each part is processed by a
+# separate array task. The results are merged back into the full control table.
+
 echo "Current working directory: $(pwd)"
 # $FUTURE_EI_BASE_DIR must be passed defined for array job, bash_common.sh
 if [ -z "$FUTURE_EI_BASE_DIR" ]; then
