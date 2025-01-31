@@ -1,5 +1,5 @@
 #!/bin/bash
-# Land use HPC step for the batch job src/future-ei-pipeline.sh
+# Land use HPC step for the batch job src/10_40_combined_array_job.sh
 # If called separately for testing, source the bash_common.sh script first
 
 # log SLURM variables
