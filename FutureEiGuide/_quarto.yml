@@ -14,8 +14,8 @@ book:
     - summary.qmd
     - references.qmd
   # favicon: images/favicon.png
-  repo-url: https://github.com/cbueth/Future-EI
-  issue-url: https://github.com/cbueth/Future-EI/issues/new/choose
+  repo-url: https://github.com/ethzplus/Future-EI
+  issue-url: https://github.com/ethzplus/Future-EI/issues/new/choose
   repo-actions: [edit, issue, source]
   repo-subdir: FutureEiGuide
   authority: Planning of Landscape and Urban Systems – PLUS (ETH Zurich)

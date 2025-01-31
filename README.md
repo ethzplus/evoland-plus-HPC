@@ -1,10 +1,10 @@
 [//]: # (Workflow: Quarto Pages Guide)
 [//]: # (Workflow: Linting shell check)
 [//]: # (R lifecycle batch)
-[![Quarto: Pages Guide](https://github.com/cbueth/Future-EI/actions/workflows/publish.yml/badge.svg?branch=main)](https://cbueth.github.io/Future-EI/)
-[![Shellcheck](https://github.com/cbueth/Future-EI/actions/workflows/lint-sh.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint-sh.yml)
-[![Lintr](https://github.com/cbueth/Future-EI/actions/workflows/lint-R.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint-R.yml)
-[![Hadolint](https://github.com/cbueth/Future-EI/actions/workflows/lint-docker.yml/badge.svg?branch=main)](https://github.com/cbueth/Future-EI/actions/workflows/lint-docker.yml)
+[![Quarto: Pages Guide](https://github.com/ethzplus/Future-EI/actions/workflows/publish.yml/badge.svg?branch=main)](https://ethzplus.github.io/Future-EI/)
+[![Shellcheck](https://github.com/ethzplus/Future-EI/actions/workflows/lint-sh.yml/badge.svg?branch=main)](https://github.com/ethzplus/Future-EI/actions/workflows/lint-sh.yml)
+[![Lintr](https://github.com/ethzplus/Future-EI/actions/workflows/lint-R.yml/badge.svg?branch=main)](https://github.com/ethzplus/Future-EI/actions/workflows/lint-R.yml)
+[![Hadolint](https://github.com/ethzplus/Future-EI/actions/workflows/lint-docker.yml/badge.svg?branch=main)](https://github.com/ethzplus/Future-EI/actions/workflows/lint-docker.yml)
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 
 
@@ -30,7 +30,7 @@ but an example is provided in the guide.
 ## Setup
 
 For the setup of Future-EI, please refer to
-the [setup guide](https://cbueth.github.io/Future-EI/setup).
+the [setup guide](https://ethzplus.github.io/Future-EI/setup).
 Generally, a shared configuration file can be found at
 [`src/config.yml`](src/config.yml).
 
