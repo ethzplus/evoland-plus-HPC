@@ -3,7 +3,7 @@
 To set up Future-EI for usage, you need to clone this repository, install the
 models used in @fig-pipeline, and configure the local paths for inputs and parameters.
 For the `bash` script, environment variables are set in the
-[`src/config.yml`](https://github.com/cbueth/Future-EI/tree/main/src/config.yml)
+[`src/config.yml`](https://github.com/ethzplus/Future-EI/tree/main/src/config.yml)
 file.
 
 ## Micromamba/Conda
@@ -19,7 +19,7 @@ Find the installation instructions
 Using `conda`, the commands work the same, only `micromamba` needs to be replaced by
 `conda`.
 The given scripts identify the installed package manager, as can be found in
-[`src/bash_functions.sh`](https://github.com/cbueth/Future-EI/tree/main/src/bash_functions.sh).
+[`src/bash_functions.sh`](https://github.com/ethzplus/Future-EI/tree/main/src/bash_functions.sh).
 
 ## Dinamica EGO
 
@@ -28,7 +28,7 @@ but will be shipped in the LULCC docker image for simplicity.
 It can be automatically installed or built using the
 [src/steps/10_LULCC/docker_setup.sh](src/steps/10_LULCC/docker_setup.sh)
 script, which uses variables from the
-[`src/config.yml`](https://github.com/cbueth/Future-EI/tree/main/src/config.yml)
+[`src/config.yml`](https://github.com/ethzplus/Future-EI/tree/main/src/config.yml)
 file, and depends on the
 [dinamica-ego-docker](https://github.com/cbueth/dinamica-ego-docker/)
 container.
