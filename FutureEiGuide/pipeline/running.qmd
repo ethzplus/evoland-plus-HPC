@@ -120,3 +120,23 @@ are also submitted with `sbatch`.
 In contrast, these are simple jobs and their parallelization is achieved by
 assigning more CPUs to the job and using R's asynchronous processing
 [`future::plan(future::multisession)`](https://rdrr.io/cran/future/man/multisession.html).
+
+## Logging
+
+There are multiple levels of logging in the pipeline.
+When running the Slurm jobs, the output and error logs are written to the
+specified files.
+These are coming from three main sources:
+the R scripts, the Python scripts, and the Slurm job scripts.
+Generally, slurm logs are written to the file specified in the job script.
+For the logs regarding the scripts written for this pipeline,
+`FUTURE_EI_LOG_LEVEL: debug` in the `config.yml` file can be set to
+`debug`, `info`, `warning`, or `error`.
+The NCP calculation uses `natcap.invest` which has detailed logs written to
+the console.
+For the LULCC container, Dinamica EGO has more detailed logs of the integrated
+R scripts.
+They are written to the mounted `LULCC_CH_HPC_DIR` directory and do not show
+up in the Slurm logs.
+Dinamica EGO has a separate log level that can be set through the
+`DINAMICA_EGO_CLI_LOG_LEVEL` environment variable.
