@@ -21,7 +21,8 @@ as mentioned in the [setup section](#lulcc-repository).
 
 
 LULCC needs a variety of inputs.
-These are set via environment variables in the `src/config.yml` file.
+These are set via environment variables in the `src/config.yml` file —
+the assumption being that the `src` directory contains project-specific code, and hence also setup details.
 Here is an excerpt of the file:
 
 ```{.yaml filename="src/config.yml"}
@@ -49,7 +50,9 @@ bash_variables:
 A relevant parameter to change is the `LULCC_M_SIM_CONTROL_TABLE` variable.
 This is the only path that is absolute,
 and it should point to the `Simulation_control.csv` file.
-All further paths are relative to the LULCC repository root.
+All further paths are relative to the LULCC repository root:
+the files under `Tools` are configuration files,
+while the `Data` directory contains input and working data.
 For information on the further variables,
 see the [LULCC repository](https://github.com/blenback/LULCC-CH)
 and paper [@lulcc2024].
