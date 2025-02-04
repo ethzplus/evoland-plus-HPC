@@ -1,4 +1,4 @@
-# Nature Contributions to People {#40_NCPs}
+# Nature's Contributions to People {#40_NCPs}
 
 Based on the code written for @kuelling2024, we
 automatized the calculation of eight NCP.

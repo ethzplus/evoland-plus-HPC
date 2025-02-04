@@ -1,7 +1,7 @@
 # Summary
 
 The Future-EI pipeline provides a comprehensive framework
-for exploring future ecosystem services and nature contributions to people (NCP)
+for exploring future ecosystem services and nature's contributions to people (NCP)
 in the context of climate scenarios.
 By following the steps outlined in this guide,
 users can generate and analyze LULC layers, focal windows, and NCP,

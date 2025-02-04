@@ -55,13 +55,13 @@ about:
 [@black2023; @black2024]
 - [Species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM)
   [@adde2023]
-- Nature contributions to people (NCP) calculations, based on [@kuelling2024]
+- Nature's contributions to people (NCP) calculations, based on [@kuelling2024]
 
 
 # What is _Future-EI_? {.unnumbered}
 
 This is a guide and reference book for the Future-EI pipeline.
-To explore future ecosystem services and nature contributions to people (NCP)
+To explore future ecosystem services and nature's contributions to people (NCP)
 in the context of climate scenarios, Future-EI (future ecological infrastructure)
 couples the
 ,

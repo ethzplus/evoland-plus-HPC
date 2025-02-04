@@ -48,7 +48,7 @@ based on historical data and future projections.
 The generated land use maps are then used as input for the following steps.
 
 
-## NCP: Nature Contributions to People
+## NCP: Nature's Contributions to People
 A range of NCP are estimated from the land use maps.
 Some NCP use further data for the estimation,
 e.g., precipitation and temperature projections.
@@ -68,7 +68,7 @@ but has been adapted for automation and HPC compatibility.
 | [SDR](#SDR) | Formation, protection and decontamination of soils     | Erosion control by sediment retention            |
 |   [WY](#WY) | Regulation of freshwater quantity, location and timing | Annual water yield                               |
 
-: Nature Contributions to People (NCP) estimated from the LULCC model.
+: Nature's Contributions to People (NCP) estimated from the LULCC model.
 {#tbl-ncp}
 
 
