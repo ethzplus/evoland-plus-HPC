@@ -1,10 +1,7 @@
 # Preface {.unnumbered}
 
-This is a guide and reference book for the Future-EI pipeline.
-To explore future ecosystem services and nature contributions to people (NCP)
-in the context of climate scenarios, Future-EI (future ecological infrastructure)
-couples the
-[land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
+This is a guide and reference book for the Evoland-HPC pipeline.
+Evoland-HPC models future changes in the provision of ecosystem services under scenarios of climatic, socio-economic, land use change and alternative area-based conservation starategies. Evoland-HPC couples a [land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
 [@black2023; @black], state-of-the-art
 [species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM) [@adde2023],
-and NCP calculations [@kuelling].
+and ecosystem service models [@kuelling].

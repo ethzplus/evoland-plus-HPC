@@ -9,3 +9,4 @@ FutureEiGuide/_book/
 *.Rhistory
 *.Rprofile
 *.RData
+.Rproj.user
