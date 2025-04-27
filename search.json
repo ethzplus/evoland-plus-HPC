@@ -2,9 +2,9 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "Future-EI",
+    "title": "Evoland-HPC",
     "section": "",
-    "text": "Preface\nThis is a guide and reference book for the Future-EI pipeline. To explore future ecosystem services and nature contributions to people (NCP) in the context of climate scenarios, Future-EI (future ecological infrastructure) couples the land use land cover change (LULCC) model for Switzerland (Black et al. 2023, n.d.), state-of-the-art species distribution modelling (N-SDM) (Adde et al. 2023), and NCP calculations (Kuelling and Adde, n.d.).\n\n\n\n\nAdde, Antoine, Pierre-Louis Rey, Philipp Brun, Nathan Külling, Fabian Fopp, Florian Altermatt, Olivier Broennimann, et al. 2023. “N-SDM : A High-Performance Computing Pipeline for Nested Species Distribution Modelling.” Ecography 2023 (6): e06540. https://doi.org/10.1111/ecog.06540.\n\n\nBlack, Benjamin, Antoine Adde, Olivier Broennimann, Daniel Farinotti, Antoine Guisan, Nathan Külling, Manuel Kurmann, et al. n.d. “Broadening the Horizon in Land Use Change Modelling: Normative Scenarios for Nature Positive Futures.”\n\n\nBlack, Benjamin, Maarten J. Van Strien, Antoine Adde, and Adrienne Grêt-Regamey. 2023. “Re-Considering the Status Quo: Improving Calibration of Land Use Change Models Through Validation of Transition Potential Predictions.” Environmental Modelling & Software 159 (January): 105574. https://doi.org/10.1016/j.envsoft.2022.105574.\n\n\nKuelling, Nathan, and Antoine Adde. n.d. “NCP Calculation Paper.”",
+    "text": "Preface\nThis is a guide and reference book for the Evoland-HPC pipeline. Evoland-HPC models future changes in the provision of ecosystem services under scenarios of climatic, socio-economic, land use change and alternative area-based conservation starategies. Evoland-HPC couples a land use land cover change (LULCC) model for Switzerland (Black et al. 2023, n.d.), state-of-the-art species distribution modelling (N-SDM) (Adde et al. 2023), and ecosystem service models (Kuelling and Adde, n.d.).\n\n\n\n\nAdde, Antoine, Pierre-Louis Rey, Philipp Brun, Nathan Külling, Fabian Fopp, Florian Altermatt, Olivier Broennimann, et al. 2023. “N-SDM : A High-Performance Computing Pipeline for Nested Species Distribution Modelling.” Ecography 2023 (6): e06540. https://doi.org/10.1111/ecog.06540.\n\n\nBlack, Benjamin, Antoine Adde, Olivier Broennimann, Daniel Farinotti, Antoine Guisan, Nathan Külling, Manuel Kurmann, et al. n.d. “Broadening the Horizon in Land Use Change Modelling: Normative Scenarios for Nature Positive Futures.”\n\n\nBlack, Benjamin, Maarten J. Van Strien, Antoine Adde, and Adrienne Grêt-Regamey. 2023. “Re-Considering the Status Quo: Improving Calibration of Land Use Change Models Through Validation of Transition Potential Predictions.” Environmental Modelling & Software 159 (January): 105574. https://doi.org/10.1016/j.envsoft.2022.105574.\n\n\nKuelling, Nathan, and Antoine Adde. n.d. “NCP Calculation Paper.”",
     "crumbs": [
       "Preface"
     ]
@@ -24,7 +24,7 @@
     "href": "structure.html",
     "title": "2  Overview",
     "section": "",
-    "text": "2.1 LULCC: Land Use Simulation\nThe land use land cover change (LULCC) model for Switzerland (Black et al. 2023, n.d.) simulates the land use change in Switzerland from 2010 to 2060…\nLULCC depends on R, CRAN packages and Dinamica EGO.",
+    "text": "2.1 LULCC: Land Use Simulation\nCoupling the three models, we need to define how they depend on each other. Figure 2.1 shows the dependencies between the models.\nFrom this structure, a clear order of execution can be derived. For each of them there is a short description of the model.\nThe land use land cover change (LULCC) model for Switzerland (Black et al. 2023, n.d.) simulates the land use change in Switzerland from 2010 to 2060…\nLULCC depends on R, CRAN packages and Dinamica EGO.",
     "crumbs": [
       "<span class='chapter-number'>2</span>  <span class='chapter-title'>Overview</span>"
     ]
@@ -64,7 +64,7 @@
     "href": "setup.html",
     "title": "4  Setup",
     "section": "",
-    "text": "4.1 Micromamba/Conda\nFor some pipeline steps, we use conda environments. For this, we recommend using micromamba, it does the same thing as conda, but resolves dependencies much faster, with the flexibility of miniconda (only command line interface, no GUI). Find the installation instructions here. Using conda, the commands work the same, only micromamba needs to be replaced by conda. The given scripts identify the installed package manager, as can be found in src/bash_functions.sh.",
+    "text": "4.1 Micromamba/Conda\nTo set up Future-EI for usage, you need to clone this repository, install the models used in Figure 2.1, and configure the local paths for inputs and parameters. For the bash script, environment variables are set in the src/config.yml file.\nFor some pipeline steps, we use conda environments. For this, we recommend using micromamba, it does the same thing as conda, but resolves dependencies much faster, with the flexibility of miniconda (only command line interface, no GUI). Find the installation instructions here. Using conda, the commands work the same, only micromamba needs to be replaced by conda. The given scripts identify the installed package manager, as can be found in src/bash_functions.sh.",
     "crumbs": [
       "<span class='chapter-number'>4</span>  <span class='chapter-title'>Setup</span>"
     ]
