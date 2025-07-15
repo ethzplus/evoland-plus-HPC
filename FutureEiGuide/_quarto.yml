@@ -2,9 +2,9 @@ project:
   type: book
 
 book:
-  title: "Future-EI"
+  title: "evoland+ HPC"
   author: "Carlson Büth and Benjamin Black"
-  date: "24/1/2025" # TODO: update date
+  date: "15/7/2025" # TODO: update date
   chapters:
     - index.qmd
     - intro.qmd
@@ -20,7 +20,6 @@ book:
     - 50_further_steps.qmd
     - summary.qmd
     - references.qmd
-  # favicon: images/favicon.png
   repo-url: https://github.com/cbueth/Future-EI
   issue-url: https://github.com/cbueth/Future-EI/issues/new/choose
   repo-actions: [source, issue]

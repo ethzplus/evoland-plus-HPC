@@ -47,9 +47,9 @@ about:
 
 {{< pagebreak >}}
 
-# Future-EI Guide {.unnumbered .unlisted}
+# evoland+ HPC Guide {.unnumbered .unlisted}
 
-### An unified pipeline for ... (?) {.unnumbered}
+### An unified pipeline for scenario based modelling of Land Use and Land Cover Change, Ecosystem Services and  (?) {.unnumbered}
 
 - [Land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
 [@black2023; @black2024]

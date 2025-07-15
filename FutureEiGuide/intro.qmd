@@ -1,6 +1,6 @@
 # Introduction
 
-Details on the background on the Future-EI pipeline
+Details on the background on the evoland+ HPC pipeline
 
 - Motivation
 - Why
