@@ -1,4 +1,4 @@
-# Running
+## Running
 
 The pipeline is executed in three parts, each part is a separate Slurm job.
 Remember @fig-pipeline from the [Structure](../structure.html) section.
@@ -7,20 +7,20 @@ submitted as one Slurm array job.
 For all of these steps, you need to have followed the previous sections to
 set up and configure the pipeline.
 This includes preparing the FF NCP using
-[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh)
+[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh)
 and filling the
 [simulation control table](10_LULCC.html#simulation-control-table)
 with all the scenarios you want to run.
 
-## Future-EI pipeline
+### evoland-plus HPC pipeline
 
 **Land Use Simulation** and **NCP Estimation** can separately be calculated
 for one scenario with the jobs
-[`src/steps/10_LULCC/slurm_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/10_LULCC/slurm_job.sh)
+[`src/steps/10_LULCC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/slurm_job.sh)
 and
-[`src/steps/40_NCPs/slurm_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs/slurm_job.sh).
+[`src/steps/40_NCPs/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/slurm_job.sh).
 The
-[`10_40_combined_array_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/10_40_combined_array_job.sh)
+[`10_40_combined_array_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_40_combined_array_job.sh)
 slurm job calculates both steps for all scenarios in parallel.
 Each array job receives a subset of the scenarios to calculate.
 All scenarios are calculated in parallel with the following slurm job:
@@ -106,22 +106,22 @@ This comes down to commenting-out one line in the script.
 :::
 
 
-## Check LULCC and Focal LULC
+### Check LULCC and Focal LULC
 
 As explained in their respective sections, the steps
 [Check LULCC](11_CheckLULCC.html) and
 [Focal LULC](20_FocalLULC.html) can be already run after the LULC layers are
 present.
 Both
-[`src/steps/11_CheckLULCC/slurm_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/11_CheckLULCC/slurm_job.sh)
+[`src/steps/11_CheckLULCC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/11_CheckLULCC/slurm_job.sh)
 and
-[`src/steps/20_FocalLULC/slurm_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/20_FocalLULC/slurm_job.sh)
+[`src/steps/20_FocalLULC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/20_FocalLULC/slurm_job.sh)
 are also submitted with `sbatch`.
 In contrast, these are simple jobs and their parallelization is achieved by
 assigning more CPUs to the job and using R's asynchronous processing
 [`future::plan(future::multisession)`](https://rdrr.io/cran/future/man/multisession.html).
 
-## Logging
+### Logging
 
 There are multiple levels of logging in the pipeline.
 When running the Slurm jobs, the output and error logs are written to the

@@ -1,4 +1,4 @@
-# Focal LULC {#20_FocalLULC}
+## Focal LULC {#20_FocalLULC}
 
 This step calculates focal statistics for the land use and land cover change (LULCC) data.
 The resulting focal windows are used for the N-SDM model [@lulcc2024].
@@ -26,15 +26,15 @@ It creates the outputs in a similar structure, inside the output directory, name
 For each scenario, the focal statistics by `WindowType` and `FocalFunction`
 are calculated for each radius in `RadiusList`.
 For details, consult the docstring of the method
-[`20_focal_statistics::simulated_lulc_to_predictors`](https://github.com/cbueth/Future-EI/blob/main/src/steps/20_FocalLULC/20_focal_statistics.R#L260-L323).
+[`20_focal_statistics::simulated_lulc_to_predictors`](https://github.com/ethzplus/evoland-plus-HPC/blob/main/src/steps/20_FocalLULC/20_focal_statistics.R#L260-L323).
 
 This step uses a conda environment with `raster~=3.6-26`, `terra~=1.7-71`
 (only used for conversion), and further R packages.
 The conda environment `focal_lulc` is set up by executing the setup script  
-[`src/steps/20_FocalLULC/20_FocalLULC_setup.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/20_FocalLULC/20_FocalPrep_setup.sh).
+[`src/steps/20_FocalLULC/20_FocalLULC_setup.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/20_FocalLULC/20_FocalPrep_setup.sh).
 
 As for the previous steps, the job script
-[`slurm_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/20_FocalLULC/slurm_job.sh)
+[`slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/20_FocalLULC/slurm_job.sh)
 needs to be submitted to the HPC scheduler.
 
 ```{.bash}

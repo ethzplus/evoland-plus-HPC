@@ -331,11 +331,48 @@
                     "given": "Benjamin"
                 },
                 {
-                    "literal": "others"
+                    "family": "Adde",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Külling",
+                    "given": "Nathan"
+                },
+                {
+                    "family": "Büth",
+                    "given": "Carlson"
+                },
+                {
+                    "family": "Kurmann",
+                    "given": "Manuel"
+                },
+                {
+                    "family": "Lehmann",
+                    "given": "Anthony"
+                },
+                {
+                    "family": "Altermatt",
+                    "given": "Florian"
+                },
+                {
+                    "family": "Guisan",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Gret-Regamey",
+                    "given": "Adrienne"
                 }
             ],
-            "id": "Black2025",
-            "title": "Future-EI paper",
+            "id": "black2025",
+            "issued": {
+                "date-parts": [
+                    [
+                        2025
+                    ]
+                ]
+            },
+            "note": "In Review in Global Environmental Change",
+            "title": "Identifying robust conservation strategies to secure ecosystem service provision under uncertainties",
             "type": "manuscript"
         },
         {

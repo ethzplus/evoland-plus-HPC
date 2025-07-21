@@ -1,9 +1,9 @@
-# Nature's Contributions to People {#40_NCPs}
+## Nature's Contributions to People {#40_NCPs}
 
 Based on the code written for @kuelling2024, we
 automatized the calculation of eight NCP.
 To note, our study includes more NCP as this, as some of them are
-characterized by the plain focal windows [@Black2025]. (_Ben_: true?)
+characterized by the plain focal windows [@black2025]. (_Ben_: true?)
 
 
 Additionally to `R` and CRAN packages,
@@ -20,19 +20,19 @@ among other packages[^r-package-versions-ncp].
 :::
 
 As the previous two steps, setting up the conda environment `ncps` is done using
-the [`src/steps/40_NCPs/40_NCPs_setup.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs/40_NCPs_setup.sh)
+the [`src/steps/40_NCPs/40_NCPs_setup.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/40_NCPs_setup.sh)
 script.
 
-## NCP
+### NCPs
 
-@tbl-ncp lists all NCP calculated in the Future-EI project.
+@tbl-ncp lists all NCP calculated in the evoland-plus HPC project.
 Here, we detail the eight NCP calculated in this step.
 The `config.yml` file includes a few variables which are automatically used
 for the NCP calculation.
 
 ```{.yaml filename="src/config.yml (54-59)"}
   # NCP variables
-  NCP_PARAMS_YML: ~/Future-EI/src/steps/40_NCPs/NCP_models/40_NCPs_params.yml
+  NCP_PARAMS_YML: ~/evoland-plus HPC/src/steps/40_NCPs/NCP_models/40_NCPs_params.yml
   NCP_RUN_SCENARIO_ID: # Scenario ID, automatically set for each configuration
   NCP_RUN_YEAR: # Year for which to run NCPs, automatically set
   NCP_RUN_OUTPUT_DIR: # Output directory for NCPs, automatically set
@@ -62,7 +62,7 @@ The first three layers are automatically found in the `NCP_RUN_INPUT_DIR`
 and depend on the scenario ID and year.
 These three are constructed with the template that the LULCC model produces,
 as can be seen in the
-[`load_params.py`](https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs/NCP_models/load_params.py)
+[`load_params.py`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/load_params.py)
 script.
 
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
@@ -124,13 +124,13 @@ Make sure that the resolution of all input data is the same and matches the
 
 For each NCP, the configuration is detailed in the following sections.
 
-### CAR: Regulation of climate {#CAR}
+#### CAR: Regulation of climate {#CAR}
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 CAR:
   # 1_CAR_S_CH.R
   # 2_CAR_S_CH.py
   bp_tables_dir:
-    Future-EI/src/steps/40_NCPs/NCP_models/CAR/BPTABLE/
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/CAR/BPTABLE/
   # 3_CAR_S_CH.R
   # output prefix
   out_prefix: tot_c_cur_
@@ -142,13 +142,13 @@ The `natcap.invest`-model
 [Carbon Storage and Sequestration](https://invest.readthedocs.io/en/latest/models.html#carbon-storage-and-sequestration)
 is used for this calculation.
 
-### FF: Food and feed {#FF}
+#### FF: Food and feed {#FF}
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 FF:
   # 0_FF_ecocrop.R
   crops_data:
-    Future-EI/src/steps/40_NCPs/NCP_models/FF/crops.txt
-  ecocrop_dir: Future-EI-Output/FF_preprocessing_ecocrop/
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/FF/crops.txt
+  ecocrop_dir: evoland-plus HPC-Output/FF_preprocessing_ecocrop/
 
 ```
 
@@ -158,21 +158,21 @@ The package uses a limiting factor approach @Hackett1991.
 This NCP has a data preparation step which needs to be executed once before
 running the parallelized NCP calculation.
 It is a single R script that can easily be triggered with calling
-[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh),
+[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh),
 no SLURM needed.
 
-### HAB: Habitat creation and maintenance {#HAB}
+#### HAB: Habitat creation and maintenance {#HAB}
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 HAB:
   # 0_thread_layers_generation.R
   # 1_HAB_S_CH.py
   half_saturation_constant: 0.075
   bp_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/
   sensitivity_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/hab_sensitivity.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/hab_sensitivity.csv
   threats_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/threats.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/threats.csv
 
 ```
 
@@ -217,13 +217,13 @@ python -c "import site; print(site.getsitepackages())"
 In this folder, you navigate further down to find
 `.../site-packages/natcap/invest/habitat_quality.py`.
 
-### NDR: Nutrient Delivery Ratio {#NDR}
+#### NDR: Nutrient Delivery Ratio {#NDR}
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 NDR:
   # 1_NDR_S_CH.py
   # Biophysical table
   biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/NDR/BPTABLE/ndr_bptable_ds25_futei.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/NDR/BPTABLE/ndr_bptable_ds25_futei.csv
   calc_n: true
   calc_p: true
   k_param: 2
@@ -243,7 +243,7 @@ The biophysical table specifies the nutrient retention by vegetation using
 various variables, e.g., root depth and more detailed soil properties
 described in the `natcap.invest` documentation.
 
-### POL: Pollination and dispersal of seeds {#POL}
+#### POL: Pollination and dispersal of seeds {#POL}
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 POL:
   # 1_POL_S_CH.py
@@ -251,10 +251,10 @@ POL:
   farm_vector_path: ''
   # Guild table path
   guild_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/guild.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/POL/BPTABLE/guild.csv
   # Landcover biophysical table path
   landcover_biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/pollination_bptable_ds25_futei.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/POL/BPTABLE/pollination_bptable_ds25_futei.csv
   # 2_POL_S_CH_aggregating.R
 
 ```
@@ -263,14 +263,14 @@ The `POL` NCP calculates the `natcap.invest`
 [Crop Pollination model](https://invest.readthedocs.io/en/latest/models.html#crop-pollination).
 Followed by an aggregation step in R.
 
-### REC: Recreation potential {#REC}
+#### REC: Recreation potential {#REC}
 
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 REC:
   # 1_REC.R
   # lulc naturality lookup table
   lutable_nat_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/REC/BPTABLE/lutable_naturality.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/REC/BPTABLE/lutable_naturality.csv
 
 ```
 
@@ -286,13 +286,13 @@ This is a normalized aggregate of three landscape characteristics maps:
 
 The output is a single map of recreation potential.
 
-### SDR: Formation, protection and decontamination of soils {#SDR}
+#### SDR: Formation, protection and decontamination of soils {#SDR}
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 SDR:
   # 1_SDR_S_CH.py
   # Biophysical table
   biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/SDR/BPTABLE/bptable_SDR_v2_futei.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/SDR/BPTABLE/bptable_SDR_v2_futei.csv
   # Drainage path
   ic_0_param: 0.4
   k_param: 2
@@ -308,13 +308,13 @@ Sediment export and retention are calculated in the `SDR` NCP
 with the [Sediment Delivery Ratio model](https://invest.readthedocs.io/en/latest/models.html#sediment-delivery-ratio)
 from `natcap.invest`.
 
-### WY: Regulation of freshwater quantity, location and timing {#WY}
+#### WY: Regulation of freshwater quantity, location and timing {#WY}
 ```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
 WY:
   # 1_WY_S_CH.py
   # Biophysical table
   biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/WY/BPTABLE/wy_bptable_ds25_futei.csv
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/WY/BPTABLE/wy_bptable_ds25_futei.csv
   # Seasonality constant
   seasonality_constant: 25
 
@@ -324,12 +324,12 @@ WY:
 is the final NCP calculated in this step.
 The `WY` NCP calculates the hydropower potential.
 
-## Running the NCP calculation
+### Running the NCP calculation
 
 Assuming the `ncps` environment is set up, all previous configurations are
 correctly set, the input data is available, and
 the FF NCP has been prepared using
-[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh),
+[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh),
 the NCP calculation can be started.
 
 To calculate all NCP for one scenario and year, the `run_all_ncps.py` script
@@ -344,9 +344,9 @@ The simplified execution of this using the HPC scheduler SLURM is done with
 `sbatch src/steps/40_NCPs/NCP_models/slurm_job.sh`.
 The scenario ID and year are set in the job script.
 
-The full, parallelized execution of the Future-EI pipeline for
+The full, parallelized execution of the evoland-plus HPC pipeline for
 all scenarios with LULCC and NCP calculation is done with the
-[`10_40_combined_array_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/10_40_combined_array_job.sh)
+[`10_40_combined_array_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_40_combined_array_job.sh)
 script and SLURM, for this consult the following
 [Running section](running.html).
 

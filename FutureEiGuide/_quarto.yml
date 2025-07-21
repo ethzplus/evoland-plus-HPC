@@ -1,42 +1,33 @@
 project:
   type: book
-
 book:
-  title: "evoland+ HPC"
   author: "Carlson Büth and Benjamin Black"
-  date: "15/7/2025" # TODO: update date
+  date: last-modified
   chapters:
     - index.qmd
     - intro.qmd
     - structure.qmd
-    - part: pipeline/index.qmd
-      chapters:
-        - pipeline/setup.qmd
-        - pipeline/10_LULCC.qmd
-        - pipeline/11_CheckLULCC.qmd
-        - pipeline/20_FocalLULC.qmd
-        - pipeline/40_NCPs.qmd
-        - pipeline/running.qmd
-    - 50_further_steps.qmd
+    - pipeline/pipeline.qmd
     - summary.qmd
     - references.qmd
-  repo-url: https://github.com/cbueth/Future-EI
-  issue-url: https://github.com/cbueth/Future-EI/issues/new/choose
+  issue-url: https://github.com/ethzplus/evoland-plus-HPC/issues/new/choose
   repo-actions: [source, issue]
   repo-subdir: FutureEiGuide
   authority: Planning of Landscape and Urban Systems – PLUS (ETH Zurich)
   language: en
   license: MIT License
-
 bibliography: references.bib
+callout-appearance: minimal
 
 format:
   html:
-    theme: cosmo
+    theme: 
+      light: [cosmo, theme-light.scss]
+      dark: [cosmo, theme-dark.scss]
     link-external-icon: true
     link-external-newwindow: true
-  pdf:
-    documentclass: scrreprt
+  # pdf:
+  #   documentclass: scrreprt
 
 execute:
   freeze: auto

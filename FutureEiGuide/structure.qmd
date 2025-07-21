@@ -1,12 +1,12 @@
 # Structure
 
-For the related research project @Black2025, we couple three main
+For the related research project @black2025, we couple three main
 steps:
 Land Use Simulation,
 combined NCP Estimations and
 Species Distribution Modeling.
 These are shown bold in the @fig-pipeline.
-Future-EI covers the LULC Simulation and steps dependent on its output,
+evoland-plus HPC covers the LULC Simulation and steps dependent on its output,
 namely the NCP estimations, intensity analysis and focal window preparation.
 These steps, shown in blue, are unified to be automated for
 command line interface (CLI) and high performance computing (HPC) compatibility,
@@ -14,7 +14,7 @@ to be scalable and reproducible.
 
 ```{mermaid}
 %%| label: fig-pipeline
-%%| fig-cap: "Pipeline Overview -- Steps in blue are part of the Future-EI pipeline, red steps are external. From this structure, a clear order of execution can be derived."
+%%| fig-cap: "Pipeline Overview -- Steps in blue are part of the evoland-plus HPC pipeline, red steps are external. From this structure, a clear order of execution can be derived."
 flowchart TD
   LULCC[LULCC:<br>Land Use Simulation] --> Focal(Focal LULC<br>prep.)
   LULCC --> NCP[NCP Estimation]
@@ -41,7 +41,7 @@ individual steps and code used, in terms of input, output and execution.
 
 ## LULCC: Land Use Simulation
 The [land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
-[@black2023;@black2024] is the first step in the Future-EI pipeline.
+[@black2023;@black2024] is the first step in the evoland-plus HPC pipeline.
 For given climate scenarios, it simulates land use changes in Switzerland
 until a given future year (e.g., 2060),
 based on historical data and future projections.
@@ -91,7 +91,7 @@ The [nested species distribution modelling (N-SDM)](https://github.com/N-SDM/N-S
 step simulates the distribution of species in Switzerland.
 Species occurrence used to fit models and covariate data are selected,
 both at different spatial scales, to predict the species distribution.
-This part is not integrated into the Future-EI pipeline,
+This part is not integrated into the evoland-plus HPC pipeline,
 and needs to be consulted separately.
 
 ## Species Maps Aggregation
@@ -104,5 +104,5 @@ The species maps are then aggregated to ...
 To analyze the scenarios, the species maps are clustered to ...
 The code for this step can be found in the separate repository
 [reponame](https://github.com/blenback/reponame).
-These scripts are adapted to the case of Switzerland and the Future-EI project.
+These scripts are adapted to the case of Switzerland and the evoland-plus HPC project.
 ...

@@ -1,4 +1,4 @@
-# Check LULCC {#11_CheckLULCC}
+## Check LULCC {#11_CheckLULCC}
 
 For checking the LULCC output integrity of the previous step,
 an intensity analysis is performed.
@@ -32,14 +32,14 @@ CheckLULCC:
 This step uses a conda environment with `raster~=3.6-26` aside further
 R packages.
 The automatic setup script
-[`src/steps/11_CheckLULCC/11_CheckLULCC_setup.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/11_CheckLULCC/11_CheckLULCC_setup.sh)
+[`src/steps/11_CheckLULCC/11_CheckLULCC_setup.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/11_CheckLULCC/11_CheckLULCC_setup.sh)
 needs to be executed to set up the conda environment.
 It sets up a conda environment `check_lulc` with the packages found in
 `11_checklulcc_env.yml`.
 
 Running the intensity analyis is as easy as [`sbatch`ing](https://slurm.schedmd.com/sbatch.html)
 the job script
-[`slurm_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/11_CheckLULCC/slurm_job.sh).
+[`slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/11_CheckLULCC/slurm_job.sh).
 
 ```{.bash}
 sbatch src/steps/11_CheckLULCC/slurm_job.sh

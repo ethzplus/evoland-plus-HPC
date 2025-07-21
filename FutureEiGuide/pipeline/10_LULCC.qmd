@@ -1,10 +1,10 @@
-# Land Use Land Cover Change {#10_LULCC}
+## Land Use Land Cover Change {#10_LULCC}
 
 LULCC is a [`Dinamica EGO`](https://dinamicaego.com) [@dinamicaEGO] model,
 and makes use of the [`R`](https://www.r-project.org/) [@r2022] ecosystem,
 including packages from the Comprehensive R Archive Network (CRAN).
 You can find the LULCC model,
-as well as an adapted version for use with Future-EI,
+as well as an adapted version for use with evoland-plus HPC,
 in the [LULCC repository](https://github.com/blenback/LULCC-CH) [@lulcc2024],
 as mentioned in the [setup section](#lulcc-repository).
 
@@ -57,7 +57,7 @@ For information on the further variables,
 see the [LULCC repository](https://github.com/blenback/LULCC-CH)
 and paper [@lulcc2024].
 
-## Simulation Control Table {#simulation-control-table}
+### Simulation Control Table {#simulation-control-table}
 
 `Simulation_control.csv` is a table that controls the scenarios to be simulated,
 including the data described in @tbl-simulation-control.
@@ -100,17 +100,17 @@ This table controls which data is used to simulate the land use changes.
 
 
 
-## Container Setup
+### Container Setup
 
 For a platform independent execution of Dinamica EGO,
 we created a [`dinamica-ego-docker` container](https://github.com/cbueth/dinamica-ego-docker/) container.
 This way, the glibc version is fixed,
 and the container can be used system independently[^dinamica-ego-linux-compat].
 This one is used in the LULCC docker container.
-Our Dockerfile [`src/steps/10_LULCC/Dockerfile`](https://github.com/cbueth/Future-EI/tree/main/src/steps/10_LULCC/Dockerfile)
+Our Dockerfile [`src/steps/10_LULCC/Dockerfile`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/Dockerfile)
 then adds the necessary R packages for LULCC to the container.
 The Apptainer Definition
-File [`src/steps/10_LULCC/lulcc.def`](https://github. com/cbueth/Future-EI/tree/main/src/steps/10_LULCC/lulcc.def)
+File [`src/steps/10_LULCC/lulcc.def`](https://github. com/cbueth/evoland-plus HPC/tree/main/src/steps/10_LULCC/lulcc.def)
 bootstraps the docker container, mounts the `LULCC_CH_HPC_DIR` to the
 `/model` directory (it is not shipped within the container),
 and translates the entry point to the Apptainer format.
@@ -141,9 +141,9 @@ flowchart LR
 
 To load the LULCC docker onto your system,
 it can be automatically installed or built using the
-[`src/steps/10_LULCC/docker_setup.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/10_LULCC/docker_setup.sh)
+[`src/steps/10_LULCC/docker_setup.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/docker_setup.sh)
 script, which uses variables from the
-[`src/config.yml`](https://github.com/cbueth/Future-EI/tree/main/src/config.yml).
+[`src/config.yml`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/config.yml).
 If you have `docker` installed, the setup script guides you through the building,
 pushing, or pulling of the LULCC docker container.
 This step can be done on a local machine.
@@ -178,7 +178,7 @@ you might want to change it to another temporary directory.
 After all previous steps are completed,
 you can test the LULCC model with some test scenarios in the simulation control
 table.
-[`src/steps/10_LULCC/slurm_job.sh`](https://github.com/cbueth/Future-EI/tree/main/src/steps/10_LULCC/slurm_job.sh)
+[`src/steps/10_LULCC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/slurm_job.sh)
 submits.
 Before the full, parallelized simulation can be started,
 read the following sections.

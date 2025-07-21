@@ -1,15 +1,15 @@
-# Setup
+## Setup
 
-Before you set up the Future-EI pipeline, you should make sure to satisfy
+Before you set up the evoland-plus HPC pipeline, you should make sure to satisfy
 a few requirements.
 This section will go over [hardware](#hardware) and [software](#software)
 requirements, and then guide you through
-the [Future-EI repository](#future-ei-repository) setup.
+the [evoland-plus HPC repository](#future-ei-repository) setup.
 The following pages guide through the details of each step in the pipeline,
 before concluding with the [execution](running.html) of the pipeline.
 
 
-## Requirements
+### Requirements
 
 We are using a Linux cluster
 with [SLURM](https://slurm.schedmd.com/overview.html) as scheduler.
@@ -28,7 +28,7 @@ Feel free to reach out to a technically savvy colleague or your local HPC
 support for help.
 :::
 
-### Hardware
+#### Hardware
 The minimum memory and CPU requirements cannot generally be stated, as they
 depend on the area of interest, input data, and the number of scenarios.
 A viable starting point for a country with the size of Switzerland, using a
@@ -39,12 +39,12 @@ and 16 CPUs, to achieve a viable runtime.
 As this is an estimate, it is essential to monitor runtime before scaling up.
 
 
-### Software
+#### Software
 
 
 Additionally, you need to install the following software:
 
-#### Micromamba/Conda
+##### Micromamba/Conda
 
 For some pipeline steps, we use conda environments.
 [Conda](https://docs.conda.io/projects/conda/en/stable/) is a package manager
@@ -59,7 +59,7 @@ We have added compatibility for `micromamba`, `mamba` and `conda`,
 in this order of preference, but only tested with `micromamba`[^conda].
 
 [^conda]: The installed CLI is identified via bash variables in
-    [`src/bash_common.sh`](https://github.com/cbueth/Future-EI/tree/main/src/bash_common.sh).
+    [`src/bash_common.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/bash_common.sh).
     If none is found, an error highlights the issue.
 
 We have chosen [`conda-forge`](https://conda-forge.org/) as the default
@@ -69,7 +69,7 @@ as it is a single source for our `R`, Python, and lower-level dependencies
 This is independent of the modules and applications provided by the
 HPC environment.
 
-#### Apptainer
+##### Apptainer
 
 Running containerized applications on HPCs can be challenging.
 To simplify the process, we use the [Apptainer](https://apptainer.org/)
@@ -78,7 +78,7 @@ Make sure your HPC environment supports Apptainer, and that you have the
 necessary permissions to run containers.
 If this is not the case, contact your HPC support team for help.
 
-#### Docker
+##### Docker
 
 Building the LULCC container requires Docker[^docker-version]
 before converting it to the Apptainer format.
@@ -92,7 +92,7 @@ This step can be done on a local machine, and will be explained in the
 [^docker-version]: The Docker version used is `24.0.7`, but the container
     should be compatible with most versions.
 
-#### Dinamica EGO
+##### Dinamica EGO
 
 Dinamica EGO is an environmental modeling platform used in the LULCC step.
 It is available on [the project website](https://dinamicaego.com/).
@@ -100,7 +100,7 @@ But as aforementioned, it will be used from the LULCC docker image,
 as it is only integrated from the command line interface (CLI),
 not with the usual graphical user interface (GUI).
 
-#### Yaml Parser `yq`
+##### Yaml Parser `yq`
 
 For the `bash` scripts, we use [`yq`](https://mikefarah.gitbook.io/yq/) to parse
 the `yaml` configuration file.
@@ -120,9 +120,9 @@ To check the parser is installed correctly, run `yq --version` in the shell.
 [^yq-version]: We have used `yq` `v4.40.3`, but any version `>=4.18.1`
     should work.
 
-#### LULCC Repository {#lulcc-repository}
+##### LULCC Repository {#lulcc-repository}
 
-The version used for Future-EI is a reduced version of the original model,
+The version used for evoland-plus HPC is a reduced version of the original model,
 adapted for containerized execution on HPCs,
 and can be found on
 the [`hpc` branch](https://github.com/blenback/LULCC-CH/tree/hpc)
@@ -132,10 +132,10 @@ If you have never used git before, search online for a guide on how to clone a
 repository.
 
 
-## Future-EI Repository
+### evoland-plus HPC Repository
 
 After you have set up the requirements, you can clone
-the [Future-EI repository](https://github.com/cbueth/Future-EI).
+the [evoland-plus HPC repository](https://github.com/ethzplus/evoland-plus-HPC).
 This repository contains the pipeline and all necessary scripts to run it.
 
 Before you start the pipeline, you need to configure the pipeline.
@@ -146,8 +146,8 @@ but you can find more settings with descriptive names in the file.
 ```{.yaml filename="src/config.yml" code-copy="false"}
 # Bash variables
 bash_variables:
-  FUTURE_EI_CONFIG_FILE: ~/Future-EI/src/config.yml
-  FUTURE_EI_OUTPUT_DIR: ~/Future-EI-Output
+  FUTURE_EI_CONFIG_FILE: ~/evoland-plus HPC/src/config.yml
+  FUTURE_EI_OUTPUT_DIR: ~/evoland-plus HPC-Output
   ...
   # LULCC HPC version
   LULCC_CH_HPC_DIR: ~/LULCC-CH
@@ -158,7 +158,7 @@ bash_variables:
 ...
 ```
 
-For each script, [`src/bash_common.sh`](https://github.com/cbueth/Future-EI/tree/main/src/bash_common.sh)
+For each script, [`src/bash_common.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/bash_common.sh)
 is sourced to set the environment variables.
 First, `FUTURE_EI_CONFIG_FILE` needs to be set to the absolute
 path of this configuration file.

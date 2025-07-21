@@ -7,21 +7,36 @@ include-in-header:
   - text: |
       <style>
       h1.unlisted {
-        display: none;
-      }
-      </style>
-
+        display: none;      
+        }
+      .btn-custom {
+        background-color: #75AADB;
+        color: white;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-block;
+        }
+      .btn-custom:hover {
+        background-color: #42709b;
+        color: white;
+        }
+        </style>
 about:
   id: about
   template: jolla
   image: cover.png
+  image-shape: rectangle
+  image-alt: "evoland+ HPC logo"
+  image-width: 80%
   links:
     - icon: info-circle
       text: Introduction
-      url: intro.html
+      url: intro.qmd
     - icon: book
-      text: Setup
-      url: pipeline/setup.html
+      text: Setup and Usage
+      url: pipeline/setup.qmd
     - icon: file-pdf
       text: Paper
       url: .
@@ -33,13 +48,10 @@ about:
       url: .
     - icon: github
       text: Code
-      url: https://github.com/cbueth/Future-EI/
-    - icon: file-slides
-      text: Slides
-      url: .
+      url: https://github.com/ethzplus/evoland-plus-HPC
     - icon: quote
       text: Citation
-      url: .#how-to-cite
+      url: evoland_paper.bib
 ---
 
 ::: {#about}
@@ -49,81 +61,67 @@ about:
 
 # evoland+ HPC Guide {.unnumbered .unlisted}
 
-### An unified pipeline for scenario based modelling of Land Use and Land Cover Change, Ecosystem Services and  (?) {.unnumbered}
+# What is *evoland-plus HPC*? {.unnumbered}
 
-- [Land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
-[@black2023; @black2024]
-- [Species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM)
-  [@adde2023]
-- Nature's contributions to people (NCP) calculations, based on [@kuelling2024]
+A unified High Performance Computing (HPC) pipeline for scenario-based modelling of future Land Use and Land Cover Change, the supply of Nature's Contributions to People (NCPs) and the distribution of species, combining several existing models and tools:
 
+-   [Land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH) [@black2023; @black2024]
+-   [Species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM) [@adde2023]
+-   Indicators of Nature's contributions to people (NCPs) based on [@kuelling2024]
 
-# What is _Future-EI_? {.unnumbered}
-
-This is a guide and reference book for the Future-EI pipeline.
-To explore future ecosystem services and nature's contributions to people (NCP)
-in the context of climate scenarios, Future-EI (future ecological infrastructure)
-couples the
-,
-,
-and NCP calculations .
-
-For more details on the background on the Future-EI pipeline, see the
-[Introduction](intro.qmd).
-
-Open Source,
-High Performance Computing,
-Reproducibility
-
-...
+For more details on the background on the evoland-plus HPC pipeline, see the [Introduction](intro.qmd).
 
 ## Statement of need {.unnumbered}
 
-_illustrate the research purpose of the software and place it in the context of
-related work_
-
+evoland-plus HPC was devised in order to perform simulations of alternative scenarios [@mayer2023] that depict the development of the framing conditions for the establishment of a functioning Ecological Infrastructure in Switzerland as specified in the Action Plan for the Swiss Biodiversity Strategy.
 
 ## Acknowledgements {.unnumbered}
 
-This project was funded under the [ValPar.CH](https://valpar.ch/index_en.php?page=home_en)
-project, funded as part of a pilot project of the "Action Plan for the Swiss
-Biodiversity Strategy (AP SBS)" by the Federal Office for the Environment (FOEN).
+The development of evoland-plus HPC and it's parent models was funded under the [ValPar.CH](https://valpar.ch/index_en.php?page=home_en) project, funded by the Federal Office for the Environment (FOEN).
 
-[N-SDM](https://github.com/N-SDM/N-SDM) has been developed within the
-[Ecospatial Ecology Group (Ecospat)](https://www.unil.ch/ecospat/en/home.html)
-at the [University of Lausanne](https://www.unil.ch/central/en/home.html)
+[N-SDM](https://github.com/N-SDM/N-SDM) was developed within the [Ecospatial Ecology Group (Ecospat)](https://www.unil.ch/ecospat/en/home.html) at the [University of Lausanne](https://www.unil.ch/central/en/home.html)
 
-[LULCC-CH](https://github.com/blenback/LULCC-CH)...
+[LULCC-CH](https://github.com/blenback/LULCC-CH) was developed within the chair of [Planning of Landscape and Urban Systems (PLUS)](https://plus.ethz.ch/) at [ETH Zurich](https://www.ethz.ch/en.html)
 
-## How to cite {.unnumbered}
+The models of [NCPs](https://github.com/NKulling/SWISS_NCP_ASSESSMENT) were developed within the [EnviroSPACE Laboratory](https://www.unige.ch/envirospace/) at the [University of Geneva](https://www.unige.ch/).
 
-When using the Future-EI pipeline, please cite the following paper:
+## How to cite {#sec-citation .unnumbered}
 
-```bibtex
-# also update in paper.bib when published
-@unpublished{Black2025,
-  title={Future-EI Paper},
-  author={Black, Ben and others},
+When using the evoland-plus HPC pipeline, please cite the following paper:
+
+::: {.callout-note title="BibTex"}
+``` bibtex
+@unpublished{black2025,
+    title = {Identifying robust conservation strategies to secure ecosystem service provision under uncertainties},
+    author = {Black, Benjamin and Adde, Antoine and {Külling}, Nathan and {Büth}, Carlson and Kurmann, Manuel and Lehmann, Anthony and Altermatt, Florian and Guisan, Antoine and Gret-Regamey, Adrienne},
+    year = {2025},
+    date = {2025},
+    note = {In Review in Global Environmental Change}
+}
 }
 ```
-
-
-::: {.text-center}
-## Get started with Future-EI {.unnumbered}
 :::
 
-::: {.index-grid .text-center}
-
-::: {.index-g-col-6}
-[Introduction](intro.qmd){.btn .btn-primary .w-100}
+::: {.callout-note title="Attribution"}
+**Black, B., Adde, A., Külling, N., Büth, C., Kurmann, M., Lehmann, A., Altermatt, F., Guisan, A., & Gret-Regamey, A.** (2025). Identifying robust conservation strategies to secure ecosystem service provision under uncertainties. *In review in Global Environmental Change*.
 :::
 
-::: {.index-g-col-6}
-[Structure](structure.qmd){.btn .btn-primary .w-100}
+<a class="btn-custom" href="evoland_paper.bib" download>Download BibTeX File</a>
+
+::: text-center
+## Get started with evoland-plus HPC {.unnumbered}
 :::
 
-::: {.index-g-col-6}
-[Setup](pipeline/setup.qmd){.btn .btn-primary .w-100}
+:::::: {.index-grid .text-center}
+::: index-g-col-6
+[Introduction](intro.qmd){.btn .btn-custom .w-100}
 :::
 
+::: index-g-col-6
+[Structure](structure.qmd){.btn .btn-custom .w-100}
 :::
+
+::: index-g-col-6
+[Setup and usage](pipeline/setup.qmd){.btn .btn-custom .w-100}
+:::
+::::::
