@@ -9,10 +9,17 @@
 #SBATCH --error="logs/11_check_lulcc-%j.err"
 #SBATCH --mail-type=NONE       # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
+# Intensity Analysis Slurm Job
+# ----------------------------
+# This script is used to run intensity analysis
+# on all 10_LULCC output land use maps.
+
 echo "Current working directory: $(pwd)"
-source "/cluster/project/eawag/p01002/Future-EI/src/de_activate.sh" check_lulc 1
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+echo "Running script from: $SCRIPT_DIR"
+source "$SCRIPT_DIR/../../de_activate.sh" check_lulc 1
 echo "FUTURE_EI_CONFIG_FILE: $FUTURE_EI_CONFIG_FILE"
-Rscript /cluster/project/eawag/p01002/Future-EI/src/steps/11_CheckLULCC/11_CheckLULCC.R
+Rscript "$SCRIPT_DIR/11_CheckLULCC.R"
 
 # With tail -f logs/11_check_lulcc-*.out you can follow the progress of the job
 # To follow both .out and .err files, use tail -f logs/11_check_lulcc-*.out logs/11_check_lulcc-*.err

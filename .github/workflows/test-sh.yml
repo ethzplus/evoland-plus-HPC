@@ -14,7 +14,6 @@ jobs:
       matrix:
         testfile:
           - test_control_table_control.sh
-          - test_99_Cleanup.sh
     steps:
       - uses: actions/checkout@v3
       - name: Run ${{ matrix.testfile }}

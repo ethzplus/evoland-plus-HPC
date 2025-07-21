@@ -1,0 +1,391 @@
+## Nature's Contributions to People {#40_NCPs}
+
+Based on the code written for @kuelling2024, we
+automatized the calculation of eight NCP.
+To note, our study includes more NCP as this, as some of them are
+characterized by the plain focal windows [@black2025]. (_Ben_: true?)
+
+
+Additionally to `R` and CRAN packages,
+[`InVEST`](https://naturalcapitalproject.stanford.edu/software/invest) is used via
+the `Python` module [`natcap.invest`](https://pypi.org/project/natcap.invest/)
+in this step.
+
+::: {#cau-versions .callout-caution}
+#### Used Versions in this step
+Due to previous API changes, the code is compatible with `natcap.invest=3.13.0`,
+but not earlier versions.
+`raster=3.4-13` and `terra=1.5-21` are used for the NCP calculation,
+among other packages[^r-package-versions-ncp].
+:::
+
+As the previous two steps, setting up the conda environment `ncps` is done using
+the [`src/steps/40_NCPs/40_NCPs_setup.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/40_NCPs_setup.sh)
+script.
+
+### NCPs
+
+@tbl-ncp lists all NCP calculated in the evoland-plus HPC project.
+Here, we detail the eight NCP calculated in this step.
+The `config.yml` file includes a few variables which are automatically used
+for the NCP calculation.
+
+```{.yaml filename="src/config.yml (54-59)"}
+  # NCP variables
+  NCP_PARAMS_YML: ~/evoland-plus HPC/src/steps/40_NCPs/NCP_models/40_NCPs_params.yml
+  NCP_RUN_SCENARIO_ID: # Scenario ID, automatically set for each configuration
+  NCP_RUN_YEAR: # Year for which to run NCPs, automatically set
+  NCP_RUN_OUTPUT_DIR: # Output directory for NCPs, automatically set
+  NCP_RUN_SCRATCH_DIR: # Scratch directory for NCPs, automatically set
+```
+
+The more detailed configuration for each NCP is stored in the
+`40_NCPs_params.yml` file.
+For parallelization purposes, each array job receives a copy of this file
+with the respective scenario ID and year.
+The bash variables `NCP_RUN_*` from the `config.yml` act as a placeholder.
+
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+# Run Params (are passed when calling the run_all_ncps.py script)
+run_params:
+  NCP_RUN_SCENARIO_ID:
+  NCP_RUN_YEAR:
+  NCP_RUN_RCP:  # programmatically set in load_params.py
+  NCP_RUN_INPUT_DIR:
+  NCP_RUN_OUTPUT_DIR:
+  NCP_RUN_SCRATCH_DIR:
+  LULCC_M_EI_LAYER_DIR:  # set in load_params.py (uses config.yml)  # SDR
+```
+For preparation, it is indispensable to set the paths to the input data.
+Some of these are shared among multiple NCP, as noted in the comments.
+The first three layers are automatically found in the `NCP_RUN_INPUT_DIR`
+and depend on the scenario ID and year.
+These three are constructed with the template that the LULCC model produces,
+as can be seen in the
+[`load_params.py`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/load_params.py)
+script.
+
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+# Data
+data:
+  # LULC               - CAR, FF, HAB, NDR, POL, SDR, WY
+  lulc: # automatically found in NCP_RUN_INPUT_DIR
+  # Rural residential  - HAB
+  rur_res: # automatically found in NCP_RUN_INPUT_DIR
+  # Urban residential  - HAB
+  urb_res: # automatically found in NCP_RUN_INPUT_DIR
+  # Production regions - CAR
+  prodreg: Data/PRODUCTION_REGIONS/PRODREG.shp
+  # DEM                - CAR, NDR
+  dem: Data/DEM_mean_LV95.tif
+  # DEM filled         - SDR
+  dem_filled: Data/DEM_mean_LV95_filled.tif
+  # Wathersheds        - NDR, SDR, WY
+  watersheds: Data/watersheds/watersheds.shp
+  # Subwatersheds      - WY
+  sub_watersheds: Data/watersheds/Subwatersheds.shp
+  # ETO                - WY
+  eto: Data/evapotranspiration/
+  # PAWC               - WY
+  pawc: Data/Water_storage_capacity_100m_reclassified1.tif
+  # Erodibility path   - SDR
+  erodibility_path: Data/Kst_LV95_ch_nib.tif
+  # Erosivity path     - SDR
+  erosivity_path: Data/rainfall_erosivity/
+  # Precipitation      - WY, NDR
+  yearly_precipitation: Data/yearly_prec/
+  # Soil depth         - WY
+  depth_to_root_rest_layer: Data/rrd_100_mm_rexport.tif
+  # Precipitation avgs - FF
+  pavg_dir: Data/monthly_prec/
+  # Temperature avgs   - FF
+  tavg_dir: Data/monthly_temp/
+  # Soil texture       - FF
+  ph_raster: Data/ch_edaphic_eiv_descombes_pixel_r.tif
+  # Distance to lakes  - REC
+  distlakes_path: Data/distlakes.tif
+
+# Projection Settings - change for different regions
+proj:
+  # CRS
+  crs: epsg:2056
+  # Extent
+  ext: [ 2480000, 2840000, 1070000, 1300000 ]
+  # Resolution
+  res: 100
+```
+
+::: {#cau-resolution .callout-caution}
+#### Resolution
+
+Make sure that the resolution of all input data is the same and matches the
+`proj.res` setting in the `40_NCPs_params.yml` file.
+:::
+
+For each NCP, the configuration is detailed in the following sections.
+
+#### CAR: Regulation of climate {#CAR}
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+CAR:
+  # 1_CAR_S_CH.R
+  # 2_CAR_S_CH.py
+  bp_tables_dir:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/CAR/BPTABLE/
+  # 3_CAR_S_CH.R
+  # output prefix
+  out_prefix: tot_c_cur_
+```
+To calculate the carbon stored in biomass and soil,
+the `CAR` NCP needs biophysical tables that specify the carbon content
+of different land use classes.
+The `natcap.invest`-model
+[Carbon Storage and Sequestration](https://invest.readthedocs.io/en/latest/models.html#carbon-storage-and-sequestration)
+is used for this calculation.
+
+#### FF: Food and feed {#FF}
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+FF:
+  # 0_FF_ecocrop.R
+  crops_data:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/FF/crops.txt
+  ecocrop_dir: evoland-plus HPC-Output/FF_preprocessing_ecocrop/
+
+```
+
+The `FF` NCP calculates the crop production potential using the
+[`ecocrop`](https://cropmodels.r-universe.dev/Recocrop) package.
+The package uses a limiting factor approach @Hackett1991.
+This NCP has a data preparation step which needs to be executed once before
+running the parallelized NCP calculation.
+It is a single R script that can easily be triggered with calling
+[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh),
+no SLURM needed.
+
+#### HAB: Habitat creation and maintenance {#HAB}
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+HAB:
+  # 0_thread_layers_generation.R
+  # 1_HAB_S_CH.py
+  half_saturation_constant: 0.075
+  bp_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/
+  sensitivity_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/hab_sensitivity.csv
+  threats_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/threats.csv
+
+```
+
+The `HAB` NCP calculates the
+[habitat quality index](https://invest.readthedocs.io/en/latest/models.html#habitat-quality),
+another `natcap.invest` model.
+Set the three biophysical tables accordingly.
+
+As we had problems how `natcap.invest==3.13.0` handles its treat layer table,
+we had to introduce a hotfix in the source code to keep compatibility with the
+existing NCP configuration.
+When loading in the threat layers, `natcap.invest` wants to convert the column
+names to lowercase to be case-insensitive, but the layer paths are also
+converted to lowercase, but our threat layers are case-sensitive.
+To fix this bug, we changed the `to_lower` argument in the
+`execute` function in the `habitat_quality.py` file and set the
+column name to match our lowercase column name.
+
+```{.python filename=".../ncps/lib/python3.10/site-packages/natcap/invest/habitat_quality.py (line 384)"}
+# Change from:
+            args['threats_table_path'], 'THREAT', to_lower=True,
+# to:
+            args['threats_table_path'], 'threat', to_lower=False,
+```
+
+In later versions, the InVEST developers have changed the modality of loading in
+these tables.
+Compatibility with the latest version of `natcap.invest` can be added when
+adapting breaking changes with the further NPC.
+We want to note that changing the source code is a bad practice and should
+only be considered as a last resort.
+
+To find the corresponding natcap folder, navigate to the environment folder,
+from where you find the `site-packages` folder.
+```bash
+# activate the ncps environment with micromamba or conda
+micromamba activate ncps
+# find the site-packages folder
+python -c "import site; print(site.getsitepackages())"
+>>> ['.../micromamba/envs/ncps/lib/python3.10/site-packages']
+```
+In this folder, you navigate further down to find
+`.../site-packages/natcap/invest/habitat_quality.py`.
+
+#### NDR: Nutrient Delivery Ratio {#NDR}
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+NDR:
+  # 1_NDR_S_CH.py
+  # Biophysical table
+  biophysical_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/NDR/BPTABLE/ndr_bptable_ds25_futei.csv
+  calc_n: true
+  calc_p: true
+  k_param: 2
+  # Suffix for output files
+  # Subsurface critical length
+  subsurface_critical_length_n: 100
+  # Subsurface effective retention
+  subsurface_eff_n: 0.75
+  # Threshold flow accumulation
+  threshold_flow_accumulation: 200
+
+```
+
+The `NDR` NCP calculates the
+[Nutrient Delivery Ratio](https://invest.readthedocs.io/en/latest/models.html#nutrient-delivery-ratio).
+The biophysical table specifies the nutrient retention by vegetation using
+various variables, e.g., root depth and more detailed soil properties
+described in the `natcap.invest` documentation.
+
+#### POL: Pollination and dispersal of seeds {#POL}
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+POL:
+  # 1_POL_S_CH.py
+  # Farm vector path
+  farm_vector_path: ''
+  # Guild table path
+  guild_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/POL/BPTABLE/guild.csv
+  # Landcover biophysical table path
+  landcover_biophysical_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/POL/BPTABLE/pollination_bptable_ds25_futei.csv
+  # 2_POL_S_CH_aggregating.R
+
+```
+
+The `POL` NCP calculates the `natcap.invest`
+[Crop Pollination model](https://invest.readthedocs.io/en/latest/models.html#crop-pollination).
+Followed by an aggregation step in R.
+
+#### REC: Recreation potential {#REC}
+
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+REC:
+  # 1_REC.R
+  # lulc naturality lookup table
+  lutable_nat_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/REC/BPTABLE/lutable_naturality.csv
+
+```
+
+The `REC` NCP returns a Recreation Potential (RP) indicator.
+This is a normalized aggregate of three landscape characteristics maps:
+
+- Degree of naturalness (DN): Aggregate sum of naturalness scores for each
+  LULC class.
+- Natural protected areas (NP): Binary map of `0=outside` protected areas,
+  `1=inside` protected areas.
+- Water components (W): Inverse relative distance to lake coasts, with the
+  highest value at the lake coast and a decreasing value for 2 km.
+
+The output is a single map of recreation potential.
+
+#### SDR: Formation, protection and decontamination of soils {#SDR}
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+SDR:
+  # 1_SDR_S_CH.py
+  # Biophysical table
+  biophysical_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/SDR/BPTABLE/bptable_SDR_v2_futei.csv
+  # Drainage path
+  ic_0_param: 0.4
+  k_param: 2
+  l_max: 100
+  # SDR max
+  sdr_max: 0.75
+  # Threshold flow accumulation
+  threshold_flow_accumulation: 200
+
+```
+
+Sediment export and retention are calculated in the `SDR` NCP
+with the [Sediment Delivery Ratio model](https://invest.readthedocs.io/en/latest/models.html#sediment-delivery-ratio)
+from `natcap.invest`.
+
+#### WY: Regulation of freshwater quantity, location and timing {#WY}
+```{.yaml filename="src/steps/40_NCPs/NCP_models/40_NCPs_params.yml"}
+WY:
+  # 1_WY_S_CH.py
+  # Biophysical table
+  biophysical_table_path:
+    evoland-plus HPC/src/steps/40_NCPs/NCP_models/WY/BPTABLE/wy_bptable_ds25_futei.csv
+  # Seasonality constant
+  seasonality_constant: 25
+
+```
+
+[Annual Water Yield](https://invest.readthedocs.io/en/latest/models.html#annual-water-yield)
+is the final NCP calculated in this step.
+The `WY` NCP calculates the hydropower potential.
+
+### Running the NCP calculation
+
+Assuming the `ncps` environment is set up, all previous configurations are
+correctly set, the input data is available, and
+the FF NCP has been prepared using
+[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh),
+the NCP calculation can be started.
+
+To calculate all NCP for one scenario and year, the `run_all_ncps.py` script
+bundles the execution of all NCP.
+It is used like so:
+```bash
+# Usage: bash run_all_ncps.sh <NCP_RUN_SCENARIO_ID> <NCP_RUN_YEAR> <NCP_RUN_INPUT_DIR> <NCP_RUN_OUTPUT_DIR> <NCP_RUN_SCRATCH_DIR>
+bash src/steps/40_NCPs/NCP_models/run_all_ncps.sh 1 2015 /path/to/input_dir /path/to/output_dir /path/to/scratch_dir
+```
+
+The simplified execution of this using the HPC scheduler SLURM is done with
+`sbatch src/steps/40_NCPs/NCP_models/slurm_job.sh`.
+The scenario ID and year are set in the job script.
+
+The full, parallelized execution of the evoland-plus HPC pipeline for
+all scenarios with LULCC and NCP calculation is done with the
+[`10_40_combined_array_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_40_combined_array_job.sh)
+script and SLURM, for this consult the following
+[Running section](running.html).
+
+:::{#note-ncp-output .callout-note}
+#### NCP output check
+The `src/steps/40_NCPs/show_files.py` script shows existing NCP results by
+scenario.
+It reads numbers from files to generate a histogram of counts and
+checks if each expected file is present in each scenario.
+The script outputs a summary table of file coverage and lists any
+missing or unexpected files.
+Missing files are saved to `scenarios_with_missing_files.txt`,
+and unexpected files are saved to `unexpected_files.txt`.
+Such unexpected files might be intermediate files that are not cleaned up
+properly and can be deleted.
+:::
+
+
+[^r-package-versions-ncp]: The versions of the packages used in the NCP
+    calculation are listed in the note below.
+
+    ::: {#note-versions-ncp .callout-note}
+    #### Versions used for the NCP calculation
+
+    R (`4.1.3`) packages:
+
+    - raster: `3.4-13`
+    - terra: `1.5-21`
+    - meteor: `0.4.5`
+    - Recocrop: `0.4.0`
+    - rgdal: `1.5-29`
+    - codetools: `0.2-19`
+    - data.table: `1.14.8`
+    - remotes: `2.4.2`
+    - sf: `1.0-7`
+    - yaml: `2.3.7`
+
+    Python (`3.10.13`) packages:
+
+    - natcap.invest: `3.13.0`
+
+    :::

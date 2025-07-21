@@ -1,56 +1,108 @@
-# Overview
+# Structure
 
-Coupling the three models, we need to define how they depend on each other.
-@fig-pipeline shows the dependencies between the models.
+For the related research project @black2025, we couple three main
+steps:
+Land Use Simulation,
+combined NCP Estimations and
+Species Distribution Modeling.
+These are shown bold in the @fig-pipeline.
+evoland-plus HPC covers the LULC Simulation and steps dependent on its output,
+namely the NCP estimations, intensity analysis and focal window preparation.
+These steps, shown in blue, are unified to be automated for
+command line interface (CLI) and high performance computing (HPC) compatibility,
+to be scalable and reproducible.
 
 ```{mermaid}
 %%| label: fig-pipeline
-%%| fig-cap: "Pipeline Overview"
+%%| fig-cap: "Pipeline Overview -- Steps in blue are part of the evoland-plus HPC pipeline, red steps are external. From this structure, a clear order of execution can be derived."
 flowchart TD
-  LULCC[LULCC: Land Use Simulation] --> Focal(Focal LULC<br>prep.)
-  LULCC --> NSDM[N-SDM: Biodiversity Estimation]
+  LULCC[LULCC:<br>Land Use Simulation] --> Focal(Focal LULC<br>prep.)
+  LULCC --> NCP[NCP Estimation]
+  LULCC --> CheckLULCC[Intensity Analysis]
+  NCP --> Clust(Clustering)
+  LULCC --> NSDM[N-SDM:<br>Species Distribution<br>Modelling]
   Focal --> NSDM
-  LULCC --> NCPs[NCPs: Nature Contributions to People Estimation]
   NSDM --> AggSp(Species Maps Aggregation)
-  NSDM --> NCPs
-  NCPs --> AggNCPs(NCP Clustering)
+  AggSp --> Clust
+
+  style LULCC color:#2780e3, fill:#e9f2fc, stroke:#000000, stroke-width:3px, font-weight:bold
+  style Focal color:#2780e3, fill:#e9f2fc, stroke:#000000
+  style NCP color:#2780e3, fill:#e9f2fc, stroke:#000000, stroke-width:3px, font-weight:bold
+  style Clust color:#b51c89, fill:#f9e8f5, stroke:#5f5f5f
+  style NSDM color:#b51c89, fill:#f9e8f5, stroke:#5f5f5f, stroke-width:3px, font-weight:bold
+  style AggSp color:#b51c89, fill:#f9e8f5, stroke:#5f5f5f
 ```
 
 [//]: # (TODO: Update the figure)
 
-From this structure, a clear order of execution can be derived.
-For each of them there is a short description of the model.
+First, we give an overview of each step in the pipeline.
+In contrast, the [Pipeline](#pipeline) section details and documents the
+individual steps and code used, in terms of input, output and execution.
 
 ## LULCC: Land Use Simulation
 The [land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH)
-[@black2023;@black] simulates the land use change in Switzerland from 2010 to 2060...
+[@black2023;@black2024] is the first step in the evoland-plus HPC pipeline.
+For given climate scenarios, it simulates land use changes in Switzerland
+until a given future year (e.g., 2060),
+based on historical data and future projections.
+The generated land use maps are then used as input for the following steps.
 
-LULCC depends on [`R`](https://www.r-project.org/), CRAN packages and
-[`Dinamica EGO`](https://dinamicaego.com).
 
-## N-SDM: Species Distribution Modelling
-The [species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM) [@adde2023]
-uses multiple approaches to determine species distribution maps for Switzerland...
+## NCP: Nature's Contributions to People
+A range of NCP are estimated from the land use maps.
+Some NCP use further data for the estimation,
+e.g., precipitation and temperature projections.
 
-It mainly uses `Base-R`. As N-SDM is built to be used with HPCs (high performance
-computers) , with `bash` scripts `SLURM` is used to submit jobs.
+The code is based on @kuelling2024,
+but has been adapted for automation and HPC compatibility.
 
-## NCPs: Nature Contributions to People
-A range of NCPs are then estimated from the previous models outputs [@kuelling]...
-Find a description of the NCP scripts in the [NCPs folder](https://github.com/ethzplus/Future-EI/tree/main/src/steps/40_NCPs).
 
-Additionally to `R` and CRAN packages,
-[`InVEST`](https://naturalcapitalproject.stanford.edu/software/invest) is used via
-the `Python` modules [`natcap.invest`](https://pypi.org/project/natcap.invest/).
+|         NCP | Name                                                   | Indicator                                        |
+|------------:|--------------------------------------------------------|--------------------------------------------------|
+| [CAR](#CAR) | Regulation of climate                                  | Carbon stored in biomass and soil                |
+|   [FF](#FF) | Food and feed                                          | Crop production potential (`ecocrop`)            |
+| [HAB](#HAB) | Habitat creation and maintenance                       | Habitat quality index                            |
+| [NDR](#NDR) | Nutrient Delivery Ratio                                | Annual nutrient retention by vegetation          |
+| [POL](#POL) | Pollination and dispersal of seeds                     | Habitat abundance for pollinators                |
+| [REC](#REC) | Recreation potential                                   | Recreation potential (RP) provided by ecosystems |
+| [SDR](#SDR) | Formation, protection and decontamination of soils     | Erosion control by sediment retention            |
+|   [WY](#WY) | Regulation of freshwater quantity, location and timing | Annual water yield                               |
 
-Focal...
+: Nature's Contributions to People (NCP) estimated from the LULCC model.
+{#tbl-ncp}
 
-The job of the Future-EI pipeline is to glue all pieces together for use on HPCs.
-For this, a batch job written in `bash` manages multiple climate scenarios
-and other parameters, while keeping track of the intermediate results.
-Such big batch job can be broken down onto steps from the diagram above, and
-parallelization through tasks with several cpus.
-As each step is different in requirements and execution, resources must be
-allocated accordingly.
-The most computationally expensive step is the N-SDM model.
-Further details will be given in the following sections.
+
+## Intensity Analysis
+
+The Intensity Analysis (IA) is based on x,
+and serves as
+
+
+## Focal LULC Preparation
+
+_Explain why_
+These focal layers are used as inputs for X and Y,
+and act as NCP, specifically Z.
+
+
+## N-SDM: Nested Species Distribution Modelling
+
+The [nested species distribution modelling (N-SDM)](https://github.com/N-SDM/N-SDM) [@adde2023]
+step simulates the distribution of species in Switzerland.
+Species occurrence used to fit models and covariate data are selected,
+both at different spatial scales, to predict the species distribution.
+This part is not integrated into the evoland-plus HPC pipeline,
+and needs to be consulted separately.
+
+## Species Maps Aggregation
+
+The species maps are then aggregated to ...
+
+
+## Clustering
+
+To analyze the scenarios, the species maps are clustered to ...
+The code for this step can be found in the separate repository
+[reponame](https://github.com/blenback/reponame).
+These scripts are adapted to the case of Switzerland and the evoland-plus HPC project.
+...

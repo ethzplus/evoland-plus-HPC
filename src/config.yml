@@ -7,11 +7,11 @@ bash_variables:
   FUTURE_EI_LOG_LEVEL: debug
   FUTURE_EI_CONFIG_FILE: ~/Future-EI/src/config.yml
   FUTURE_EI_OUTPUT_DIR: ~/Future-EI-Output
-  # Output Directories are relative to the $FUTURE_EI_OUTPUT_DIR
+  # Subsequent Output Directories are all relative to the $FUTURE_EI_OUTPUT_DIR
   LULCC_CH_OUTPUT_BASE_DIR: /lulcc_output # Location of all scenario folders, named by IDs
   # LULCC Check
   CHECK_LULCC_OUTPUT_DIR: /lulcc_check
-  # Focal Prep
+  # Focal LULC Prep
   FOCAL_OUTPUT_BASE_DIR: /focal_output
   # NCP
   NCP_OUTPUT_BASE_DIR: /ncp_output
@@ -20,15 +20,13 @@ bash_variables:
   NSDM_OUTPUT_BASE_DIR: /nsdm_outputs
   # Species Aggregation
   SPAGG_OUTPUT_BASE_DIR: /spagg_output
-  # Summarisation
-  SUMMARISATION_OUTPUT_DIR: /summarisation_output
 
   SIM_ID: # simulation id, can be used to look up in control table, set automatically
   # Variables for the docker container
   LULCC_DOCKER_NAMESPACE: cbueth
   LULCC_DOCKER_REPO: lulcc
   LULCC_DOCKER_VERSION: 0.3.0
-  # Dinamica
+  # Dinamica log level options
   # UNCONDITIONAL=0, ERROR=1, WARNING=2, RESULT=3,
   # INFO=4, INFO2=5, DEBUG=6, DEBUG2=7
   DINAMICA_EGO_CLI_LOG_LEVEL: 7
@@ -82,21 +80,3 @@ CheckLULCC:
   BaseName: LULCC_intensity_analysis
   Parallel: True
   NWorkers: 0  # 0 means use all available cores
-
-# Summarisation
-Summarisation:
-  InputDir:  # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
-  OutputDir:  # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
-  Parallel: True
-  NWorkers: 0  # 0 means use all available cores
-  NCPs_to_summarise: [ 'HAB', 'CAR', 'FF', 'NDR', 'POL', 'REC', 'SDR', 'WY' ]
-  NCP_file_names: {
-    CAR: tot_c_cur, FF: FF_S_CH, HAB: quality_c, NDR: n_total_export,
-    POL: POL_S_CH, REC: REC_S_CH, SDR: avoided_erosion, WY: per_pixel/wyield
-  }
-  NCP_nesting: {
-    CAR: FALSE, FF: FALSE, HAB: TRUE, NDR: TRUE, POL: FALSE, REC: FALSE,
-    SDR: TRUE, WY: TRUE
-  }
-  minmax_recalc: FALSE
-

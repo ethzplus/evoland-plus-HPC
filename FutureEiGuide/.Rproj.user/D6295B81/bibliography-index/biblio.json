@@ -1,0 +1,464 @@
+{
+    "sources": [
+        {
+            "DOI": "10.1111/ecog.06540",
+            "ISSN": "0906-7590, 1600-0587",
+            "URL": "https://onlinelibrary.wiley.com/doi/10.1111/ecog.06540",
+            "accessed": {
+                "date-parts": [
+                    [
+                        2023,
+                        8,
+                        17
+                    ]
+                ]
+            },
+            "author": [
+                {
+                    "family": "Adde",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Rey",
+                    "given": "Pierre-Louis"
+                },
+                {
+                    "family": "Brun",
+                    "given": "Philipp"
+                },
+                {
+                    "family": "Külling",
+                    "given": "Nathan"
+                },
+                {
+                    "family": "Fopp",
+                    "given": "Fabian"
+                },
+                {
+                    "family": "Altermatt",
+                    "given": "Florian"
+                },
+                {
+                    "family": "Broennimann",
+                    "given": "Olivier"
+                },
+                {
+                    "family": "Lehmann",
+                    "given": "Anthony"
+                },
+                {
+                    "family": "Petitpierre",
+                    "given": "Blaise"
+                },
+                {
+                    "family": "Zimmermann",
+                    "given": "Niklaus E."
+                },
+                {
+                    "family": "Pellissier",
+                    "given": "Loïc"
+                },
+                {
+                    "family": "Guisan",
+                    "given": "Antoine"
+                }
+            ],
+            "container-title": "Ecography",
+            "id": "adde2023",
+            "issue": "6",
+            "issued": {
+                "date-parts": [
+                    [
+                        2023,
+                        6
+                    ]
+                ]
+            },
+            "language": "en-US",
+            "page": "e06540",
+            "title": "<i>N-</i><i>SDM</i> : A high-performance computing pipeline for Nested Species Distribution Modelling",
+            "title-short": "<i>N-</i><i>SDM</i>",
+            "type": "article-journal",
+            "volume": "2023"
+        },
+        {
+            "DOI": "10.1016/j.envsoft.2022.105574",
+            "ISSN": "13648152",
+            "URL": "https://linkinghub.elsevier.com/retrieve/pii/S1364815222002742",
+            "abstract": "The increasing complexity of the dynamics captured in Land Use and Land Cover (LULC) change modelling has made model behaviour less transparent and calibration more extensive. For cellular automata models in particular, this is compounded by the fact that validation is typically performed indirectly, using final simulated change maps; rather than directly considering the probabilistic predictions of transition potential. This study demonstrates that evaluating transition potential predictions provides detail into model behaviour and perfor mance that cannot be obtained from simulated map comparison alone. This is illustrated by modelling LULC transitions in Switzerland using both Logistic Regression and Random Forests. The results emphasize the need for LULC modellers to explicitly consider the performance of individual transition models independently to ensure robust predictions. Additionally, this study highlights the potential for predictor variable selection as a means to improve transition model generalizability and parsimony, which is beneficial for simulating future LULC change.",
+            "accessed": {
+                "date-parts": [
+                    [
+                        2023,
+                        8,
+                        17
+                    ]
+                ]
+            },
+            "author": [
+                {
+                    "family": "Black",
+                    "given": "Benjamin"
+                },
+                {
+                    "family": "Van Strien",
+                    "given": "Maarten J."
+                },
+                {
+                    "family": "Adde",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Grêt-Regamey",
+                    "given": "Adrienne"
+                }
+            ],
+            "container-title": "Environmental Modelling & Software",
+            "id": "black2023",
+            "issued": {
+                "date-parts": [
+                    [
+                        2023,
+                        1
+                    ]
+                ]
+            },
+            "language": "en-US",
+            "page": "105574",
+            "title": "Re-considering the status quo: Improving calibration of land use change models through validation of transition potential predictions",
+            "title-short": "Re-considering the status quo",
+            "type": "article-journal",
+            "volume": "159"
+        },
+        {
+            "DOI": "10.1007/s11625-023-01380-7",
+            "ISSN": "1862-4065, 1862-4057",
+            "URL": "https://link.springer.com/10.1007/s11625-023-01380-7",
+            "abstract": "Scenarios are useful for considering development pathways under different future conditions. To manage a functioning ecological infrastructure (EI) as a network of natural and semi-natural habitats that can promote biodiversity and provide nature’s contributions to people (NCPs), one needs to understand future biophysical and socio-economic influences on its development. However, scenarios often do not incorporate the reciprocity of biophysical and societal changes. This has prompted new proposals from the Intergovernmental Science-Policy Platform on Biodiversity and Ecosystem Services (IPBES) on the importance of creating nature-centered multiscale scenarios that include a normative dimension accounting for diverse humannature relationships. In this contribution, we operationalize the Nature Futures Framework (NFF), developed under IPBES, into integrated normative and exploratory scenarios framing the development of a functioning EI in Switzerland until 2060. We follow a two-stage participatory approach methodologically aligned with the IPBES development. First, we elaborated positive visions for future EI with stakeholders in four regions of Switzerland. We then collaborated with experts to create integrated normative and exploratory scenarios through a process comprising literature research, workshops and a survey. By positioning status quo and future scenarios within the Nature Futures Framework, we demonstrate the diversity of nature values in a specific context of EI in Switzerland, thus contributing to the global set of Nature Futures scenarios. Integrating both plausible and desirable developments, these scenarios will serve as a valuable tool in the planning of longterm measures to ensure a functioning EI in Switzerland.",
+            "accessed": {
+                "date-parts": [
+                    [
+                        2023,
+                        8,
+                        17
+                    ]
+                ]
+            },
+            "author": [
+                {
+                    "family": "Mayer",
+                    "given": "Paula"
+                },
+                {
+                    "family": "Rabe",
+                    "given": "Sven-Erik"
+                },
+                {
+                    "family": "Grêt-Regamey",
+                    "given": "Adrienne"
+                }
+            ],
+            "container-title": "Sustainability Science",
+            "id": "mayer2023",
+            "issued": {
+                "date-parts": [
+                    [
+                        2023,
+                        7
+                    ]
+                ]
+            },
+            "language": "en-US",
+            "title": "Operationalizing the Nature Futures Framework for ecological infrastructure",
+            "type": "article-journal"
+        },
+        {
+            "DOI": "10.1007/s10113-024-02261-0",
+            "ISSN": "1436-378X",
+            "URL": "http://dx.doi.org/10.1007/s10113-024-02261-0",
+            "author": [
+                {
+                    "family": "Black",
+                    "given": "Benjamin"
+                },
+                {
+                    "family": "Adde",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Farinotti",
+                    "given": "Daniel"
+                },
+                {
+                    "family": "Guisan",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Külling",
+                    "given": "Nathan"
+                },
+                {
+                    "family": "Kurmann",
+                    "given": "Manuel"
+                },
+                {
+                    "family": "Martin",
+                    "given": "Caroline"
+                },
+                {
+                    "family": "Mayer",
+                    "given": "Paula"
+                },
+                {
+                    "family": "Rabe",
+                    "given": "Sven-Erik"
+                },
+                {
+                    "family": "Streit",
+                    "given": "Jan"
+                },
+                {
+                    "family": "Zekollari",
+                    "given": "Harry"
+                },
+                {
+                    "family": "Grêt-Regamey",
+                    "given": "Adrienne"
+                }
+            ],
+            "container-title": "Regional Environmental Change",
+            "id": "black2024",
+            "issue": "3",
+            "issued": {
+                "date-parts": [
+                    [
+                        2024,
+                        7
+                    ]
+                ]
+            },
+            "publisher": "Springer Science; Business Media LLC",
+            "title": "Broadening the horizon in land use change modelling: Normative scenarios for nature positive futures in switzerland",
+            "title-short": "Broadening the horizon in land use change modelling",
+            "type": "article-journal",
+            "volume": "24"
+        },
+        {
+            "URL": "https://github.com/blenback/LULCC-CH",
+            "accessed": {
+                "date-parts": [
+                    [
+                        2024,
+                        12,
+                        20
+                    ]
+                ]
+            },
+            "author": [
+                {
+                    "family": "Black",
+                    "given": "Benjamin"
+                }
+            ],
+            "id": "lulcc2024",
+            "issued": {
+                "date-parts": [
+                    [
+                        2024
+                    ]
+                ]
+            },
+            "language": "en-US",
+            "publisher": "GitHub",
+            "title": "LULCC-CH source code",
+            "type": "software"
+        },
+        {
+            "DOI": "10.1016/j.ecolind.2024.112079",
+            "ISSN": "1470-160X",
+            "URL": "https://www.sciencedirect.com/science/article/pii/S1470160X24005363",
+            "abstract": "Changes in climate and land use represent significant risks of biodiversity loss globally, affect ecological stability, impact nature’s contributions to people (NCP, i.e. ecosystem services) and compromise human livelihood. As framings of conservation evolve to consider the interdependence between species and human needs, there is a growing recognition of the importance of NCP and biodiversity in conservation actions. However, knowledge on the interactions and spatial repartition of NCP and biodiversity remains limited. Here we show a comprehensive spatial assessment for 15 NCP and one biodiversity – distribution of threatened species – indicators in Switzerland. Indicators values were computed using a panel of mapping and modelling methods extracted from the literature, or specifically developed for this study. Through the analysis of their relationships, we reveal significant trade-offs and synergies in the spatial repartition of these indicators. Results from a spatial bundle analysis performed on the 16 indicators revealed the existence of four bundles showing a heterogeneous repartition over the Swiss landscape. Furthermore, we identified that topography (slope), climate (temperature and precipitations), and habitat (forest and meadows) were among the most influential factors to explain the spatial distribution of the four bundles. We conclude that various significant relationships exist between NCP and biodiversity indicators in Switzerland, emphasizing the importance of informed conservation approaches considering both NCP and biodiversity supply. This work helps fill the gap in our understanding of the links among different NCP, between NCP and biodiversity, and highlight their relationship to climate and land use, providing key insights for optimizing conservation efforts.",
+            "author": [
+                {
+                    "family": "Külling",
+                    "given": "Nathan"
+                },
+                {
+                    "family": "Adde",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Lambiel",
+                    "given": "Audrey"
+                },
+                {
+                    "family": "Wicki",
+                    "given": "Sergio"
+                },
+                {
+                    "family": "Guisan",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Grêt-Regamey",
+                    "given": "Adrienne"
+                },
+                {
+                    "family": "Lehmann",
+                    "given": "Anthony"
+                }
+            ],
+            "container-title": "Ecological Indicators",
+            "id": "kuelling2024",
+            "issued": {
+                "date-parts": [
+                    [
+                        2024
+                    ]
+                ]
+            },
+            "keyword": "Ecosystem services, Bundles, Trade-off, Synergy, Spatial analysis",
+            "page": "112079",
+            "title": "Nature’s contributions to people and biodiversity mapping in switzerland: Spatial patterns and environmental drivers",
+            "title-short": "Nature’s contributions to people and biodiversity mapping in switzerland",
+            "type": "article-journal",
+            "volume": "163"
+        },
+        {
+            "author": [
+                {
+                    "family": "Black",
+                    "given": "Benjamin"
+                },
+                {
+                    "family": "Adde",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Külling",
+                    "given": "Nathan"
+                },
+                {
+                    "family": "Büth",
+                    "given": "Carlson"
+                },
+                {
+                    "family": "Kurmann",
+                    "given": "Manuel"
+                },
+                {
+                    "family": "Lehmann",
+                    "given": "Anthony"
+                },
+                {
+                    "family": "Altermatt",
+                    "given": "Florian"
+                },
+                {
+                    "family": "Guisan",
+                    "given": "Antoine"
+                },
+                {
+                    "family": "Gret-Regamey",
+                    "given": "Adrienne"
+                }
+            ],
+            "id": "black2025",
+            "issued": {
+                "date-parts": [
+                    [
+                        2025
+                    ]
+                ]
+            },
+            "note": "In Review in Global Environmental Change",
+            "title": "Identifying robust conservation strategies to secure ecosystem service provision under uncertainties",
+            "type": "manuscript"
+        },
+        {
+            "ISBN": "978-65-01-05910-5",
+            "URL": "https://www.csr.ufmg.br/dinamica/dokuwiki/doku.php?id=guidebook_start",
+            "author": [
+                {
+                    "family": "Leite-Filho",
+                    "given": "Argemiro T."
+                },
+                {
+                    "family": "Soares-Filho",
+                    "given": "Britaldo S."
+                },
+                {
+                    "family": "Davis",
+                    "given": "Juliana L."
+                },
+                {
+                    "family": "Rodrigues",
+                    "given": "Hermann O."
+                }
+            ],
+            "id": "dinamicaEGO",
+            "issued": {
+                "date-parts": [
+                    [
+                        2020
+                    ]
+                ]
+            },
+            "publisher": "Centro de Sensoriamento Remoto. Universidade Federal de Minas Gerais, Belo Horizonte, Minas Gerais",
+            "title": "Modeling environmental dynamics with dinamica EGO",
+            "type": "book"
+        },
+        {
+            "URL": "https://www.R-project.org/",
+            "author": [
+                {
+                    "literal": "R Core Team"
+                }
+            ],
+            "id": "r2022",
+            "issued": {
+                "date-parts": [
+                    [
+                        2022
+                    ]
+                ]
+            },
+            "publisher": "R Foundation for Statistical Computing",
+            "publisher-place": "Vienna, Austria",
+            "title": "R: A language and environment for statistical computing",
+            "title-short": "R",
+            "type": "book"
+        },
+        {
+            "DOI": "10.1007/bf00045728",
+            "ISSN": "1572-9680",
+            "URL": "http://dx.doi.org/10.1007/BF00045728",
+            "author": [
+                {
+                    "family": "Hackett",
+                    "given": "C."
+                }
+            ],
+            "container-title": "Agroforestry Systems",
+            "id": "Hackett1991",
+            "issue": "2",
+            "issued": {
+                "date-parts": [
+                    [
+                        1991,
+                        5
+                    ]
+                ]
+            },
+            "page": "131-143",
+            "publisher": "Springer Science; Business Media LLC",
+            "title": "Mobilising environmental information about lesser-known plants: The value of two neglected levels of description",
+            "title-short": "Mobilising environmental information about lesser-known plants",
+            "type": "article-journal",
+            "volume": "14"
+        }
+    ],
+    "project_biblios": [
+        "references.bib"
+    ]
+}

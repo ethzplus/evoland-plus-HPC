@@ -10,7 +10,7 @@
 
 # About Future-EI
 
-To explore future ecosystem services and nature contributions to people (NCP)
+To explore future ecosystem services and nature's contributions to people (NCP)
 in the context of climate scenarios, Future-EI (future ecological infrastructure) 
 couples the
 [land use land cover change (LULCC) model for Switzerland](https://github.com/blenback/LULCC-CH),

@@ -9,8 +9,15 @@
 #SBATCH --error="logs/40_NCPs_single-%j.err"
 #SBATCH --mail-type=NONE      # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
+# NCP Slurm Job
+# -------------
+# This script runs all NCP models for a given scenario and year:
 year=2020
 scenario_id=1
+# The scenario_id is used to identify the scenario in the scenario table and
+# LULCC output layers, to determine the run parameters for the NCP models.
+#
+# Note: For the Slurm job that runs all scenarios, move one folder up.
 
 echo "Current working directory: $(pwd)"
 source /cluster/project/eawag/p01002/Future-EI/src/bash_common.sh
