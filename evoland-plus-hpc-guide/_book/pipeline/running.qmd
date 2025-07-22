@@ -1,0 +1,142 @@
+## Running
+
+The pipeline is executed in three parts, each part is a separate Slurm job.
+Remember @fig-pipeline from the [Structure](../structure.html) section.
+The most computationally intensive steps, LULCC and NCP are parallelized and
+submitted as one Slurm array job.
+For all of these steps, you need to have followed the previous sections to
+set up and configure the pipeline.
+This includes preparing the FF NCP using
+[`src/steps/40_NCPs/NCP_models/prepare_ncps.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/NCP_models/prepare_ncps.sh)
+and filling the
+[simulation control table](10_LULCC.html#simulation-control-table)
+with all the scenarios you want to run.
+
+### evoland-plus HPC pipeline
+
+**Land Use Simulation** and **NCP Estimation** can separately be calculated
+for one scenario with the jobs
+[`src/steps/10_LULCC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/slurm_job.sh)
+and
+[`src/steps/40_NCPs/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/40_NCPs/slurm_job.sh).
+The
+[`10_40_combined_array_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_40_combined_array_job.sh)
+slurm job calculates both steps for all scenarios in parallel.
+Each array job receives a subset of the scenarios to calculate.
+All scenarios are calculated in parallel with the following slurm job:
+
+```bash
+sbatch src/steps/10_40_combined_array_job.sh
+```
+
+This would submit the job to the cluster and start the calculation
+with the default settings.
+
+```{.bash filename="src/steps/10_40_combined_array_job.sh"}
+#!/bin/bash
+#SBATCH --job-name="10_40_combined_array"
+#SBATCH -n 1                  # Number of cores requested
+#SBATCH --cpus-per-task=2     # Number of CPUs per task
+#SBATCH --time=7-00:00:00     # Runtime in D-HH:MM:SS
+#SBATCH --mem-per-cpu=2G
+#SBATCH --tmp=2G
+#SBATCH --output="logs/10_40_combined_array-%j.out"
+#SBATCH --error="logs/10_40_combined_array-%j.err"
+#SBATCH --mail-type=NONE      # Mail events (NONE, BEGIN, END, FAIL, ALL)
+## Array job
+#SBATCH --array=1-216%12      # start-end%num_parallel
+#        ! step size needs to be 1
+```
+The speed-up of the combined job is achieved by running multiple scenarios in
+parallel.
+We do this, as the speed-up assigning more CPUs to one scenario is limited.
+Each of the 216 array jobs is assigned one core with two CPUs and 4 GB of
+memory.
+`%12` in the array specification ensures that 12 array jobs are run in parallel,
+if one job finishes, the next one is started.
+Each array job has a time limit of 7 days.
+
+
+In our case, we had 1080 scenarios to calculate, so we set the array job to
+run 216 scenarios in parallel to have five scenarios per array job.
+Before, we have tested with only having one scenario in the simulation control
+table, 10 GB of memory, and `SBATCH --array=1-1` to check if the job runs
+correctly.
+Running the Switzerland map at a resolution of 100 m by 100 m,
+the job took 6:23:06 hours to complete at a CPU efficiency of 75.29% and
+a memory efficiency of 75.58%.
+With `tail -f logs/10_40_combined_array_-*.out logs/10_40_combined_array_-*.err`
+it is easy to monitor the progress of the job.
+For explanations and more details on the `sbatch` options, see the
+[Slurm documentation](https://slurm.schedmd.com/sbatch.html#SECTION_OPTIONS).
+
+
+When running a large array of scenarios,
+the array jobs vary in the amount of memory they require and time they take.
+It is a valid approach to start with a memory limit that works for the
+majority of scenarios.
+Some jobs might fail due to memory issues, but after all array jobs have
+finished,
+it is possible to rerun the failed scenarios with a higher memory limit.
+This is possible because the LULCC and NCP are only calculated if each
+output file is missing, down to the level of each NCP.
+
+::: {#note-maxarraysize .callout-note}
+The cluster might have a limit on the number of array jobs that can be run in
+parallel.
+To find out the limit, use `scontrol show config | grep MaxArraySize`.
+:::
+
+To get a simple estimation on how long the job array takes,
+you can use cross-multiplication, starting with the time it took to calculate
+one scenario $t_{\text{one}}$.
+With the number of scenarios $n_{\text{all}}$ and the number of scenarios
+calculated in parallel $n_{\text{parallel}}$,
+the time it takes to calculate all scenarios $t_{\text{all}}$ is:
+
+$$
+t_{\text{all}} = \frac{n_{\text{all}}}{n_{\text{parallel}}} \times t_{\text{one}}
+$$
+
+::: {#tip-parallel .callout-tip}
+#### Selective running
+If you only want to either run the LULCC or the NCP, you can modify the
+`10_40_combined_array_job.sh` script to only run the respective part.
+This comes down to commenting-out one line in the script.
+:::
+
+
+### Check LULCC and Focal LULC
+
+As explained in their respective sections, the steps
+[Check LULCC](11_CheckLULCC.html) and
+[Focal LULC](20_FocalLULC.html) can be already run after the LULC layers are
+present.
+Both
+[`src/steps/11_CheckLULCC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/11_CheckLULCC/slurm_job.sh)
+and
+[`src/steps/20_FocalLULC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/20_FocalLULC/slurm_job.sh)
+are also submitted with `sbatch`.
+In contrast, these are simple jobs and their parallelization is achieved by
+assigning more CPUs to the job and using R's asynchronous processing
+[`future::plan(future::multisession)`](https://rdrr.io/cran/future/man/multisession.html).
+
+### Logging
+
+There are multiple levels of logging in the pipeline.
+When running the Slurm jobs, the output and error logs are written to the
+specified files.
+These are coming from three main sources:
+the R scripts, the Python scripts, and the Slurm job scripts.
+Generally, slurm logs are written to the file specified in the job script.
+For the logs regarding the scripts written for this pipeline,
+`FUTURE_EI_LOG_LEVEL: debug` in the `config.yml` file can be set to
+`debug`, `info`, `warning`, or `error`.
+The NCP calculation uses `natcap.invest` which has detailed logs written to
+the console.
+For the LULCC container, Dinamica EGO has more detailed logs of the integrated
+R scripts.
+They are written to the mounted `LULCC_CH_HPC_DIR` directory and do not show
+up in the Slurm logs.
+Dinamica EGO has a separate log level that can be set through the
+`DINAMICA_EGO_CLI_LOG_LEVEL` environment variable.
