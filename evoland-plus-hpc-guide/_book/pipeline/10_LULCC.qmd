@@ -1,0 +1,206 @@
+## Land Use Land Cover Change {#10_LULCC}
+
+LULCC is a [`Dinamica EGO`](https://dinamicaego.com) [@dinamicaEGO] model,
+and makes use of the [`R`](https://www.r-project.org/) [@r2022] ecosystem,
+including packages from the Comprehensive R Archive Network (CRAN).
+You can find the LULCC model,
+as well as an adapted version for use with evoland-plus HPC,
+in the [LULCC repository](https://github.com/blenback/LULCC-CH) [@lulcc2024],
+as mentioned in the [setup section](#lulcc-repository).
+
+::: {#cau-versions .callout-caution}
+#### Used Versions in this step
+- Covered
+  by [LULCC docker](https://hub.docker.com/repository/docker/cbueth/lulcc/general)
+  `0.3.0`:
+    - Dinamica EGO: `7.5`
+    - R: `4.3.2`
+        - raster: `3.6-26`
+        - [Further R packages](#note-versions)[^r-package-versions]
+:::
+
+
+LULCC needs a variety of inputs.
+These are set via environment variables in the `src/config.yml` file —
+the assumption being that the `src` directory contains project-specific code, and hence also setup details.
+Here is an excerpt of the file:
+
+```{.yaml filename="src/config.yml"}
+# Bash variables
+bash_variables:
+  ...
+  # Model Variables - from LULCC_CH_HPC root
+  LULCC_M_CLASS_AGG: Tools/LULC_class_aggregation.xlsx
+  LULCC_M_SPEC: Tools/Model_specs.csv
+  LULCC_M_PARAM_GRID: Tools/param-grid.xlsx
+  LULCC_M_PRED_TABLE: Tools/Predictor_table.xlsx
+  LULCC_M_REF_GRID: Data/Ref_grid.tif
+  LULCC_M_CAL_PARAM_DIR: Data/Allocation_parameters/Calibration
+  LULCC_M_SIM_PARAM_DIR: Data/Allocation_parameters/Simulation
+  LULCC_M_RATE_TABLE_DIR: Data/Transition_tables/prepared_trans_tables
+  LULCC_M_SIM_CONTROL_TABLE: ~/LULCC-CH/Tools/Simulation_control.csv
+  LULCC_M_SPAT_INTS_TABLE: Tools/Spatial_interventions.csv
+  LULCC_M_EI_INTS_TABLE: Tools/EI_interventions.csv
+  LULCC_M_SCENARIO_SPEC: Tools/Scenario_specs.csv
+  LULCC_M_EI_LAYER_DIR: Data/EI_intervention_layers
+  LULCC_M_REMOVE_PRED_PROB_MAPS: True # remove prediction probability maps after
+  # simulation if 1, True or TRUE
+```
+
+A relevant parameter to change is the `LULCC_M_SIM_CONTROL_TABLE` variable.
+This is the only path that is absolute,
+and it should point to the `Simulation_control.csv` file.
+All further paths are relative to the LULCC repository root:
+the files under `Tools` are configuration files,
+while the `Data` directory contains input and working data.
+For information on the further variables,
+see the [LULCC repository](https://github.com/blenback/LULCC-CH)
+and paper [@lulcc2024].
+
+### Simulation Control Table {#simulation-control-table}
+
+`Simulation_control.csv` is a table that controls the scenarios to be simulated,
+including the data described in @tbl-simulation-control.
+This format extends the original format from the LULCC model.
+
+
+```{.csv filename="~/LULCC-CH/Tools/Simulation_control.csv"}
+Simulation_num.,Scenario_ID.string,Simulation_ID.string,Model_mode.string,Scenario_start.real,Scenario_end.real,Step_length.real,Parallel_TPC.string,Pop_scenario.string,Econ_scenario.string,Climate_scenario.string,Spatial_interventions.string,EI_interventions.string,Deterministic_trans.string,Completed.string,EI_ID.string
+1,BAU,1,Simulation,2020,2060,5,N,Ref,Ref_Central,rcp45,Y,Y,Y,N,1
+217,EINAT,217,Simulation,2020,2060,5,N,Low,Ecolo_Urban,rcp26,Y,Y,Y,N,217
+433,EICUL,433,Simulation,2020,2060,5,N,Ref,Ecolo_Central,rcp26,Y,Y,Y,N,433
+649,EISOC,649,Simulation,2020,2060,5,N,Ref,Combined_Urban,rcp45,Y,Y,Y,N,649
+865,BAU,865,Simulation,2020,2060,5,N,Ref,Ref_Central,rcp85,Y,Y,Y,N,1
+```
+
+Each colum describes one scenario to be simulated.
+This table controls which data is used to simulate the land use changes.
+
+| Column Name                | Description                                                        |
+|----------------------------|--------------------------------------------------------------------|
+| `Simulation_num.`          | The number of the simulation.                                      |
+| `Scenario_ID.string`       | The scenario ID.                                                   |
+| `Simulation_ID.string`     | The simulation ID.                                                 |
+| `Model_mode.string`        | The model mode.                                                    |
+| `Scenario_start.real`      | The start year of the scenario.                                    |
+| `Scenario_end.real`        | The end year of the scenario.                                      |
+| `Step_length.real`         | The length of the steps.                                           |
+| `Parallel_TPC.string`      | Whether the simulation is parallelized.                            |
+| `Pop_scenario.string`      | The population scenario.                                           |
+| `Econ_scenario.string`     | The economic scenario.                                             |
+| `Climate_scenario.string`  | The climate scenario (e.g., `rcp45`, `rcp26`, `rcp85`).            |
+| `Spatial_interventions.string` | Whether spatial interventions are used.                            |
+| `EI_interventions.string`  | Whether EI interventions are used                                  |
+| `Deterministic_trans.string` | Whether deterministic transitions are used.                        |
+| `Completed.string`         | Whether the simulation is completed.                               |
+| `EI_ID.string`             | The EI ID.                                                         |
+
+: Description of the columns in the `Simulation_control.csv` file.
+{#tbl-simulation-control}
+
+
+
+### Container Setup
+
+For a platform independent execution of Dinamica EGO,
+we created a [`dinamica-ego-docker` container](https://github.com/cbueth/dinamica-ego-docker/) container.
+This way, the glibc version is fixed,
+and the container can be used system independently[^dinamica-ego-linux-compat].
+This one is used in the LULCC docker container.
+Our Dockerfile [`src/steps/10_LULCC/Dockerfile`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/Dockerfile)
+then adds the necessary R packages for LULCC to the container.
+The Apptainer Definition
+File [`src/steps/10_LULCC/lulcc.def`](https://github. com/cbueth/evoland-plus HPC/tree/main/src/steps/10_LULCC/lulcc.def)
+bootstraps the docker container, mounts the `LULCC_CH_HPC_DIR` to the
+`/model` directory (it is not shipped within the container),
+and translates the entry point to the Apptainer format.
+This includes adding the necessary environment variables, connecting the
+[Simulation Control Table](#simulation-control-table), pointing Dinamica EGO
+to the correct R binary, among other details found in the Definition File.
+@fig-docker-setup summarizes the levels of wrapping.
+
+[^dinamica-ego-linux-compat]: For more information on the compatibility of Dinamica EGO with Linux, see the [Dinamica EGO documentation](https://dinamicaego.com/dokuwiki/doku.php?id=dinamica_linux_compatibility).
+
+
+```{mermaid}
+%%| label: fig-docker-setup
+%%| fig-cap: "Visualization on how Dinamica EGO is wrapped until it can be used in Apptainer on the HPC."
+flowchart LR
+    Dinamica([Dinamica EGO]) --> Docker(dinamica-ego-docker)
+    Docker --> LULCC(LULCC docker)
+    LULCC --> Apptainer[Apptainer container]
+
+    style Dinamica color:#2780e3, fill:#e9f2fc, stroke:#000000
+    style Docker color:#0e7895, fill:#cbf4ff, stroke:#000000
+    style LULCC color:#0e7895, fill:#cbf4ff, stroke:#000000
+    style Apptainer color:#07946e, fill:#def9f2, stroke:#000000
+```
+
+
+
+
+To load the LULCC docker onto your system,
+it can be automatically installed or built using the
+[`src/steps/10_LULCC/docker_setup.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/docker_setup.sh)
+script, which uses variables from the
+[`src/config.yml`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/config.yml).
+If you have `docker` installed, the setup script guides you through the building,
+pushing, or pulling of the LULCC docker container.
+This step can be done on a local machine.
+Consecutively, when having `apptainer` installed,
+the LULCC docker can be converted to an Apptainer container.
+On the HPC, this latter step suffices if you use the pre-configured
+`LULCC_DOCKER_REPO`, unless you want to rebuild the container.
+The decisive line in the script is:
+
+```{.bash filename="src/steps/10_LULCC/docker_setup.sh (lines 84ff)"}
+apptainer build \
+      --build-arg "namespace=$namespace" --build-arg "repo=$repo" \
+      --build-arg "version=$version" \
+      "$APPTAINER_CONTAINERDIR/${repo}_${version}.sif" "$SCRIPT_DIR/lulcc.def"
+```
+
+Depending on your system, you might want to reconfigure the Apptainer variables:
+
+```{.yaml filename="src/config.yml"}
+# Bash variables
+bash_variables:
+  ...
+  # Apptainer variables for the apptainer container
+  APPTAINER_CONTAINERDIR: ~/apptainer_containers
+  APPTAINER_CACHEDIR: /scratch/apptainer_cache
+```
+`APPTAINER_CONTAINERDIR` is used to store the Apptainer containers,
+and `APPTAINER_CACHEDIR` is used when building them.
+If your HPC does not have a `/scratch` directory,
+you might want to change it to another temporary directory.
+
+After all previous steps are completed,
+you can test the LULCC model with some test scenarios in the simulation control
+table.
+[`src/steps/10_LULCC/slurm_job.sh`](https://github.com/ethzplus/evoland-plus-HPC/tree/main/src/steps/10_LULCC/slurm_job.sh)
+submits.
+Before the full, parallelized simulation can be started,
+read the following sections.
+
+[^r-package-versions]: The versions of the R packages used with LULCC are
+    listed in the note below.
+
+    ::: {#note-versions .callout-note}
+    #### R Packages
+    Versions used
+    with [LULCC docker](https://hub.docker.com/repository/docker/cbueth/lulcc/general)
+    `0.3.0`:
+
+    - raster: `3.6-26`
+    - tidyverse: `2.0.0`
+    - data.table: `1.15.4`
+    - randomForest: `4.7-1.1`
+    - callr: `3.7.6`
+    - future: `1.33.2`
+    - future.apply: `1.11.2`
+    - future.callr: `0.8.2`
+    - sp: `2.1-3`
+    - stringi: `1.8.3`
+    - stringr: `1.5.1`
+    :::
