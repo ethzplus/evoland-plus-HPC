@@ -1,0 +1,23 @@
+name: ncp_summarisation
+channels:
+  - conda-forge
+dependencies:
+  - r-raster~=3.6_26
+  - r-codetools
+  - r-stringr
+  - r-future
+  - r-future.apply
+  - r-yaml
+  - r-readxl
+  - r-dplyr
+  - r-tidyr
+  - r-terra
+  - r-data.table
+  - r-pak
+  - r-sf
+  - r-foreach
+  - r-doParallel
+  - r-dtwclust
+  - r-bigmemory
+  - proj
+  - gdal
