@@ -10,3 +10,5 @@ FutureEiGuide/_book/
 *.Rprofile
 *.RData
 .Rproj.user
+
+Data/
