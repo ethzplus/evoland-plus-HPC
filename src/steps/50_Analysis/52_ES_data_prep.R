@@ -1,14 +1,14 @@
 #' Calculate various summary metrics across the configurations
 #'
-#' Input: Folder of outputs from NCP simulations:
-#'    Normalise the NCP outputs and calculate a series of different summary
+#' Input: Folder of outputs from ES simulations:
+#'    Normalise the ES outputs and calculate a series of different summary
 #'    metrics from them, save results as rds files to be used in visualisations
 #'    and subsequent analysis
-#' Output: Summary measures of NCP provision across configurations. 
+#' Output: Summary measures of ES provision across configurations. 
 #'
-#' @environment Summarisation
+#' @environment ES_summarisation
 #' @config $FUTURE_EI_CONFIG_FILE (yaml file)
-#' @date 2024-10-15
+#' @date 2025-8-15
 #' @author Benjamin Black
 #'
 #'
@@ -18,57 +18,205 @@
 # # FOR TESTING ONLY
 # # Create an environment variable for the config file
 Sys.setenv(FUTURE_EI_CONFIG_FILE = "src/config.yml")
-Sys.setenv(LULCC_M_SIM_CONTROL_TABLE = "LULCC_CH_HPC/Simulation_control.csv")
-Sys.setenv(LULCC_CH_HPC_DIR = "LULCC_CH_HPC")
-Sys.setenv(LULCC_M_EI_INTS_TABLE = "EI_interventions.csv")
+Sys.setenv(LULCC_M_SIM_CONTROL_TABLE = "Simulation_control.csv")
 
 # Load libraries
-packs <- c("stringr", "terra", "future", "future.apply",
-           "data.table", "tidyr", "yaml", "dplyr", "viridis", "ggplot2", "tidyterra")
+packs <- c("stringr", "terra", "future", "future.apply", "readxl",
+           "data.table", "tidyr", "yaml", "dplyr", "viridis", "ggplot2",
+           "tidyterra", "jsonlite", "magick", "grDevices")
 invisible(lapply(packs, require, character.only = TRUE))
 
 options(future.rng.onMisuse = "ignore")
 
-## Functions
+### =========================================================================
+### Functions
+### =========================================================================
+
+### Prepare a dataframe of information on the ES layers that are to be processed
+#' Prepare a dataframe of information on the ES layers that are to be processed
+#' Including the input data path for each config and time step, 
+#' a path to save the normalized tif file, a path to save a png file of the rescaled layer
+#' a path to save a JSON file of the areas of land that fall within discrete classes of the ES provision values
+#' 
+#' @param input_dir The directory where the input ES layers are stored
+#' @param image_dir The directory where the output images will be saved
+#' @param raster_dir The directory where the output rasters will be saved
+#' @param classified_area_dir The directory where the classified area JSON files will be saved
+#' @param base_dir The base directory where the output directories are located
+#' @param Sim_ctrl_tbl_path The path to the simulation control table CSV file
+#' @param ProjCH The projection CRS to use for the ES layers
+#' @param ESs_to_summarise A character vector of ESs to summarise
+#' @param ES_nesting A named list indicating whether each ES is nested (TRUE) or not (FALSE)
+#' @param ES_file_names A named list of file names for each ES
+#' @param map_masks A list of shapefiles to use as masks for the ES layers
+#' @return A dataframe with information on the ES layers to be processed, including paths for input, output rasters, images, and classified areas
+prepare_analysis_df <- function(
+    input_dir = "F:/KB-outputs/ncp_output",
+    image_dir = "map_images",
+    raster_dir = "raster_data",
+    classified_area_dir = "chart_data/classified_area",
+    base_dir = web_platform_dir,
+    Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
+    ProjCH = ProjCH,
+    ESs_to_summarise = config$ESs_to_summarise,
+    ES_nesting = config$ES_nesting,
+    ES_file_names = config$ES_file_names,
+    mask
+){
+  
+  # if the directories do not exist, create them
+  if(!dir.exists(file.path(base_dir, image_dir))){
+    dir.create(file.path(base_dir, image_dir), recursive = TRUE, showWarnings = FALSE)
+  }
+  if(!dir.exists(file.path(base_dir, raster_dir))){
+    dir.create(file.path(base_dir, raster_dir), recursive = TRUE, showWarnings = FALSE)
+  }
+  if(!dir.exists(file.path(base_dir, classified_area_dir))){
+    dir.create(file.path(base_dir, classified_area_dir), recursive = TRUE, showWarnings = FALSE)
+  }
+
+  # load the simulation control table
+  Sim_ctrl_tbl <- read.csv(Sim_ctrl_tbl_path, stringsAsFactors = FALSE)
+  
+  # Tidy names in Sim_ctrl_tbl$Scenario_ID.string putting a '-' after 'EI
+  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "EI", "EI-")
+  
+  # for Scenario_ID.string replace any GREX with GR-EX
+  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "GREX", "GR-EX")
+  
+  # Get earliest scenario start date and latest end date
+  Start_date <- min(Sim_ctrl_tbl$Scenario_start.real)
+  End_date <- max(Sim_ctrl_tbl$Scenario_end.real)
+  
+  # Create seq of scenario time steps with Step_length.real
+  Sim_time_steps <- seq(Start_date, End_date, by = Sim_ctrl_tbl$Step_length.real[1])
+  
+  # Vector IDs of configurations to be analysed
+  # Note Manually adjust this to analyse specific configurations
+  Config_IDs <- unique(Sim_ctrl_tbl$Simulation_num.)
+  
+  # Loop over ESs_to_summarise and create vectors of file paths for their layers
+  # according to Config_IDs, Sim_time_steps and nesting
+  ES_paths <- lapply(ESs_to_summarise, function(ES){
+    
+    # Loop over config_IDs returning paths as vector
+    Config_paths <- lapply(Config_IDs, function(Config_ID){
+      
+      # use Config_ID to subset Sim_ctrl_tbl to get scenario details
+      Config_details <- Sim_ctrl_tbl[Sim_ctrl_tbl$Simulation_num. == Config_ID, ]
+      
+      # Create a vector of file paths for each time step
+      Config_time_paths <- as.data.frame(rbindlist(lapply(Sim_time_steps, function(Time_step){
+      
+        # If ES is not nested then append time step to file path
+        if(ES_nesting[[ES]] == FALSE){
+          input_path <- file.path(input_dir, Config_ID, ES, paste0(ES_file_names[[ES]], "_", Time_step, ".tif"))
+        } else if (ES_nesting[[ES]] == TRUE){
+          # If ES is nesting then append time step as a dir before file path
+          input_path <- file.path(input_dir, Config_ID, ES, Time_step, paste0(ES_file_names[[ES]], ".tif"))
+        }
+        
+    
+        # tif path structure: NCP-Time_step-Config_details$Climate_scenario.string-Config_details$Econ_scenario.string-Config_details$Pop_scenario.string-Config_details$Scenario_ID.string-full.tif’
+        tif_path <- file.path(base_dir, raster_dir, paste0(ES, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
+                                                Config_details$Econ_scenario.string, "-", 
+                                                Config_details$Pop_scenario.string, "-", 
+                                                Config_details$Scenario_ID.string, "-", names(mask), ".tif")) 
+    
+        png_path <- file.path(base_dir, image_dir, paste0(ES, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
+                                                Config_details$Econ_scenario.string, "-", 
+                                                Config_details$Pop_scenario.string, "-", 
+                                                Config_details$Scenario_ID.string, "-", names(mask), ".png"))
+          
+        classified_area_path <- file.path(base_dir, classified_area_dir,
+                            paste0(ES, "-", Time_step, "-", 
+                                   Config_details$Climate_scenario.string, "-", 
+                                   Config_details$Econ_scenario.string, "-", 
+                                   Config_details$Pop_scenario.string, "-", 
+                                   Config_details$Scenario_ID.string, "-", names(mask), "-classifed_area.json"))
+        
+
+        
+        # combine all paths into a named list
+        time_step_paths <- list(input_path, tif_path, png_path, classified_area_path)
+        names(time_step_paths) <- c("Path", "es_path_tif", "es_path_png", "es_path_classifed_area")
+        return(time_step_paths)
+        
+        
+      }))) # close loop over time_steps
+    
+      
+      #Add column for ES
+      Config_time_paths$ES <- ES
+      
+      # Add column for Config_ID
+      Config_time_paths$Config_ID <- Config_ID
+      
+      # Add column for Time_step
+      Config_time_paths$Time_step <- Sim_time_steps
+      
+      # loop over ES_time_paths and check which exist
+      #Config_time_paths$Exists <- file.exists(Config_time_paths$Path)      
+
+      return(Config_time_paths)
+    }) # close loop over Config_IDs
+    
+    # Bind list of dataframes into a single dataframe
+    Config_df <- do.call(rbind, Config_paths)
+  })
+    
+  #rbind list of dataframes into a single dataframe
+  ES_path_df <- do.call(rbind, ES_paths)
+  
+  # # check if all files exist
+  # if (all(ES_path_df$Exists)) {
+  #   message("All ES input files exist.")
+  # } else {
+  #   stop("Some ES input files do not exist. Please check the paths.")
+  # }
+
+return(ES_path_df)
+} 
 
 #' calc_minmaxs:
 #'
-#' Calculate the minmax values for all configurations for each NCP
+#' Calculate the minmax values for all configurations for each ES
 #'
 #' This function calculates the minimum and maximum values in the rasters 
-#' for all time points for all configurations for each NCP  and saves 
-#' the results for each NCP to an RDS file
+#' for all time points for all configurations for each ES  and saves 
+#' the results for each ES to an RDS file
 #'
 #'
 #' @param parallel: logical: If TRUE, the function will run in parallel
 #' using the number of workers specified in the config file. If FALSE, the
 #' function will run sequentially
-#' @param NCP_layer_paths: data.frame: A df containing info for each NCP layer
+#' @param ES_layer_paths: data.frame: A df containing info for each ES layer
 #' i.e. config_ID, time step, raw layer path and path to save rescaled layer
-#' @param NCP_rescaling_dir: character: The directory to save the minmax
-#' values for each NCP
-#' @param NCPs_to_summarise: character: A vector of NCPs to calculate minmax
+#' @param ES_rescaling_dir: character: The directory to save the minmax
+#' values for each ES
+#' @param ESs_to_summarise: character: A vector of ESs to calculate minmax
 #' values for
 #' @param minmax_recalc: logical: If TRUE, the function will recalculate the
-#' minmax values for each NCP even if the file already exists. If FALSE, the
+#' minmax values for each ES even if the file already exists. If FALSE, the
 #' function will skip the calculation if the file already exists
 #' @param report_NAs: logical: If TRUE, the function will check for NAs and NaNs
 #' in the minmax values. If any are found, the function will return a vector of
-#' the NCP paths that have NAs or NaNs as the min or max values indicating
+#' the ES paths that have NAs or NaNs as the min or max values indicating
 #' there may be a problem with the layers
 #'
 #'@return: vector: If report_NAs is TRUE, the function will return a vector of
-#' the NCP paths that have NAs or NaNs as the min or max values indicating 
+#' the ES paths that have NAs or NaNs as the min or max values indicating 
 #' there may be a problem with the layers
 #' @export
 
 calc_minmaxs <- function(
   parallel = TRUE,
-  NCP_layer_paths,
-  NCP_rescaling_dir,
-  NCPs_to_summarise,
+  ES_layer_paths,
+  ES_rescaling_dir,
+  ESs_to_summarise,
   minmax_recalc = TRUE,
-  report_NAs = TRUE
+  report_NAs = TRUE,
+  mask
   ){
 
   # Set parallel processing options
@@ -85,87 +233,117 @@ calc_minmaxs <- function(
     )
     future::plan(future::multisession, workers = n_workers)
   }
+  
+  # Create the directory to save the minmax values for each ES
+  Mask_rescaling_dir <- file.path(ES_rescaling_dir, names(mask))
+  if(!dir.exists(Mask_rescaling_dir)){
+    dir.create(Mask_rescaling_dir, recursive = TRUE, showWarnings = FALSE)
+  }
 
-  # loop over NCPs calculating min max values for all rasters of each
-  lapply(NCPs_to_summarise, function(NCP){
+  # loop over ESs calculating min max values for all rasters of each
+  lapply(ESs_to_summarise, function(ES){
 
-    # create an output file path for this NCP
-    NCP_minmax_path <- file.path(NCP_rescaling_dir, paste0(NCP, "_minmaxs.rds"))
+    # create an output file path for this ES
+    ES_minmax_path <- file.path(Mask_rescaling_dir, paste0(ES, "_minmaxs.rds"))
 
     # check if file already exists & if minmax_recalc == FALSE then skip
     # otherwise if the file does not exist or minmax_recalc = TRUE then re-calculate
-    if(file.exists(NCP_minmax_path) & minmax_recalc == FALSE){
-      cat("Global minmax file already exists for", NCP, "\n")
-      cat("Recalculation is set to FALSE, skipping to next NCP \n")
-    } else if (!file.exists(NCP_minmax_path) | minmax_recalc == TRUE){
+    if(file.exists(ES_minmax_path) & minmax_recalc == FALSE){
+      cat("Global minmax file already exists for", ES, "\n")
+      cat("Recalculation is set to FALSE, skipping to next ES \n")
+    } else if (!file.exists(ES_minmax_path) | minmax_recalc == TRUE){
 
-      if(!file.exists(NCP_minmax_path)){
-        cat("Global Minmax file does not exist for", NCP, "\n")
+      if(!file.exists(ES_minmax_path)){
+        cat("Global Minmax file does not exist for", ES, "\n")
       }
       if(minmax_recalc == TRUE){
-        cat("Recalculation is set to TRUE, calculating minmax for", NCP, "\n")
+        cat("Recalculation is set to TRUE, calculating minmax for", ES, "\n")
       }
 
-        # Subset to NCP records
-        NCP_layer_paths <- NCP_layer_paths[NCP_layer_paths$NCP == NCP,]
+        # Subset to ES records
+        ES_layer_paths <- ES_layer_paths[ES_layer_paths$ES == ES,]
 
-        # Inner loop over paths for NCP calculating the greatest minmax values for each
-        NCP_minmax <- future_sapply(NCP_layer_paths$Path, function(path){
+        # Inner loop over paths for ES calculating the greatest minmax values for each
+        ES_minmax <- future_sapply(ES_layer_paths$Path, function(path){
 
-        # Calculate min and max for current NCP
+          # If mask is provided, apply it to the raster
+          if(names(mask) != "Full_extent"){
+            
+            # if the mask path contains shp extension, read it as a vector
+            if(grepl("\\.shp$", unlist(mask))){
+              message(paste("Applying mask from shapefile:", mask))
+              mask_layer <- terra::vect(x = unlist(mask))
+            } else if(grepl("\\.tif$", mask)){
+              message(paste("Applying mask from raster file:", mask))
+              mask_layer <- terra::rast(unlist(mask))
+            } else {
+              stop(paste("Unsupported mask file type for:", mask))
+            }
+          }
+          
+        # Calculate min and max for current ES
         # Use try catch in case the file is missing or corrupt
         File_minmax <- tryCatch({
 
           # Load file
           raster <- rast(path)
+          
+          # If mask is provided, apply it to the raster
+          if(names(mask) != "Full_extent"){
 
+            raster <- terra::mask(x = raster, 
+                                  mask = mask_layer, 
+                                  updatevalue = NA)
+          }
+          
           # Get min max
           File_minmax <- minmax(raster, compute = TRUE)
 
         }, error=function(e){File_minmax <- NA})
 
+        
         cat("Finished calculating minmax for", path, "\n")
         return(File_minmax)
       }, simplify = FALSE)
 
-      # Save minmax values for NCP
-      saveRDS(NCP_minmax, NCP_minmax_path)
+      # Save minmax values for ES
+      saveRDS(ES_minmax, ES_minmax_path)
     }
   })
 
   # if report_NAs is TRUE, check for NAs and NaNs in the minmax values
   if(report_NAs == TRUE){
 
-    # Summarise results across NCPs in a single dataframe
-    All_NCP_minmaxs <- lapply(NCPs_to_summarise, function(NCP){
+    # Summarise results across ESs in a single dataframe
+    All_ES_minmaxs <- lapply(ESs_to_summarise, function(ES){
 
-      # Load the minmax values for current NCP
-      NCP_minmax <- readRDS(file.path(NCP_rescaling_dir, paste0(NCP, "_minmaxs.rds")))
+      # Load the minmax values for current ES
+      ES_minmax <- readRDS(file.path(Mask_rescaling_dir, paste0(ES, "_minmaxs.rds")))
 
       #loop over list and add details to dataframe
-      NCP_minmax <- lapply(NCP_minmax, function(x){
+      ES_minmax <- lapply(ES_minmax, function(x){
         data.frame(Min = x[1], Max = x[2])
       })
 
       # bind list of dataframes into a single dataframe
-      NCP_minmax <- as.data.frame(rbindlist(NCP_minmax, idcol = "Path"))
+      ES_minmax <- as.data.frame(rbindlist(ES_minmax, idcol = "Path"))
     })
-    names(All_NCP_minmaxs) <- NCPs_to_summarise
+    names(All_ES_minmaxs) <- ESs_to_summarise
 
     # bind list of dataframes into a single dataframe
-    All_NCP_minmaxs <- as.data.frame(rbindlist(All_NCP_minmaxs, idcol = "NCP"))
+    All_ES_minmaxs <- as.data.frame(rbindlist(All_ES_minmaxs, idcol = "ES"))
 
     # Identify NAs
-    NA_indices <- which(is.na(All_NCP_minmaxs$Min))
+    NA_indices <- which(is.na(All_ES_minmaxs$Min))
 
     # Get paths of the NA value
-    NA_records <- NCP_layer_paths[NA_indices, "Path"]
+    NA_records <- ES_layer_paths[NA_indices, "Path"]
 
     # Check for NaN values
-    NaN_indices <- which((is.nan(All_NCP_minmaxs$Min)))
+    NaN_indices <- which((is.nan(All_ES_minmaxs$Min)))
 
     # What is the path of the NaN value
-    NaN_records <- NCP_layer_paths[NaN_indices, "Path"]
+    NaN_records <- ES_layer_paths[NaN_indices, "Path"]
   return(c(NA_records, NaN_records))
   }
   }
@@ -173,76 +351,78 @@ calc_minmaxs <- function(
 
 #' calc_global_minmaxs:
 #'
-#' Calculate the global minmax values for each NCP
+#' Calculate the global minmax values for each ES
 #'
 #' This function calculates global minimum and maximum values
-#' (i.e. smallest minimum and greatest maximum value) for each NCP across the
+#' (i.e. smallest minimum and greatest maximum value) for each ES across the
 #' configurations*time points and saves the results to an RDS file
 #'
 #'
-#' @param NCPs_to_summarise Vector of NCPs to summarise
-#' @param NCP_rescaling_dir Directory to load/save the results
+#' @param ESs_to_summarise Vector of ESs to summarise
+#' @param ES_rescaling_dir Directory to load/save the results
 #'
 #' @export
 
 calc_global_minmaxs <- function(
-    NCPs_to_summarise,
-    NCP_rescaling_dir
+    ESs_to_summarise,
+    ES_rescaling_dir,
+    mask
     ){
+  
+  # Outer loop over ESs
+  ES_global_minmaxs <- lapply(ESs_to_summarise, function(ES){
 
-  # Outer loop over NCPs
-  NCP_global_minmaxs <- lapply(NCPs_to_summarise, function(NCP){
-
-    # Load the minmax values for current NCP
-    NCP_minmax <- readRDS(file.path(NCP_rescaling_dir, paste0(NCP, "_minmaxs.rds")))
+    # Load the minmax values for current ES
+    ES_minmax <- readRDS(file.path(ES_rescaling_dir, names(mask), paste0(ES, "_minmaxs.rds")))
 
     #loop over list and add details to dataframe
-    NCP_minmax <- lapply(NCP_minmax, function(x){
+    ES_minmax <- lapply(ES_minmax, function(x){
       data.frame(Min = x[1], Max = x[2])
     })
 
     # bind list of dataframes into a single dataframe
-    NCP_minmax <- as.data.frame(rbindlist(NCP_minmax, idcol = "Path"))
+    ES_minmax <- as.data.frame(rbindlist(ES_minmax))
 
     # Initialize min and max values
-    NCP_min <- Inf
-    NCP_max <- -Inf
+    ES_min <- Inf
+    ES_max <- -Inf
 
-    # Calculate global min and max for current NCP
-    for(i in 1:nrow(NCP_minmax)){
-        NCP_min <- min(NCP_min, NCP_minmax[i, "Min"], na.rm = TRUE)
-        NCP_max <- max(NCP_max, NCP_minmax[i, "Max"], na.rm = TRUE)
+    # Calculate global min and max for current ES
+    for(i in 1:nrow(ES_minmax)){
+        ES_min <- min(ES_min, ES_minmax[i, "Min"], na.rm = TRUE)
+        ES_max <- max(ES_max, ES_minmax[i, "Max"], na.rm = TRUE)
     }
-    return(data.frame(Min = NCP_min, Max = NCP_max))
+    return(data.frame(Min = ES_min, Max = ES_max))
   })
-  names(NCP_global_minmaxs) <- NCPs_to_summarise
+  names(ES_global_minmaxs) <- ESs_to_summarise
 
   # bind list of dataframes into a single dataframe
-  NCP_global_minmaxs <- as.data.frame(rbindlist(NCP_global_minmaxs, idcol = "NCP"))
+  ES_global_minmaxs <- as.data.frame(rbindlist(ES_global_minmaxs, idcol = "ES"))
 
   # Save the global minmax values
-  saveRDS(NCP_global_minmaxs, file = file.path(NCP_rescaling_dir, "NCP_global_minmaxs.rds"))
+  saveRDS(ES_global_minmaxs, file = file.path(ES_rescaling_dir, names(mask), "ES_global_minmaxs.rds"))
 }
 
-#' calc_layer_summaries:
+
+#' normalise_and_summarize:
 #' 
 #' Calculate the sum, mean and standard deviation of the normalised values
-#'  for each time step of each configuration for the NCPs specificed 
+#'  for each time step of each configuration for the ESs specificed 
 #' 
 #' This function calculates the sum, mean and standard deviation of the normalised values
-#' for each time step of each configuration for the NCPs specificed and saves the results
+#' for each time step of each configuration for the ESs specificed and saves the results
 #' to an RDS file
 #' 
 #' @param metrics Vector of metrics to calculate must use built-in function arguments from terra::global
 #' i.e. "max", "min", "mean", "sum", "range", "rms" (root mean square), "sd",
 #'  "std" (population sd, using n rather than n-1),
-#' @param NCP_layer_paths Dataframe: containing info for each NCP layer
+#' @param ES_layer_paths Dataframe: containing info for each ES layer
 #' i.e. config_ID, time step, raw layer path and path to save rescaled layer
-#' @param NCPs_to_summarise Vector of NCPs to summarise
-#' @param NCP_rescaling_dir Directory to load the global minmaxs values used for normalization 
-#' @param NCP_summary_stats_dir Directory to save the summary statistics for individual NCPs
-#' @param NCP_summarisation_dir Directory to save the summary statistics for all NCPs
-#' @param Recalc_summary Logical indicating whether to recalculate the summary statistics for each NCP
+#' @param ESs_to_summarise Vector of ESs to summarise
+#' @param ES_rescaling_dir Directory to load the global minmaxs values used for normalization 
+#' @param ES_summary_stats_dir Directory to save the summary statistics for individual ESs
+#' @param ES_summarisation_dir Directory to save the summary statistics for all ESs
+#' @param Recalc_summary Logical indicating whether to recalculate the summary statistics for each ES
 #' @param Recalc_rescaled_layers Logical indicating whether to recalculate the normalised layers
 #' @param Save_rescaled_layers Logical indicating whether to save the normalised layers
 #' @param Sim_ctrl_tbl Dataframe: containing the simulation information
@@ -251,20 +431,21 @@ calc_global_minmaxs <- function(
 #' 
 #' @export
 #
-
-calc_layer_summaries <- function(
+normalise_and_summarize <- function(
     metrics = c("sum", "mean", "sd"),
-    NCP_layer_paths,
-    NCPs_to_summarise,
-    NCP_rescaling_dir,
-    NCP_summary_stats_dir,
-    NCP_summarisation_dir,
+    ES_layer_paths,
+    ESs_to_summarise,
+    ES_rescaling_dir,
+    ES_summary_stats_dir,
+    ES_summarisation_dir,
     Recalc_summary = TRUE,
     Recalc_rescaled_layers = FALSE,
     Save_rescaled_layers = FALSE,
-    Sim_ctrl_tbl,
+    Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
     Rescale_results = TRUE,
-    Parallel = TRUE
+    Parallel = TRUE,
+    mask,
+    sample_size = 50000
   ){
 
   # Set parallel processing options
@@ -281,167 +462,316 @@ calc_layer_summaries <- function(
     )
     future::plan(future::multisession, workers = n_workers)
   }
-
+  
+  
+  
   # Load back in the global minmax values
-  NCP_global_minmaxs <- readRDS(file.path(NCP_rescaling_dir, "NCP_global_minmaxs.rds"))
+  ES_global_minmaxs <- readRDS(file.path(ES_rescaling_dir, names(mask), "ES_global_minmaxs.rds"))
+  
+  # load the simulation control table
+  Sim_ctrl_tbl <- read.csv(Sim_ctrl_tbl_path, stringsAsFactors = FALSE)
+  
+  # Tidy names in Sim_ctrl_tbl$Scenario_ID.string putting a '-' after 'EI
+  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "EI", "EI-")
+  
+  # for Scenario_ID.string replace any GREX with GR-EX
+  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "GREX", "GR-EX")
 
-  # Loop over the NCPs specified and calculate the summary metrics specified for the
+  # Loop over the ESs specified and calculate the summary metrics specified for the
   # rescaled values for each time step under all configurations
   # for each configuration and time-step
-  lapply(NCPs_to_summarise, function(NCP){
-
-    # subset to NCP records
-    NCP_layer_paths <- NCP_layer_paths[NCP_layer_paths$NCP == NCP,]
-
-    # create path to save the combined results for this NCP
-    NCP_sum_stats_path <- file.path(NCP_summary_stats_dir, paste0(NCP, "_summary_stats.rds"))
-
+  lapply(ESs_to_summarise, function(ES){
+    
+    # subset to ES records
+    ES_layer_paths <- ES_layer_paths[ES_layer_paths$ES == ES,]
+    
+    Mask_summary_stats_dir <- file.path(ES_summary_stats_dir, names(mask))
+    # if the directory does not exist, create it
+    if(!dir.exists(Mask_summary_stats_dir)){
+      dir.create(Mask_summary_stats_dir, recursive = TRUE, showWarnings = FALSE)
+    }
+    
+    # create path to save the combined results for this ES
+    ES_sum_stats_path <- file.path(Mask_summary_stats_dir, paste0(ES, "_summary_stats.rds"))
+    
     # check if the summary file already exists & if Recalc_summary == FALSE then skip
     # otherwise if the file does not exist or Recalc_summary = TRUE then re-calculate
-    if(file.exists(NCP_sum_stats_path) & Recalc_summary == FALSE){
-      cat("Summary stats file already exists for", NCP, "\n")
-      cat("Recalculation of summary is set to FALSE, skipping to next NCP \n")
-    } else if (!file.exists(NCP_sum_stats_path) | Recalc_summary == TRUE){
-
-      if(!file.exists(NCP_sum_stats_path)){
-        cat("Summary stats file does not exist for", NCP, "\n")
+    if(file.exists(ES_sum_stats_path) & Recalc_summary == FALSE){
+      cat("Summary stats file already exists for", ES, "\n")
+      cat("Recalculation of summary is set to FALSE, skipping to next ES \n")
+    } else if (!file.exists(ES_sum_stats_path) | Recalc_summary == TRUE){
+      
+      if(!file.exists(ES_sum_stats_path)){
+        cat("Summary stats file does not exist for", ES, "\n")
       }
       if(Recalc_summary == TRUE){
-        cat("Recalculation of summary is set to TRUE, calculating Summary stats for", NCP, "\n")
+        cat("Recalculation of summary is set to TRUE, calculating Summary stats for", ES, "\n")
       }
-
+      
       #if Recalc_rescaled_layers is FALSE, then identify which layers exist
       #already and remove them from the df
       if(Recalc_rescaled_layers == FALSE){
-
-        cat("Recalculation of rescaled layers is set to FALSE, identifying which layers already exist for", NCP, "\n")
-
-        # Count how many of the rescaled layers for this NCP exist and how many
+        
+        cat("Recalculation of rescaled layers is set to FALSE, identifying which layers already exist for", ES, "\n")
+        
+        # Count how many of the rescaled layers for this ES exist and how many
         # are missing
-        NCP_layer_paths$Exists <- sapply(NCP_layer_paths$Norm_path_tif, file.exists)
-
-        cat("Number of rescaled raster layers for", NCP, "that exist:", sum(NCP_layer_paths$Exists), "\n")
-        cat("Number of rescaled raster layers for", NCP, "that are missing:", sum(!NCP_layer_paths$Exists), "\n")
-
+        ES_layer_paths$Exists <- sapply(ES_layer_paths$es_path_tif, file.exists)
+        
+        cat("Number of rescaled raster layers for", ES, "that exist:", sum(ES_layer_paths$Exists), "\n")
+        cat("Number of rescaled raster layers for", ES, "that are missing:", sum(!ES_layer_paths$Exists), "\n")
+        
         # Remove the existing layers from the dataframe
-        NCP_layer_paths <- NCP_layer_paths[!NCP_layer_paths$Exists,]
-
+        ES_layer_paths <- ES_layer_paths[!ES_layer_paths$Exists,]
+        
         cat("Existing layers have been removed from the list to be rescaled, performing normalization of remaining layers \n")
       } else if(Recalc_rescaled_layers == TRUE){
-        cat("Recalculation of rescaled layers is set to TRUE, normalising all layers in NCP_layer_paths \n")
+        cat("Recalculation of rescaled layers is set to TRUE, normalising all layers in ES_layer_paths \n")
       }
-
-      if(nrow(NCP_layer_paths) == 0){
-        cat("Recalculation of rescaled layers is set to FALSE and all layers already exist for", NCP, "skipping to next NCP \n")
+      
+      if(nrow(ES_layer_paths) == 0){
+        cat("Recalculation of rescaled layers is set to FALSE and all layers already exist for", ES, "skipping to next ES \n")
       }else{
         
-        # Loop over sequence of NCP layer paths, normalise the layer values 
+        # Loop over sequence of ES layer paths, normalise the layer values 
         # with the global min/max values and then calculate sum, mean, median, mode
         # std of the rescaled values. 
-        NCP_sum_stats <- future_lapply(1:nrow(NCP_layer_paths), function(i){
-
-        # use trycatch to handle missing or corrupt files
-        Layer_info_stat <- tryCatch({
-
-          # Load the raster
-          raster <- rast(NCP_layer_paths[i, "Path"])
-
-          NCP_name <- NCP_layer_paths[i, "NCP"]
-          NCP_min <- NCP_global_minmaxs[NCP_global_minmaxs$NCP == NCP, "Min"]
-          NCP_max <- NCP_global_minmaxs[NCP_global_minmaxs$NCP == NCP, "Max"]
-
-          # Normalise the raster
-          raster_norm <- (raster - NCP_min) / (NCP_max - NCP_min)
-
-          # if Save_rescaled_layers is TRUE, save the rescaled raster
-          if(Save_rescaled_layers == TRUE){
-
-            cat("Save_rescaled_layers is set to TRUE \n")
-
-            #create dir
-            dir <- dirname(NCP_layer_paths[i, "Norm_path_tif"])
-            if(!dir.exists(dir)){
-              dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+        ES_sum_stats <- future_lapply(1:nrow(ES_layer_paths), function(i){
+          
+          # Load the mask here because rast/vect are non-Future exportable objects
+          if(names(mask) != "Full_extent"){
+            
+            # if the mask path contains shp extension, read it as a vector
+            if(grepl("\\.shp$", unlist(mask))){
+              message(paste("Applying mask from shapefile:", mask))
+              mask_layer <- terra::vect(x = unlist(mask))
+            } else if(grepl("\\.tif$", mask)){
+              message(paste("Applying mask from raster file:", mask))
+              mask_layer <- terra::rast(unlist(mask))
+            } else {
+              stop(paste("Unsupported mask file type for:", mask))
             }
-
-            # save as tif using the pre-prepared path
-            writeRaster(raster_norm, file = NCP_layer_paths[i, "Norm_path_tif"])
             
-            # produce plot and save
-            # Create the viridis color palette
-            cols <- viridis(100)
-            
-            # produce plot using viridis palette and save
-            png(NCP_layer_paths[i, "Norm_path_png"],
-            width=20,
-            height=20,
-            res=300,
-            bg = "transparent",
-            units = "cm"
-            )
-            plot(raster_norm, col = viridis::viridis(100), axes = FALSE, legend = TRUE)
-            dev.off()
-            cat("rescaled layer saved to", NCP_layer_paths[i, "Norm_path_tif"], "\n")
           }
-
-          # Calculate the stats
-          raster_stats <- global(raster_norm, metrics, na.rm=TRUE)
-
-          # cbind raster_stats with the row of NCP_layer_paths
-          Layer_info_stat <- cbind(NCP_layer_paths[i,], raster_stats)
+          
+          # use trycatch to handle missing or corrupt files
+          Layer_info_stat <- tryCatch({
+            
+            # Load the raster
+            raster <- rast(ES_layer_paths[i, "Path"])
+            
+            if(names(mask) != "Full_extent"){
+              # If mask is provided, apply it to the raster
+              raster <- terra::mask(x = raster, 
+                                    mask = mask_layer, 
+                                    updatevalue = NA)
+            }
+            
+            ES_name <- ES_layer_paths[i, "ES"]
+            ES_min <- ES_global_minmaxs[ES_global_minmaxs$ES == ES, "Min"]
+            ES_max <- ES_global_minmaxs[ES_global_minmaxs$ES == ES, "Max"]
+            
+            # Normalise the raster
+            raster_norm <- (raster - ES_min) / (ES_max - ES_min)
+            
+            # if Save_rescaled_layers is TRUE, save the rescaled raster
+            if(Save_rescaled_layers == TRUE){
+              
+              cat("Save_rescaled_layers is set to TRUE \n")
+              
+              #create dir
+              dir <- dirname(ES_layer_paths[i, "es_path_tif"])
+              if(!dir.exists(dir)){
+                dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+              }
+              
+              # save as tif using the pre-prepared path
+              writeRaster(raster_norm, file = ES_layer_paths[i, "es_path_tif"], overwrite = TRUE)
+              
+              cat("rescaled layer saved to", ES_layer_paths[i, "es_path_tif"], "\n")
+              
+              # produce png img and save
+              save_continuous_indexed_png(raster_obj = raster_norm, 
+                                          output_path = ES_layer_paths[i, "es_path_png"],
+                                          low_color = "#007CDC",
+                                          high_color = "#FFEA2A",
+                                          mid_color = NULL,
+                                          width = 25, 
+                                          height = 20, 
+                                          resolution = 300,
+                                          units = "cm",
+                                          margins = c(0, 0, 0, 0),
+                                          background = "transparent",
+                                          colorspace = "sRGB",
+                                          max_colors = 256,
+                                          show_legend = FALSE,
+                                          axes = FALSE,
+                                          box = FALSE,
+                                          cleanup_temp = TRUE,
+                                          verbose = FALSE)
+              
+              cat("rescaled layer image saved to", ES_layer_paths[i, "es_path_png"], "\n")
+            }
+            
+            # Calculate the stats
+            raster_stats <- global(raster_norm, metrics, na.rm=TRUE)
+            
+            # Take a sample for calculating the quantiles
+            vals <- values(raster_norm, mat=FALSE)
+            
+            # remove NAs
+            vals <- vals[!is.na(vals)]
+            
+            # vector of raster values
+            samp <- sample(vals, min(sample_size, length(vals)), replace=FALSE) 
+            
+            # save the sample as an RDS using the mask name, ES and Config_ID
+            sample_path <- file.path(ES_rescaling_dir, names(mask), "quantile_samples",
+                                     paste0(ES, "_sample_", ES_layer_paths[i, "Config_ID"], ".rds"))
+            
+            # create the directory if it does not exist
+            sample_dir <- dirname(sample_path)
+            if(!dir.exists(sample_dir)){
+              dir.create(sample_dir, recursive = TRUE, showWarnings = FALSE)
+            }
+            
+            # save the sample
+            saveRDS(samp, file = sample_path)
+            
+            # cbind raster_stats with the row of ES_layer_paths
+            Layer_info_stat <- cbind(ES_layer_paths[i,], raster_stats)
+            
+            # add the sample path to the Layer_info_stat
+            Layer_info_stat$Sample_path <- sample_path
+            
+            # return the Layer_info_stat
+            return(Layer_info_stat)
           }, error=function(e){
 
-          # if an error occurs, return NA for all metrics
-          raster_stats <- rep(NA, length(metrics))
-          names(raster_stats) <- metrics
+            # if an error occurs, return NA for all metrics
+            raster_stats <- rep(NA, length(metrics))
+            names(raster_stats) <- metrics
 
-          #convert to dataframe
-          raster_stats <- t(data.frame(raster_stats))
+            #convert to dataframe
+            raster_stats <- t(data.frame(raster_stats))
 
-          # cbind raster_stats with the row of NCP_layer_paths
-          Layer_info_stat <- cbind(NCP_layer_paths[i,], raster_stats)
+            # cbind raster_stats with the row of ES_layer_paths
+            Layer_info_stat <- cbind(ES_layer_paths[i,], raster_stats)
+
+            # add the sample path as NA
+            Layer_info_stat$Sample_path <- NA
+          })
+          return(Layer_info_stat)
         })
-        return(Layer_info_stat)
-      })
+        
+        # Save the results for the current ES
+        saveRDS(ES_sum_stats, file = ES_sum_stats_path)
+        cat("Summary stats for", ES, "have been saved to", ES_sum_stats_path, "\n")
+      
+        # loop over the non-NA Sample_paths and calculate the quantiles
+        ES_sample_paths <- ES_sum_stats[!is.na(ES_sum_stats)]
+        
+        all_samples <- c()
+        for(sample_path in ES_sample_paths){
+          
+          # Load the sample
+          sample <- readRDS(sample_path)
+          
+          # add the sample to the all_samples vector
+          all_samples <- c(all_samples, sample)
+        }
+        
+        # Calculate the quantiles for the combined sample
+        probs <- seq(0, 1, 0.1)  # deciles, change as needed
+        global_qtiles <- quantile(all_samples, probs=probs, na.rm=TRUE)
+        
+        # Save the global quantiles to a file
+        global_qtiles_path <- file.path(Mask_summary_stats_dir, paste0(ES, "_global_quantiles.rds"))
+        saveRDS(global_qtiles, global_qtiles_path)
+        
+        cat("Saving global quantiles for", ES, "to", global_qtiles_path, "\n")
+      
+        browser()
+        # Now loop over the layers and produce a JSON file of the % area of the map
+        #that fall within each quantile
+        lapply(1:nrow(ES_layer_paths), function(i){
 
-        # Save the results for the current NCP
-        saveRDS(NCP_sum_stats, file = NCP_sum_stats_path)
-        cat("Summary stats for", NCP, "have been saved to", NCP_sum_stats_path, "\n")
-    }
-    }
-  })
+          # Load the raster
+          raster <- rast(ES_layer_paths[i, "Path"])
+
+          # If mask is provided, apply it to the raster
+          if(names(mask) != "Full_extent"){
+            raster <- terra::mask(x = raster, 
+                                  mask = mask_layer, 
+                                  updatevalue = NA)
+          }
+
+          # Calculate the area of each quantile as a % of the area of NON-NA cells in the raster
+          Non_na_area <- sum(!is.na(values(raster)), na.rm = TRUE)
+          quantile_areas <- sapply(global_qtiles, function(qtile){
+            sum(values(raster) <= qtile, na.rm = TRUE) / Non_na_area * 100
+          })
+
+          # Create a data frame with the quantile areas
+          quantile_df <- data.frame(Quantile = names(global_qtiles), Area = quantile_areas)
+          
+          # convert the df to json
+          json_data <- toJSON(setNames(as.list(quantile_df$Quantile), quantile_df$Area), pretty = TRUE)
+          
+          # save the json data to the mask_path_data
+          write(json_data, file = ES_layer_paths[i, "es_path_classified_area"])
+          cat("Quantile areas for", ES_layer_paths[i, "Path"], "have been saved to", ES_layer_paths[i, "es_path_classified_area"], "\n")
+          browser()
+        })
+        
+        
+        } # close if statement for nrow(ES_layer_paths) == 0
+      }# close if statement for Recalc_rescaled_layers
+  }) # close loop over ESs_to_summarise
 
   # if parallel == TRUE set back to sequential processing
   if(Parallel == TRUE){
     future::plan(future::sequential)
   }
+  
 
-  # Produce a single df summarising the results across all NCPs
-  NCP_sum_stats <- lapply(NCPs_to_summarise, function(NCP){
+  
+  
+  
+  
 
-    # Load the summary stats for the current NCP
-    NCP_sum_stats <- readRDS(file.path(NCP_summary_stats_dir, paste0(NCP, "_summary_stats.rds")))
+  # Produce a single df summarising the results across all ESs
+  ES_sum_stats <- lapply(ESs_to_summarise, function(ES){
+
+    # Load the summary stats for the current ES
+    ES_sum_stats <- readRDS(file.path(Mask_summary_stats_dir, paste0(ES, "_summary_stats.rds")))
 
     # Bind the list of dataframes for each time point together
-    NCP_sum_stats <- do.call(rbind, NCP_sum_stats)
+    ES_sum_stats <- do.call(rbind, ES_sum_stats)
     
     # remove the exists column
-    NCP_sum_stats$Exists <- NULL
+    ES_sum_stats$Exists <- NULL
 
-    return(NCP_sum_stats)
+    return(ES_sum_stats)
   })
 
   #rbind list of dataframes into a single dataframe
-  NCP_sum_stats <- do.call(rbind, NCP_sum_stats)
+  ES_sum_stats <- do.call(rbind, ES_sum_stats)
 
-  # Use the simulation control table to add the scenario_ID to the NCP_sum_stats
-  NCP_sum_stats$Scenario <- sapply(NCP_sum_stats$Config_ID, function(x) Sim_ctrl_tbl[Sim_ctrl_tbl$Simulation_num. == x, "Scenario_ID.string"])
+  # Use the simulation control table to add the scenario_ID to the ES_sum_stats
+  ES_sum_stats$Scenario <- sapply(ES_sum_stats$Config_ID, function(x) Sim_ctrl_tbl[Sim_ctrl_tbl$Simulation_num. == x, "Scenario_ID.string"])
 
   # Convert metric columns to numeric
-  NCP_sum_stats[,metrics] <- lapply(NCP_sum_stats[,metrics], as.numeric)
+  ES_sum_stats[,metrics] <- lapply(ES_sum_stats[,metrics], as.numeric)
 
-  # Save the NCP_sum_stats
-  saveRDS(NCP_sum_stats, file = file.path(NCP_summarisation_dir, "NCP_summary_stats.rds"))
+  # create dir for saving summarisation results
+  Mask_summarisation_dir <- file.path(ES_summarisation_dir, names(mask))
+  if(!dir.exists(Mask_summarisation_dir)){
+    dir.create(Mask_summarisation_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  
+  # Save the ES_sum_stats
+  saveRDS(ES_sum_stats, file = file.path(Mask_summarisation_dir, "ES_summary_stats.rds"))
 
   cat("Summary stats have been calculated and saved \n")
 
@@ -450,629 +780,247 @@ calc_layer_summaries <- function(
     cat("rescaled_summary_stats is set to TRUE, normalising the summary stats \n")
 
     # Normalise the summary stats
-    NCP_sum_stats_norm <- lapply(NCPs_to_summarise, function(NCP){
+    ES_sum_stats_norm <- lapply(ESs_to_summarise, function(ES){
 
-      # Get summary values for current NCP
-      NCP_sum_stats_NCP <- NCP_sum_stats[NCP_sum_stats$NCP == NCP,]
+      # Get summary values for current ES
+      ES_sum_stats_ES <- ES_sum_stats[ES_sum_stats$ES == ES,]
 
       # Loop over the metrics
       for(metric in metrics){
 
          # Initialize min and max values
-        NCP_min <- min(NCP_sum_stats_NCP[[metric]], na.rm = TRUE)
-        NCP_max <- max(NCP_sum_stats_NCP[[metric]], na.rm = TRUE)
+        ES_min <- min(ES_sum_stats_ES[[metric]], na.rm = TRUE)
+        ES_max <- max(ES_sum_stats_ES[[metric]], na.rm = TRUE)
 
         # Rescale the summary values
-        NCP_sum_stats_NCP[[paste0(metric, "_rescale")]] <- (NCP_sum_stats_NCP[[metric]] - NCP_min) / (NCP_max - NCP_min)
+        ES_sum_stats_ES[[paste0(metric, "_rescale")]] <- (ES_sum_stats_ES[[metric]] - ES_min) / (ES_max - ES_min)
 
         # Remove the original summary values
-        NCP_sum_stats_NCP[[metric]] <- NULL
+        ES_sum_stats_ES[[metric]] <- NULL
 
         # Rename the rescaled summary values
-        names(NCP_sum_stats_NCP)[names(NCP_sum_stats_NCP) == paste0(metric, "_rescale")] <- metric
+        names(ES_sum_stats_ES)[names(ES_sum_stats_ES) == paste0(metric, "_rescale")] <- metric
       }
 
-    return(NCP_sum_stats_NCP)
+    return(ES_sum_stats_ES)
     })
-  names(NCP_sum_stats_norm) <- NCPs_to_summarise
+  names(ES_sum_stats_norm) <- ESs_to_summarise
 
   # bind the list of dataframes into a single dataframe
-  NCP_sum_stats_norm <- as.data.frame(rbindlist(NCP_sum_stats_norm))
+  ES_sum_stats_norm <- as.data.frame(rbindlist(ES_sum_stats_norm))
 
   # Save the rescaled summary stats
-  saveRDS(NCP_sum_stats_norm, file = file.path(NCP_summarisation_dir, "NCP_summary_stats_rescaled.rds"))
+  saveRDS(ES_sum_stats_norm, file = file.path(Mask_summarisation_dir, "ES_summary_stats_rescaled.rds"))
   }
 }
 
-
-#' calc_change_summaries
-#'
-#' Calculate several metrics describing change in NCP provision between time
-#' points:
-#' 1. Avg. and std. of the positive and negative change in NCP 
-#' provision for each NCP specified between each time point across all configurations
-#' 2. a raster of the sum of change values across all time points each NCP and
-#' all configurations
-#' 3. The SSIM spatial pattern metric for simulated time point with reference
-#' to the 1st time point for each NCP under all configurations: 
-#' The SSIM calculation returns 4 metrics:
-#' SIM: Similarity in Mean
-#' SIV: Similarity in Variance
-#' SIP: Similarity in Pattern of spatial covariance
-#' SSIM: Which is the product of the three above
-#' See research/Explanation_SSIM_components_Jones2016.png for details'
-#'
-#' @param NCP_layer_paths A dataframe with the paths to the NCP rasters for each
-#' NCP and time point
-#' @param NCPs_to_summarise A vector of NCPs to summarise
-#' @param NCP_rescaling_dir The directory where the normalised NCP rasters are stored
-#' @param NCP_change_summary_stats_dir The directory where the change summary stats are stored
-#' @param NCP_change_sum_rasters_dir The directory where the change sum rasters are stored
-#' @param NCP_SSIM_dir The directory where the SSIM results are stored
-#' @param NCP_summarisation_dir The directory where the summarised results are stored
-#' @param Sim_ctrl_tbl The simulation control table
-#' @param Rescale_results A boolean indicating whether to normalise the summary stats
-#' @param Parallel A boolean indicating whether to use parallel processing
-#' @param Save_rescaled_layers A boolean indicating whether normalised layers
-#'  have been saved by the previous function calc_layer_summaries
-
-calc_change_summaries <- function(
-  NCP_layer_paths,
-  NCPs_to_summarise,
-  NCP_rescaling_dir,
-  NCP_change_summary_stats_dir,
-  NCP_change_sum_rasters_dir,
-  NCP_SSIM_dir,
-  NCP_summarisation_dir,
-  Sim_ctrl_tbl,
-  Rescale_results = TRUE,
-  Parallel = TRUE,
-  Save_rescaled_layers = TRUE
-  ){
-
-  # Set parallel processing options
-  if (Parallel == FALSE) {
-    future::plan(future::sequential)
+#' save_continuous_indexed_png
+#' # Save a continuous indexed PNG from a raster object with specified colors
+#' #' @param raster_obj A RasterLayer or RasterStack object to be saved as PNG
+#' @param output_path The file path where the PNG will be saved
+#' @param low_color The color for the lowest value in the raster
+#' @param high_color The color for the highest value in the raster
+#' @param mid_color An optional color for the mid-point in the raster
+#' @param width The width of the output PNG in pixels
+#' @param height The height of the output PNG in pixels
+#' @param resolution The resolution of the output PNG in DPI
+#' @param units The units for width and height (default is "cm")
+#' @param margins A numeric vector of length 4 specifying the margins (bottom, left, top, right) in inches
+#' @param background The background color of the PNG (default is "transparent")
+#' @param colorspace The colorspace for the indexed PNG (default is "sRGB")
+#' @param max_colors The maximum number of colors to use in the indexed PNG (default is 256)
+#' @param show_legend Whether to show the legend in the plot (default is FALSE)
+#' @param axes Whether to show axes in the plot (default is FALSE)
+#' @param box Whether to draw a box around the plot (default is FALSE)
+#' @param cleanup_temp Whether to delete the temporary PNG file after saving (default is TRUE)
+#' @param verbose Whether to print verbose messages during the process (default is FALSE)
+save_continuous_indexed_png <- function(raster_obj, 
+                                        output_path, 
+                                        low_color,
+                                        high_color,
+                                        mid_color = NULL,
+                                        width = 25, 
+                                        height = 20, 
+                                        resolution = 300,
+                                        units = "cm",
+                                        margins = c(0, 0, 0, 0),
+                                        background = "transparent",
+                                        colorspace = "sRGB",
+                                        max_colors = 256,
+                                        show_legend = FALSE,
+                                        axes = FALSE,
+                                        box = FALSE,
+                                        cleanup_temp = TRUE,
+                                        verbose = FALSE) {
+  
+  # Load required libraries
+  if (!requireNamespace("magick", quietly = TRUE)) {
+    stop("Package 'magick' is required but not installed.")
+  }
+  if (!requireNamespace("raster", quietly = TRUE)) {
+    stop("Package 'raster' is required but not installed.")
+  }
+  
+  library(magick)
+  library(raster)
+  library(grDevices)
+  
+  # Validate color arguments
+  if (missing(low_color) || missing(high_color)) {
+    stop("You must provide at least 'low_color' and 'high_color'.")
+  }
+  
+  # Build color palette (with optional mid_color)
+  if (!is.null(mid_color)) {
+    if (verbose) cat("Generating continuous palette with mid color...\n")
+    color_palette <- colorRampPalette(c(low_color, mid_color, high_color))(max_colors)
   } else {
-    # number of workers from config - if not set, use all available cores
-    n_workers <- ifelse(
-      is.null(config$NWorkers) ||
-        config$NWorkers == "" ||
-        config$NWorkers == 0,
-      future::availableCores(),
-      config$NWorkers
+    if (verbose) cat("Generating continuous palette without mid color...\n")
+    color_palette <- colorRampPalette(c(low_color, high_color))(max_colors)
+  }
+  
+  # Create temporary PNG
+  temp_png <- tempfile(fileext = ".png")
+  if (verbose) cat("Creating temporary PNG...\n")
+  
+  png(temp_png, 
+      width = width, 
+      height = height, 
+      res = resolution, 
+      bg = background, 
+      units = units)
+  
+  par(mar = margins)
+  
+  plot(raster_obj, 
+       col = color_palette, 
+       legend = show_legend, 
+       axes = axes, 
+       box = box)
+  
+  dev.off()
+  
+  # Quantize to indexed PNG
+  if (verbose) cat("Converting to indexed PNG...\n")
+  img <- image_read(temp_png)
+  
+  img_indexed <- img %>%
+    image_quantize(max = max_colors, 
+                   colorspace = colorspace, 
+                   dither = FALSE) %>%
+    image_strip()
+  
+  image_write(img_indexed, output_path, format = "png", depth = 8)
+  
+  if (verbose) cat(paste("Saved indexed PNG to:", output_path, "\n"))
+  
+  # Clean up
+  if (cleanup_temp) {
+    unlink(temp_png)
+    if (verbose) cat("Cleaned up temporary files.\n")
+  } else {
+    if (verbose) cat(paste("Temporary file saved at:", temp_png, "\n"))
+  }
+  
+  invisible(img_indexed)
+}
+
+
+
+#' Summarize_for_masks
+#' Upper level function to summarise the ESs for a list of supplied masks
+#' #' @param config List: Configuration list containing the ESs to summarise,
+#' #' ES nesting, ES file names, and other parameters
+#' #' @param web_platform_dir Character: The directory where the web platform files are stored
+#' #' @param ProjCH string of CRS
+#' #' @param ES_rescaling_dir Character: The directory where the rescaled ES layers are stored
+#' #' @param masks List: A named list of masks to apply to the ES layers if the
+#' #  name is Full_extent then the list item can be empty and the summary will be performed on the entire map
+
+
+masks <- list("full" = file.path(Mask_dir, "Canton_mask.shp"))
+i=1
+
+
+Summarise_for_masks <- function(
+    config = config,
+    web_platform_dir,
+    ProjCH,
+    ES_rescaling_dir = ES_rescaling_dir,
+    ES_summary_stats_dir = ES_summary_stats_dir,
+    ES_summarisation_dir = ES_summarisation_dir,
+    masks = list("full" = file.path(Mask_dir, "Canton_mask.shp"))
+){
+  
+  
+  # loop over the masks
+  for(i in seq_along(masks)){
+    
+    cat(paste0("Processing ES outputs for mask: ", names(masks)[i], "\n"))
+    
+    # apply function to prepare DF
+    ES_layer_paths <- prepare_analysis_df(
+      input_dir = "F:/KB-outputs/ncp_output",
+      image_dir = "map_images",
+      raster_dir = "raster_data",
+      classified_area_dir = "chart_data/classified_area",
+      base_dir = web_platform_dir,
+      Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
+      ProjCH = ProjCH,
+      ESs_to_summarise = config$ESs_to_summarise,
+      ES_nesting = config$ES_nesting,
+      ES_file_names = config$ES_file_names,
+      mask = masks[i]
     )
-    future::plan(future::multisession, workers = n_workers)
+    
+    # Calculate minmaxs for this mask
+    calc_minmaxs(
+      parallel = config$Parallel,
+      ES_layer_paths = ES_layer_paths,
+      ES_rescaling_dir = ES_rescaling_dir,
+      ESs_to_summarise = config$ESs_to_summarise,
+      minmax_recalc = TRUE,
+      report_NAs = TRUE,
+      mask = masks[i]
+    )
+    
+    # Calculate global minmaxs for this mask
+    calc_global_minmaxs(
+      ESs_to_summarise = config$ESs_to_summarise,
+      ES_rescaling_dir = ES_rescaling_dir,
+      mask = masks[i]
+    )
+    
+    # Normalise and summarise the ESs for this mask
+    normalise_and_summarize(
+      metrics = c("sum", "mean", "sd"),
+      ES_layer_paths = ES_layer_paths,
+      ESs_to_summarise = config$ESs_to_summarise,
+      ES_rescaling_dir = ES_rescaling_dir,
+      ES_summary_stats_dir = ES_summary_stats_dir,
+      ES_summarisation_dir = ES_summarisation_dir,
+      Recalc_summary = TRUE,
+      Recalc_rescaled_layers = TRUE,
+      Save_rescaled_layers = TRUE,
+      Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
+      Rescale_results = TRUE,
+      Parallel = TRUE,
+      mask = masks[i]
+    )
+    
   }
-
-  # Load back in the global min maxs
-  NCP_global_minmaxs <- readRDS(file.path(NCP_rescaling_dir, "NCP_global_minmaxs.rds"))
-
-  # Outer loop over NCPs_to_summarise
-  Calc_NCP_change <- lapply(NCPs_to_summarise, function(NCP){
-
-    # Print message of current NCP
-    cat(paste0("Calculating change summary stats for ", NCP, "\n"))
-
-    # Get the global min and max for the NCP
-    NCP_min <- NCP_global_minmaxs[NCP_global_minmaxs$NCP == NCP, "Min"]
-    NCP_max <- NCP_global_minmaxs[NCP_global_minmaxs$NCP == NCP, "Max"]
-
-    # Create the file paths for all expected outputs and check how many exist
-    # Change summary stats    
-    NCP_change_paths <- sapply(Config_IDs, function(Config_ID) file.exists(file.path(NCP_change_summary_stats_dir, paste0(NCP, "_Config_", Config_ID, "_change_stats.rds"))))
-
-    # Print the number of files that exist
-    cat(paste0("Number of configurations for which change summary stats have been computed for ", NCP, ": ", sum(NCP_change_paths), "\n"))
-
-    # print number remaining
-    cat(paste0("Number of configurations for which change summary stats remain to be computed for ", NCP, ": ", length(Config_IDs) - sum(NCP_change_paths), "\n"))
-
-    # sum change raster
-    NCP_sum_change_paths <- sapply(Config_IDs, function(Config_ID) file.exists(file.path(NCP_change_sum_rasters_dir, paste0(NCP, "_Config_", Config_ID, "_change_sum_rast.tif"))))
-
-    # Print status of configs completed
-    cat(paste0("Number of configurations for which sum change rasters have been computed for ", NCP, ": ", sum(NCP_sum_change_paths), "\n"))
-    cat(paste0("Number of configurations for which change summary stats remain to be computed for ", NCP, ": ", length(Config_IDs) - sum(NCP_sum_change_paths), "\n"))
-
-    # SSIM analysis
-    NCP_SSIM_paths <- sapply(Config_IDs, function(Config_ID) file.exists(file.path(NCP_SSIM_dir, paste0(NCP, "_Config_", Config_ID, "_SSIM.rds"))))
-
-    # Print status of configs completed
-    cat(paste0("Number of configurations for which SSIM analysis has been computed for ", NCP, ": ", sum(NCP_SSIM_paths), "\n"))
-    cat(paste0("Number of configurations for which SSIM analysis remains to be computed for ", NCP, ": ", length(Config_IDs) - sum(NCP_SSIM_paths), "\n"))
-
-    # if all files exists then skip to next NCP
-    if(all(NCP_change_paths) & all(NCP_sum_change_paths) & all(NCP_SSIM_paths)){
-      cat(paste0("Change analysis and SSIM files exist for all configurations under ", NCP, ". Skipping to next NCP.\n"))
-    } else {
-
-      # Subset the Config_IDs for which change summary stats have not been computed
-      # get indices of FALSE entries in NCP_change_paths, NCP_sum_change_paths and NCP_SSIM_paths
-      Config_IDs_to_do <- unique(c(which(!NCP_change_paths), which(!NCP_sum_change_paths), which(!NCP_SSIM_paths)))
-
-      # Sort in ascending order
-      Config_IDs_to_do <- sort(Config_IDs_to_do)
-
-      # Inner loop over Config_IDs
-      Config_change_results <- future_lapply(Config_IDs_to_do, function(Config_ID){
-
-        # Use tryCatch to catch errors and continue with the loop
-        Config_results <- tryCatch({
-
-        # Print message of current NCP and Config_ID
-        cat(paste0("Calculating change summary stats for ", NCP, " under Config ", Config_ID, "\n"))
-
-        # Create the path for output of change analysis
-        NCP_change_path <- file.path(NCP_change_summary_stats_dir, paste0(NCP, "_Config_", Config_ID, "_change_stats.rds"))
-
-        # Create the path for the sum change raster
-        NCP_sum_change_path <- file.path(NCP_change_sum_rasters_dir, paste0(NCP, "_Config_", Config_ID, "_change_sum_rast.tif"))
-
-        # Create the path for output of SSIM analysis
-        NCP_SSIM_path <- file.path(NCP_SSIM_dir, paste0(NCP, "_Config_", Config_ID, "_SSIM.rds"))
-
-        # Check which of the files exist
-        existing_files <- c(file.exists(NCP_change_path) & file.exists(NCP_sum_change_path) & file.exists(NCP_SSIM_path))
-
-        # Check if all of the files exist if not then continue
-        if(all(existing_files) == TRUE){
-
-          # Print message that change analysis files already exist
-          cat(paste0("All change and SSIM analysis files already exist for ", NCP, " under Config ", Config_ID, " skipping \n"))
-        } else {
-
-          # Get the paths for the NCP layers for the current NCP and Config_ID
-          Config_info <- NCP_layer_paths[NCP_layer_paths$NCP == NCP & NCP_layer_paths$Config_ID == Config_ID,]
-
-          # if Save_rescaled_layers is TRUE then rescaled raster layers will
-          # possibly have been saved already which means the normalisation
-          # does not need to be repeated (saving time)
-          if(Save_rescaled_layers == TRUE){
-
-            # Check if the normalised layers have been saved
-            Config_info <- Config_info[unlist(lapply(Config_info$Norm_path_tif, file.exists)),]
-
-            # Read in the all the time step layers for the current NCP and Config_ID
-            # as a list of rast objects
-            NCP_layers <- lapply(Config_info$Norm_path_tif, rast)
-
-            if(nrow(Config_info) == 0){
-              return(msg <- paste0("No input files found for Config_ID: ", Config_ID))
-            }
-          } else {
-
-            # Check that each of the time step files for this config exist and remove those that don't
-            Config_info <- Config_info[unlist(lapply(Config_info$Path, file.exists)),]
-
-            if(nrow(Config_info) == 0){
-            return(msg <- paste0("No input files found for Config_ID: ", Config_ID))
-            }
-
-            # Read in the all the time step layers for the current NCP and Config_ID
-            # as a list of rast objects
-            NCP_layers <- lapply(Config_info$Path, rast)
-
-            # Normalize the layers
-            NCP_layers <- lapply(NCP_layers, function(x){
-              Layer_rescale <- (x - NCP_min) / (NCP_max - NCP_min)
-            })
-          }
-
-          # Change layer names to Time_steps
-          names(NCP_layers) <- Config_info$Time_step
-
-          # Check if both of the change analysis output files exist
-          Change_files_exist <- c(file.exists(NCP_change_path), file.exists(NCP_sum_change_path))
-
-          # If either file does not exist then calculate the change statistics
-          if(all(Change_files_exist) == TRUE){
-            cat(paste0("Change summary stats and sum raster already exist for ", NCP, " under Config ", Config_ID, " skipping \n"))
-          } else {
-
-            # Print message that change summary stats are being calculated
-            cat(paste0("Either the change summary or the sum change raster does not exist, calculating change summary stats for ", NCP, " under Config ", Config_ID, "\n"))
-
-            # Calculate the differences between each layer (i.e. differences over time)
-            Diffs_over_time <- diff(rast(NCP_layers))
-
-            # Calculate the average value of positive change cells
-            Change_stats <- lapply(as.list(Diffs_over_time), function(Layer){
-            vals <- values(Layer, na.rm = TRUE)
-            avg_pos_change <- mean(vals[vals > 0])
-            avg_neg_change <- mean(vals[vals < 0])
-            std_pos_change <- sd(vals[vals > 0])
-            std_neg_change <- sd(vals[vals < 0])
-
-            # Return named list of results
-            return(list(Avg_pos_change = avg_pos_change,
-                        Avg_neg_change = avg_neg_change,
-                        Std_pos_change = std_pos_change,
-                        Std_neg_change = std_neg_change))
-            })
-            names(Change_stats) <- names(Diffs_over_time)
-
-            # Bind to long dataframe
-            Change_stats_long <- rbindlist(Change_stats, idcol = "Time_step")
-
-            # Save as rds
-            saveRDS(Change_stats_long, NCP_change_path)
-
-            # Calculate sum of change over time points
-            Change_sum <- sum(Diffs_over_time)
-
-            # Save raster of the sum of differences over time as an tif file
-            writeRaster(Change_sum, NCP_sum_change_path)
-            }
-
-          #Check if the SSIM file exists and if not perform the calculation
-          if(file.exists(NCP_SSIM_path) == TRUE){
-            cat(paste0("SSIM file already exists for ", NCP, " under Config ", Config_ID, " skipping \n"))
-          } else {
-
-              # Print message that SSIM is being calculated
-              cat(paste0("Calculating SSIM for ", NCP, " under Config ", Config_ID, "\n"))
-
-              # Apply SSIM calculation to all layers using the 2020 (1st) layer as the reference
-              SSIM_time_steps <- lapply(NCP_layers[2:length(NCP_layers)], function(x) {
-
-                # Calculate SSIM
-                SSIM_step <- capture.output(SSIMmap::ssim_raster(NCP_layers[[1]], x))
-
-                # remove spaces in the output following ':'
-                SSIM_step_str <- gsub(": ", ":", SSIM_step)
-
-                # Split the output to a vector on the whitespace
-                SSIM_step_str <- unlist(strsplit(SSIM_step_str, " "))
-
-                # Name the list for the characters before the colon
-                names(SSIM_step_str) <- sapply(SSIM_step_str, function(x) {
-                  strsplit(x, ":")[[1]][1]
-                })
-
-                # split on the colon and only keep the numeric after it
-                SSIM_step_str <- sapply(SSIM_step_str, function(x) {
-                  as.numeric(strsplit(x, ":")[[1]][2])
-                  })
-
-                return(SSIM_step_str)
-              })
-
-              # bind results
-              SSIM_time_steps_comb <- as.data.frame(do.call(rbind, SSIM_time_steps))
-
-              #convert row names to a column
-              SSIM_time_steps_comb$Time_step <- rownames(SSIM_time_steps_comb)
-
-              # Save the result
-              saveRDS(SSIM_time_steps_comb, NCP_SSIM_path)
-            }
-
-
-
-        # Print completion message
-        cat(paste0("Completed change analysis for ", NCP, " under Config ", Config_ID, "\n"))
-      }
-
-
-      }, error=function(e){
-
-        # Print error message
-        cat(paste0("Error in Config ", Config_ID, ": ", e$message, "\n"))
-    })
-  })
-
-    }
-  })
-
-  # if parallel == TRUE set back to sequential processing
-  if(Parallel == TRUE){
-    future::plan(future::sequential)
-  }
-
-  # Combine the change stats files together
-  NCP_change_stats <- lapply(NCPs_to_summarise, function(NCP){
-
-    # Create the file paths for all expected outputs and check how many exist
-    NCP_change_paths <- lapply(Config_IDs, function(Config_ID) file.path(NCP_change_summary_stats_dir, paste0(NCP, "_Config_", Config_ID, "_change_stats.rds")))
-
-    # Check if the change files exist
-    NCP_change_paths_exist <- sapply(NCP_change_paths, function(x) file.exists(x))
-
-    # Subset to only the existing files
-    NCP_change_paths <- NCP_change_paths[NCP_change_paths_exist]
-
-    # Subset Config IDs to only the existing files
-    Config_IDs <- Config_IDs[NCP_change_paths_exist]
-
-    # Load the existing files   
-    NCP_change_dfs <- lapply(NCP_change_paths, function(x) readRDS(x))
-    names(NCP_change_dfs) <- Config_IDs
-
-    # bind results together
-    NCP_change_summary <- rbindlist(NCP_change_dfs, idcol = "Config_ID")
-    })
-  names(NCP_change_stats) <- NCPs_to_summarise
-
-  # bind results together
-  NCP_change_stats <- as.data.frame(rbindlist(NCP_change_stats, idcol = "NCP"))
-
-  # Add scenarios by matching on Config_ID
-  NCP_change_stats$Scenario <- sapply(NCP_change_stats$Config_ID, function(x) Sim_ctrl_tbl[Sim_ctrl_tbl$Simulation_num. == x, "Scenario_ID.string"])
-
-  # Save the result
-  saveRDS(NCP_change_stats, file.path(NCP_summarisation_dir, "NCPs_change_summary.rds"))
-
-  # Combine the SSIM files together
-  NCP_SSIM_stats <- lapply(NCPs_to_summarise, function(NCP){
-
-    # Create the file paths for all expected outputs and check how many exist
-    NCP_SSIM_paths <- lapply(Config_IDs, function(Config_ID) file.path(NCP_SSIM_dir, paste0(NCP, "_Config_", Config_ID, "_SSIM.rds")))
-
-    # Check if the change files exist
-    NCP_SSIM_paths_exist <- sapply(NCP_SSIM_paths, function(x) file.exists(x))
-
-    # Subset to only the existing files
-    NCP_SSIM_paths <- NCP_SSIM_paths[NCP_SSIM_paths_exist]
-
-    # Subset Config IDs to only the existing files
-    Config_IDs <- Config_IDs[NCP_SSIM_paths_exist]
-
-    # Load the existing files   
-    NCP_SSIM_dfs <- lapply(NCP_SSIM_paths, function(x) readRDS(x))
-    names(NCP_SSIM_dfs) <- Config_IDs
-
-    # bind results together
-    NCP_SSIM_summary <- rbindlist(NCP_SSIM_dfs, idcol = "Config_ID")
-    })
-  names(NCP_SSIM_stats) <- NCPs_to_summarise
-
-  # bind results together
-  NCP_SSIM_stats <- as.data.frame(rbindlist(NCP_SSIM_stats, idcol = "NCP"))
-
-  # Add scenarios by matching on Config_ID
-  NCP_SSIM_stats$Scenario <- sapply(NCP_SSIM_stats$Config_ID, function(x) Sim_ctrl_tbl[Sim_ctrl_tbl$Simulation_num. == x, "Scenario_ID.string"])
-
-  # Save the result
-  saveRDS(NCP_SSIM_stats, file.path(NCP_summarisation_dir, "NCPs_SSIM_summary.rds"))
-
-  # if Rescale_results == TRUE, normalise the results
-  if(Rescale_results == TRUE){
-
-    # Get names of metrics from colnames removing NCP, Config_ID
-    metrics_change <- colnames(NCP_change_stats)[!colnames(NCP_change_stats) %in% c("NCP", "Config_ID", "Scenario", "Time_step")]
-
-    # Loop over NCPs_to_summarise and normalize the summary values of NCP provision
-    NCP_change_stats_rescale <- lapply(NCPs_to_summarise, function(NCP){
-
-      # Get summary values for current NCP
-      NCP_change_stats_NCP <- NCP_change_stats[NCP_change_stats$NCP == NCP,]
-
-      # Loop over the metrics
-      for(metric in metrics_change){
-
-        # Initialize min and max values
-        NCP_min <- min(NCP_change_stats_NCP[[metric]], na.rm = TRUE)
-        NCP_max <- max(NCP_change_stats_NCP[[metric]], na.rm = TRUE)
-
-        # for the Avg_neg_change metric, smaller values are better and hence we want to invert it so these have higher values
-        if(metric == "Avg_neg_change"){
-
-          # first change the values to absolute values
-          NCP_change_stats_NCP[[metric]] <- abs(NCP_change_stats_NCP[[metric]])
-
-          # Initialize min and max values
-          NCP_min <- min(NCP_change_stats_NCP[[metric]], na.rm = TRUE)
-          NCP_max <- max(NCP_change_stats_NCP[[metric]], na.rm = TRUE)
-
-          # then invert the values
-          NCP_change_stats_NCP[[metric]] <- (NCP_max - NCP_change_stats_NCP[[metric]] + NCP_min)
-        }
-
-        # Normalize the summary values
-        NCP_change_stats_NCP[[paste0(metric, "_rescale")]] <- (NCP_change_stats_NCP[[metric]] - NCP_min) / (NCP_max - NCP_min)
-
-        # Remove the original summary values
-        NCP_change_stats_NCP[[metric]] <- NULL
-
-        # Rename the rescaled summary values
-        names(NCP_change_stats_NCP)[names(NCP_change_stats_NCP) == paste0(metric, "_rescale")] <- metric
-      }
-
-      return(NCP_change_stats_NCP)
-    })
-    names(NCP_change_stats_rescale) <- NCPs_to_summarise
-
-    # bind the list of dataframes into a single dataframe
-    NCP_change_stats_rescale <- as.data.frame(rbindlist(NCP_change_stats_rescale))
-
-    # Save the NCP_change_stats_rescale
-    saveRDS(NCP_change_stats_rescale, file = file.path(NCP_summarisation_dir, "NCP_change_stats_rescaled.rds"))
-
-    # Get names of metrics from colnames removing NCP, Config_ID
-    metrics_SSIM <- colnames(NCP_SSIM_stats)[!colnames(NCP_SSIM_stats) %in% c("NCP", "Config_ID", "Scenario", "Time_step")]
-
-    # Loop over NCPs_to_summarise and normalize the summary values of NCP provision
-    NCP_SSIM_stats_rescale <- lapply(NCPs_to_summarise, function(NCP){
-
-      # Get summary values for current NCP
-      NCP_SSIM_stats_NCP <- NCP_SSIM_stats[NCP_SSIM_stats$NCP == NCP,]
-
-      # Loop over the metrics
-      for(metric in metrics_SSIM){
-
-        # Initialize min and max values
-        NCP_min <- min(NCP_SSIM_stats_NCP[[metric]], na.rm = TRUE)
-        NCP_max <- max(NCP_SSIM_stats_NCP[[metric]], na.rm = TRUE)
-
-        # Normalize the summary values
-        NCP_SSIM_stats_NCP[[paste0(metric, "_rescale")]] <- (NCP_SSIM_stats_NCP[[metric]] - NCP_min) / (NCP_max - NCP_min)
-
-        # Remove the original summary values
-        NCP_SSIM_stats_NCP[[metric]] <- NULL
-
-        # Rename the rescaled summary values
-        names(NCP_SSIM_stats_NCP)[names(NCP_SSIM_stats_NCP) == paste0(metric, "_rescale")] <- metric
-      }
-
-  return(NCP_SSIM_stats_NCP)
-})
-    names(NCP_SSIM_stats_rescale) <- NCPs_to_summarise
-
-    # bind the list of dataframes into a single dataframe
-    NCP_SSIM_stats_rescale <- as.data.frame(rbindlist(NCP_SSIM_stats_rescale))
-
-    # Save the NCP_SSIM_stats_rescale
-    saveRDS(NCP_SSIM_stats_rescale, file = file.path(NCP_summarisation_dir, "NCP_SSIM_rescaled.rds"))
-  }
-}
-
-#' Calc_aggregated_metric
-#' 
-#' The aggregated metric is calculated as the product of:
-#' - Rescaled SSIM to represent change in spatial pattern of NCP provision: 
-#'     Rationale: Captures spatial dislocation of NCP provision from current state
-#'     Interpretation: High values are good because they represent low spatial dislocation 
-#' - Rescaled average positive change in NCP provision: 
-#'     Rationale: Capturing variation in disruption in provision
-#'     Interpretation: High values are good because they represent higher average increases in provision
-#' - Rescaled average negative change in NCP provision
-#'     Rationale: Capturing variation in disruption in provision
-#'     Interpretation: High values are bad because they represent higher average decreases in provision NEED TO INVERT
-#' - Rescaled sum of NCP provision: 
-#'     Rationale: Capturing total landscape level provision of NCPs
-#'     Interpretation: High values are good because they represent higher total provision
-#'     
-#'  @param NCPs_to_summarise A character vector of NCPs to summarise
-#'  @param NCP_summarisation_dir The directory where the NCP summarisation files are stored
-#'  @param Agg_metrics A character vector of metrics to aggregate
-
-calc_agg_metric <- function(
-  NCPs_to_summarise,
-  NCP_summarisation_dir,
-  value_scaling = c("unscaled", "rescaled"),
-  Agg_metrics = c("sum", "Avg_pos_change", "Avg_neg_change", "SSIM")
-  ){
   
-  for(scale in value_scaling){
-    if(scale == "unscaled"){
-    
-      # Load the unscaled NCP summary stats (NCP_sum_stats)
-      Sum_stats <- readRDS(file.path(NCP_summarisation_dir, "NCP_summary_stats.rds"))
-    
-      # Load the unscaled NCP change stats (NCP_change_stats)
-      Change_stats <- readRDS(file.path(NCP_summarisation_dir, "NCPs_change_summary.rds"))
-    
-      # Load the unscaled NCP SSIM stats (NCP_SSIM_stats)
-      SSIM_stats <- readRDS(file.path(NCP_summarisation_dir, "NCPs_SSIM_summary.rds"))
-    
-    } else if(scale == "rescaled"){
-    
-      # Load the rescaled NCP summary stats (NCP_sum_stats_rescale)
-      Sum_stats <- readRDS(file.path(NCP_summarisation_dir, "NCP_summary_stats_rescaled.rds"))
-
-      # Load the rescaled NCP change stats (NCP_change_stats_rescale)
-      Change_stats <- readRDS(file.path(NCP_summarisation_dir, "NCP_change_stats_rescaled.rds"))
-
-      # Load the rescaled NCP SSIM stats (NCP_SSIM_stats_rescale)
-      SSIM_stats <- readRDS(file.path(NCP_summarisation_dir, "NCP_SSIM_rescaled.rds"))
-    }
-
-    # Loop over NCPs_to_summarise and calculate the aggregate metric
-    NCP_Agg_stats <- lapply(NCPs_to_summarise, function(NCP){
-
-      # Get summary values for current NCP
-      Sum_stats_NCP <- Sum_stats[Sum_stats$NCP == NCP,]
-      Change_stats_NCP <- Change_stats[Change_stats$NCP == NCP,]
-      SSIM_stats_NCP <- SSIM_stats[SSIM_stats$NCP == NCP,]
-
-      # create an empty list to store the seperate metrics
-      NCP_Agg_stats_NCP <- list()
-
-      # Loop over the metrics
-      for(metric in Agg_metrics){
-
-        # For the metrics in Sum_stats_rescale
-        if(metric %in% names(Sum_stats_NCP)){
-
-          # remove the other metrics from the dataframe and rename the metric column to be value
-          NCP_stats <- Sum_stats_NCP %>% select(Config_ID, NCP, Scenario, Time_step, metric) %>% rename(value = metric)
-
-          # Add the dataframe to the list
-          NCP_Agg_stats_NCP[[metric]] <- NCP_stats
-
-        # For the Change stats metrics
-        } else if (metric %in% names(Change_stats_NCP)){
-
-          # remove the other metrics from the dataframe
-          NCP_stats <- Change_stats_NCP %>% select(Config_ID, NCP, Scenario, Time_step, metric)
-
-          # if metric is Avg_neg_change then convert the negative values to positive
-          if(metric == "Avg_neg_change"){
-            NCP_stats$Avg_neg_change <- abs(NCP_stats[[metric]])
-          }
-
-          # rename the metric column to be value
-          NCP_stats <- NCP_stats %>% rename(value = metric)
-
-          # Add the dataframe to the list
-          NCP_Agg_stats_NCP[[metric]] <- NCP_stats
-
-        # For the SSIM metrics
-        } else if (metric %in% names(SSIM_stats_NCP)){
-
-          # remove the other metrics from the dataframe
-          NCP_stats <- SSIM_stats_NCP %>% select(Config_ID, NCP, Time_step, Scenario, metric)
-
-          # rename the metric column to be value
-          NCP_stats <- NCP_stats %>% rename(value = metric)
-
-          # Add the dataframe to the list
-          NCP_Agg_stats_NCP[[metric]] <- NCP_stats
-          }
-        }
-
-      #bind the lists together
-      NCP_Agg_stats_NCP <- rbindlist(NCP_Agg_stats_NCP, idcol = "metric", use.names = TRUE)
-
-      # pivot wide on the value columns with names from metric
-      NCP_Agg_stats_NCP <- NCP_Agg_stats_NCP %>% pivot_wider(names_from = metric, values_from = value)
-
-      # remove all entries of the 1st time point as the values will all be NA for this
-      NCP_Agg_stats_NCP <- NCP_Agg_stats_NCP %>% filter(Time_step != min(Time_step))
-
-      # loop over config_id and multiply all the metric columns together
-      NCP_Agg_stats_NCP$Agg_metric <- sapply(1:nrow(NCP_Agg_stats_NCP), function(i){
-        product <- prod(NCP_Agg_stats_NCP[i, Agg_metrics])
-      })
-
-      # get the min and max of the aggregated metric
-      min_agg <- min(NCP_Agg_stats_NCP$Agg_metric, na.rm = TRUE)
-      max_agg <- max(NCP_Agg_stats_NCP$Agg_metric, na.rm = TRUE)
-
-      # Normalise the aggregated metric
-      NCP_Agg_stats_NCP$Agg_metric_rescale <- (NCP_Agg_stats_NCP$Agg_metric - min_agg)/ (max_agg - min_agg)
-
-      return(NCP_Agg_stats_NCP)
-    })
-    names(NCP_Agg_stats) <- NCPs_to_summarise
-
-    # bind the list of dataframes into a single dataframe
-    NCP_Agg_stats <- as.data.frame(rbindlist(NCP_Agg_stats))
-
-    if(scale == "rescaled"){
-      # Save the results
-      saveRDS(NCP_Agg_stats, file.path(NCP_summarisation_dir, "NCP_aggregated_metric_rescaled.rds"))
-    } else if(scale == "unscaled"){
-      # Save the results
-      saveRDS(NCP_Agg_stats, file.path(NCP_summarisation_dir, "NCP_aggregated_metric_unscaled.rds"))
-    }
-  }
+  
   
 }
 
 
-## Main
+
+
+
+### =========================================================================
+### Main
+### =========================================================================
 
 # Load config from $FUTURE_EI_CONFIG_FILE
 config_file <- Sys.getenv("FUTURE_EI_CONFIG_FILE")
@@ -1088,10 +1036,10 @@ bash_vars <- config$bash_variables # general bash variables
 config <- config$Summarisation # only summarisation variables
 
 # if InputDir is not set, use bash variable
-# $FUTURE_EI_OUTPUT_DIR/$NCP_OUTPUT_BASE_DIR
+# $FUTURE_EI_OUTPUT_DIR/$ES_OUTPUT_BASE_DIR
 if (is.null(config$InputDir) || config$InputDir == "") {
   config$InputDir <- file.path(bash_vars$FUTURE_EI_OUTPUT_DIR,
-                               bash_vars$NCP_OUTPUT_BASE_DIR)
+                               bash_vars$ES_OUTPUT_BASE_DIR)
 }
 # if OutputDir is not set, use bash variable SUMMARISATION_OUTPUT_DIR
 if (is.null(config$OutputDir) || config$OutputDir == "") {
@@ -1100,7 +1048,7 @@ if (is.null(config$OutputDir) || config$OutputDir == "") {
 }
 # Check if InputDir is now set
 if (is.null(config$InputDir) || config$InputDir == "") {
-  stop("InputDir nor NCP_OUTPUT_BASE_DIR set in FUTURE_EI_CONFIG_FILE")
+  stop("InputDir nor ES_OUTPUT_BASE_DIR set in FUTURE_EI_CONFIG_FILE")
 }
 # Check if InputDir exists
 if (!dir.exists(config$InputDir)) {
@@ -1115,7 +1063,7 @@ if (!dir.exists(config$OutputDir)) {
   dir.create(config$OutputDir, recursive = TRUE)
 }
 
-cat("Performing summarisation of Future EI outputs \n")
+cat("Performing summarisation of ES outputs \n")
 
 cat("Working directory is:", getwd(), "\n")
 cat("Input directory set to:", config$InputDir, "\n")
@@ -1123,235 +1071,61 @@ cat("Output directory set to:", config$OutputDir, "\n")
 
 ### Start by creating sub directories
 
-# Dir for the processed NCP layers 
-Rescaled_NCP_layer_dir <- file.path(config$OutputDir, "Rescaled_NCP_layers")
-if (!dir.exists(Rescaled_NCP_layer_dir)) {
-  dir.create(Rescaled_NCP_layer_dir, recursive = TRUE)
+# dir for saving results
+web_platform_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform"
+# if dir doesn't exist, create it
+if(!dir.exists(web_platform_dir)){
+  dir.create(web_platform_dir, recursive = TRUE, showWarnings = FALSE)
 }
 
+# Mask directory
+Mask_dir <- file.path(config$OutputDir, "Masks")
+# if dir doesn't exist, create it
+if(!dir.exists(Mask_dir)){
+  dir.create(Mask_dir, recursive = TRUE, showWarnings = FALSE)
+}
+
+# Dir for the processed ES layers 
 # Sub-dir for the summarisation results
-NCP_summarisation_dir <- file.path(config$OutputDir, "NCP_summarisation")
-if (!dir.exists(NCP_summarisation_dir)) {
-  dir.create(NCP_summarisation_dir, recursive = TRUE)
+ES_summarisation_dir <- file.path(config$OutputDir, "ES_summarisation")
+if (!dir.exists(ES_summarisation_dir)) {
+  dir.create(ES_summarisation_dir, recursive = TRUE)
 }
 
 # Sub-dir for the normalisation results
-NCP_rescaling_dir <- file.path(NCP_summarisation_dir, "NCP_rescaling")
-if (!dir.exists(NCP_rescaling_dir)) {
-  dir.create(NCP_rescaling_dir, recursive = TRUE)
+ES_rescaling_dir <- file.path(ES_summarisation_dir, "ES_rescaling")
+if (!dir.exists(ES_rescaling_dir)) {
+  dir.create(ES_rescaling_dir, recursive = TRUE)
 }
 
 # Sub-dir for the summary_stats results
-NCP_summary_stats_dir <- file.path(NCP_summarisation_dir, "NCP_summary_stats")
-if (!dir.exists(NCP_summary_stats_dir)) {
-  dir.create(NCP_summary_stats_dir, recursive = TRUE)
+ES_summary_stats_dir <- file.path(ES_summarisation_dir, "ES_summary_stats")
+if (!dir.exists(ES_summary_stats_dir)) {
+  dir.create(ES_summary_stats_dir, recursive = TRUE)
 }
 
 # Dir to store results of change analysis
-NCP_change_dir <- file.path(NCP_summarisation_dir, "NCP_change")
-if (!dir.exists(NCP_change_dir)) {
-  dir.create(NCP_change_dir, recursive = TRUE)
+ES_change_dir <- file.path(ES_summarisation_dir, "ES_change")
+if (!dir.exists(ES_change_dir)) {
+  dir.create(ES_change_dir, recursive = TRUE)
 }
 
 # Sub-dir for Change_summary_stats and 
-NCP_change_summary_stats_dir <- file.path(NCP_change_dir, "summary_stats")
-if (!dir.exists(NCP_change_summary_stats_dir)) {
-  dir.create(NCP_change_summary_stats_dir, recursive = TRUE)
+ES_change_summary_stats_dir <- file.path(ES_change_dir, "summary_stats")
+if (!dir.exists(ES_change_summary_stats_dir)) {
+  dir.create(ES_change_summary_stats_dir, recursive = TRUE)
 }
 
 # Sub-dir for rasters summing change over time
-NCP_change_sum_rasters_dir <- file.path(NCP_change_dir, "sum_change_rasters")
-if (!dir.exists(NCP_change_sum_rasters_dir)) {
-  dir.create(NCP_change_sum_rasters_dir, recursive = TRUE)
+ES_change_sum_rasters_dir <- file.path(ES_change_dir, "sum_change_rasters")
+if (!dir.exists(ES_change_sum_rasters_dir)) {
+  dir.create(ES_change_sum_rasters_dir, recursive = TRUE)
 }
 
 # Sub-dir to store results of SSIM pattern analysis
-NCP_SSIM_dir <- file.path(NCP_summarisation_dir, "NCP_SSIM")
-if (!dir.exists(NCP_SSIM_dir)) {
-  dir.create(NCP_SSIM_dir, recursive = TRUE)
+ES_SSIM_dir <- file.path(ES_summarisation_dir, "ES_SSIM")
+if (!dir.exists(ES_SSIM_dir)) {
+  dir.create(ES_SSIM_dir, recursive = TRUE)
 }
 
 
-### Prepare a dataframe of information on the NCP layers that are to be processed
-
-prepare_analysis_df <- function(
-    input_dir = "F:/KB-outputs/lulcc_output",
-    image_dir = "map_images",
-    raster_dir = "raster_data",
-    perc_area_data_dir = "chart_data/perc_area",
-    area_chg_data_dir = "chart_data/perc_area_change",
-    base_dir = web_platform_dir,
-    Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
-    ProjCH = ProjCH,  
-){
-  
-  
-  
-}
-
-
-
-
-
-
-# Load simulation control table from env var LULCC_M_SIM_CONTROL_TABLE
-Sim_ctrl_tbl <- read.csv()
-
-# Tidy names in Sim_ctrl_tbl$Scenario_ID.string putting a '-' after 'EI
-Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "EI", "EI-")
-
-# Load EI interventions table from
-# env var LULCC_CH_HPC_DIR / LULCC_M_EI_INTS_TABLE
-#EI_interventions_tbl <- read.csv(
-#  file.path(Sys.getenv("LULCC_CH_HPC_DIR"), Sys.getenv("LULCC_M_EI_INTS_TABLE"))
-#)
-
-# Get earliest scenario start date and latest end date
-Start_date <- min(Sim_ctrl_tbl$Scenario_start.real)
-End_date <- max(Sim_ctrl_tbl$Scenario_end.real)
-
-# Create seq of scenario time steps with Step_length.real
-Sim_time_steps <- seq(Start_date, End_date, by = Sim_ctrl_tbl$Step_length.real[1])
-
-# Vector IDs of configurations to be analysed
-# Note Manually adjust this to analyse specific configurations
-Config_IDs <- unique(Sim_ctrl_tbl$Simulation_num.)
-
-# Loop over NCPs_to_summarise and create vectors of file paths for their layers
-# according to Config_IDs, Sim_time_steps and nesting
-NCP_layer_paths <- lapply(config$NCPs_to_summarise, function(NCP){
-
-  # Loop over config_IDs returning paths as vector
-  Config_paths <- lapply(Config_IDs, function(Config_ID){
-
-    # If NCP is not nested then append time step to file path
-    if(config[["NCP_nesting"]][[NCP]] == FALSE){
-
-      # Create a vector of file paths for each time step
-      NCP_time_paths <- sapply(Sim_time_steps, function(Time_step){
-        NCP_step_path <- file.path(config$InputDir, Config_ID, NCP, paste0(config[["NCP_file_names"]][[NCP]], "_", Time_step, ".tif"))
-      })
-
-    # If NCP is nesting then append time step as a dir before file path
-    } else if (config[["NCP_nesting"]][[NCP]] == TRUE){
-
-      # Create a vector of file paths for each time step
-      NCP_time_paths <- sapply(Sim_time_steps, function(Time_step){
-
-        NCP_step_path <-file.path(config$InputDir, Config_ID, NCP, Time_step, paste0(config[["NCP_file_names"]][[NCP]], ".tif"))
-
-      })
-    }
-    
-    # 
-
-    # Also create a vector of file paths for saving the Rescaled NCP layers
-    # use Config_ID to subset Sim_ctrl_tbl to get scenario details
-    Config_details <- Sim_ctrl_tbl[Sim_ctrl_tbl$Simulation_num. == Config_ID, ]
-    
-    # model path structure: NCP-Time_step-Config_details$Climate_scenario.string-Config_details$Econ_scenario.string-Config_details$Pop_scenario.string-Config_details$Scenario_ID.string-full.tif’
-    NCP_rescaled_paths_tif <- sapply(Sim_time_steps, function(Time_step){
-      file.path(Rescaled_NCP_layer_dir, paste0(NCP, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
-                                                Config_details$Econ_scenario.string, "-", 
-                                                Config_details$Pop_scenario.string, "-", 
-                                                Config_details$Scenario_ID.string, "-full.tif")) 
-    })
-    
-    NCP_rescaled_paths_png <- sapply(Sim_time_steps, function(Time_step){
-      file.path(Rescaled_NCP_layer_dir, paste0(NCP, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
-                                                Config_details$Econ_scenario.string, "-", 
-                                                Config_details$Pop_scenario.string, "-", 
-                                                Config_details$Scenario_ID.string, "-full.png")) 
-    })
-
-    # combine both vectors of paths in a dataframe
-    NCP_time_paths <- data.frame(Path = NCP_time_paths, Norm_path_tif = NCP_rescaled_paths_tif, 
-                                 Norm_path_png = NCP_rescaled_paths_png)
-
-    #Add column for NCP
-    NCP_time_paths$NCP <- NCP
-
-    # Add column for Config_ID
-    NCP_time_paths$Config_ID <- Config_ID
-
-    # Add column for Time_step
-    NCP_time_paths$Time_step <- Sim_time_steps
-    
-    # loop over NCP_time_paths and check which exist
-    NCP_time_paths$Exists <- file.exists(NCP_time_paths$Path)
-
-    return(NCP_time_paths)
-  })
-
-  # Bind list of dataframes into a single dataframe
-  NCP_df <- do.call(rbind, Config_paths)
-})
-names(NCP_layer_paths) <- config$NCPs_to_summarise
-
-#rbind list of dataframes into a single dataframe
-NCP_layer_paths <- do.call(rbind, NCP_layer_paths)
-
-# print table of frequency of paths that exist
-NCP_layer_paths$Exists <- as.logical(NCP_layer_paths$Exists)
-# Print summary of NCP_layer_paths
-print(table(NCP_layer_paths$Exists))
-
-# subset the table to only the rows that don't exist'
-NCP_layer_paths_missing <- NCP_layer_paths[!NCP_layer_paths$Exists, ]
-
-# get unique congif IDs
-unique_config_IDs <- sort(unique(NCP_layer_paths_missing$Config_ID))
-print(unique_config_IDs)
-
-# Run calc_minmaxs function
-calc_minmaxs(parallel = config$Parallel,
-             NCP_layer_paths = NCP_layer_paths,
-             NCP_rescaling_dir = NCP_rescaling_dir,
-             NCPs_to_summarise = config$NCPs_to_summarise,
-             minmax_recalc = config$minmax_recalc,
-             report_NAs = TRUE)
-
-# Run calc_global_minmaxs
-calc_global_minmaxs(
-    NCPs_to_summarise = config$NCPs_to_summarise,
-    NCP_rescaling_dir = NCP_rescaling_dir)
-
-
-# Run calc_layer_summaries
-calc_layer_summaries(
-    metrics = c("sum", "mean", "sd"),
-    NCP_layer_paths = NCP_layer_paths,
-    NCPs_to_summarise = config$NCPs_to_summarise,
-    NCP_rescaling_dir = NCP_rescaling_dir,
-    NCP_summary_stats_dir = NCP_summary_stats_dir,
-    NCP_summarisation_dir = NCP_summarisation_dir,
-    Recalc_summary = TRUE,
-    Recalc_rescaled_layers = FALSE,
-    Save_rescaled_layers = TRUE,
-    Sim_ctrl_tbl = Sim_ctrl_tbl,
-    Rescale_results = TRUE,
-    Parallel = TRUE
-  )
-
-# Run calc_change_summaries
-calc_change_summaries(
-  NCP_layer_paths = NCP_layer_paths,
-  NCPs_to_summarise = config$NCPs_to_summarise,
-  NCP_rescaling_dir = NCP_rescaling_dir,
-  NCP_change_summary_stats_dir = NCP_change_summary_stats_dir,
-  NCP_change_sum_rasters_dir = NCP_change_sum_rasters_dir,
-  NCP_SSIM_dir = NCP_SSIM_dir,
-  NCP_summarisation_dir = NCP_summarisation_dir,
-  Sim_ctrl_tbl = Sim_ctrl_tbl,
-  Rescale_results = TRUE,
-  Parallel = config$Parallel,
-  Save_rescaled_layers = FALSE
-  )
-
-# Run calc_agg_metric
-calc_agg_metric(
-  NCPs_to_summarise = config$NCPs_to_summarise,
-  NCP_summarisation_dir = NCP_summarisation_dir,
-  Agg_metrics = c("sum", "Avg_pos_change", "Avg_neg_change", "SSIM"),
-  value_scaling = c("unscaled", "rescaled")
-  )

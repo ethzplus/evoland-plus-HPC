@@ -20,11 +20,11 @@ run_params:
 # Data
 data:
   # LULC               - CAR, FF, HAB, NDR, POL, SDR, WY
-  lulc: # automatically found in NCP_RUN_INPUT_DIR
+  lulc: # from NCP_RUN_INPUT_DIR
   # Rural residential  - HAB
-  rur_res: # automatically found in NCP_RUN_INPUT_DIR
+  rur_res: # from NCP_RUN_INPUT_DIR
   # Urban residential  - HAB
-  urb_res: # automatically found in NCP_RUN_INPUT_DIR
+  urb_res: # from NCP_RUN_INPUT_DIR
   # Production regions - CAR
   prodreg: Data/PRODUCTION_REGIONS/PRODREG.shp
   # DEM                - CAR, NDR

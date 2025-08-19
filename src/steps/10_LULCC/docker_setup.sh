@@ -3,8 +3,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo "Running script from: $SCRIPT_DIR"
 source "$SCRIPT_DIR/../../bash_common.sh"
 
-# Script to download, build and distribute the Docker image for the LULCC step.
-# Supports Apptainer (Singularity) to create a SIF container from the Docker image.
+# Script to download, build and distribute the Docker image for the LULCC step
+# Supports Docker, and Apptainer (Singularity) as a fallback only for downloading
 
 # Assure LULCC_DOCKER_NAMESPACE, LULCC_DOCKER_REPO, and LULCC_DOCKER_VERSION are set
 if [ -z "$LULCC_DOCKER_NAMESPACE" ] || [ -z "$LULCC_DOCKER_REPO" ] || [ -z "$LULCC_DOCKER_VERSION" ]; then

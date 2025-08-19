@@ -1,5 +1,5 @@
 #!/bin/bash
-# NCP step for the batch job src/10_40_combined_array_job.sh
+# NCP step for the batch job src/future-ei-pipeline.sh
 # For each simulation and year, run the NCP models
 # Uses run_all_ncps.sh <NCP_RUN_SCENARIO_ID> <NCP_RUN_YEAR> <NCP_RUN_INPUT_DIR> <NCP_RUN_OUTPUT_DIR> <NCP_RUN_SCRATCH_DIR>
 # If called separately for testing, source the bash_common.sh script first

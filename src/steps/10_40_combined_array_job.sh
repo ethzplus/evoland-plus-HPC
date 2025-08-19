@@ -10,14 +10,33 @@
 #SBATCH --mail-type=ALL       # Mail events (NONE, BEGIN, END, FAIL, ALL)
 ## Array job
 ##SBATCH --array=1-1      # start-end%num_parallel
-#SBATCH --array=1-216%12      # start-end%num_parallel
+#SBATCH --array=1-15%5      # start-end%num_parallel
 #        ! step size needs to be 1
 
-# LULCC and NCPs combined array job
-# ---------------------------------
-# This script is used to run the LULCC and NCPs steps in parallel.
-# The control table is split into parts and each part is processed by a
-# separate array task. The results are merged back into the full control table.
+#!/bin/bash
+# ... (your SBATCH directives)
+
+# Set the base directory explicitly
+export FUTURE_EI_BASE_DIR="/cluster/home/bblack/Future-EI"
+
+echo "Current working directory: $(pwd)"
+echo "FUTURE_EI_BASE_DIR is set to: '$FUTURE_EI_BASE_DIR'"
+
+# Verify the directory exists
+if [ ! -d "$FUTURE_EI_BASE_DIR" ]; then
+  echo "ERROR: FUTURE_EI_BASE_DIR directory does not exist: $FUTURE_EI_BASE_DIR"
+  exit 1
+fi
+
+# Check if variable is empty (this should not happen now)
+if [ -z "$FUTURE_EI_BASE_DIR" ]; then
+  echo "ERROR: FUTURE_EI_BASE_DIR is not defined. Exiting."
+  exit 1
+fi
+
+echo "About to source bash_common.sh"
+source "$FUTURE_EI_BASE_DIR"/src/bash_common.sh
+echo "Successfully sourced bash_common.sh"
 
 echo "Current working directory: $(pwd)"
 # $FUTURE_EI_BASE_DIR must be passed defined for array job, bash_common.sh

@@ -71,6 +71,7 @@ Files to expect:
 
 import sys
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 output_files = [
