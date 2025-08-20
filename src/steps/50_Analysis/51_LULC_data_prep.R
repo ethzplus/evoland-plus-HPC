@@ -15,7 +15,7 @@
 # # FOR TESTING ONLY
 # # Create an environment variable for the config file
 Sys.setenv(FUTURE_EI_CONFIG_FILE = "src/config.yml")
-Sys.setenv(LULCC_M_SIM_CONTROL_TABLE = "LULCC_CH_HPC/Simulation_control.csv")
+Sys.setenv(LULCC_M_SIM_CONTROL_TABLE = "Simulation_control.csv")
 Sys.setenv(LULCC_CH_HPC_DIR = "LULCC_CH_HPC")
 Sys.setenv(LULCC_M_EI_INTS_TABLE = "EI_interventions.csv")
 
@@ -256,10 +256,17 @@ prepare_lulc_files <- function(
   Sim_ctrl_tbl <- read.csv(Sim_ctrl_tbl_path, stringsAsFactors = FALSE)
   
   # Tidy names in Sim_ctrl_tbl$Scenario_ID.string putting a '-' after 'EI
-  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "EI", "EI-")
+  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "EI", "EI_")
   
   # for Scenario_ID.string replace any GREX with GR-EX
-  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "GREX", "GR-EX")
+  Sim_ctrl_tbl$Scenario_ID.string <- str_replace_all(Sim_ctrl_tbl$Scenario_ID.string, "GREX", "GR_EX")
+  
+  # convert all values in columns: Climate_scenario.string, Econ_scenario.string,
+  # Pop_scenario.string and Scenario_ID.string to lower case
+  Sim_ctrl_tbl$Climate_scenario.string <- tolower(Sim_ctrl_tbl$Climate_scenario.string)
+  Sim_ctrl_tbl$Econ_scenario.string <- tolower(Sim_ctrl_tbl$Econ_scenario.string)
+  Sim_ctrl_tbl$Pop_scenario.string <- tolower(Sim_ctrl_tbl$Pop_scenario.string)
+  Sim_ctrl_tbl$Scenario_ID.string <- tolower(Sim_ctrl_tbl$Scenario_ID.string)
   
   # Get earliest scenario start date and latest end date
   Start_date <- min(Sim_ctrl_tbl$Scenario_start.real)
@@ -274,6 +281,9 @@ prepare_lulc_files <- function(
   
   # Load the LULC aggregation scheme
   Aggregation_scheme <- read_excel(LULC_agg_path)
+  
+  # convert the values in Class_abbreviation to lower case
+  Aggregation_scheme$Class_abbreviation <- tolower(Aggregation_scheme$Class_abbreviation)
   
   # Loop over config_IDs creating a dataframe with paths for saving the rasters, pngs and chart data
   lulc_paths <- lapply(Config_IDs, function(Config_ID){
@@ -392,6 +402,11 @@ prepare_lulc_files <- function(
   #Load in most recent non-aggregated LULC raster
   ref_LULC <- rast(Non_agg_lulc_path)
   
+  # check if the raster has the correct projection
+  if (crs(ref_LULC) != ProjCH) {
+    ref_LULC <- project(ref_LULC, ProjCH)
+  }
+  
   # get raster values of lakes and rivers
   mask_values <- unlist(Aggregation_scheme[Aggregation_scheme$NOAS04_class_ENG %in% c("Lakes", "Rivers", "Glaciers, perpetual snow"), "NOAS04_ID"])
   names(mask_values) <- c(20,21, 19)
@@ -425,10 +440,14 @@ prepare_lulc_files <- function(
     
     cat(paste("Processing scenario:", Scenario, "\n"))
     
+    Glacier_files <- list.files("Data/glacier_scenario_indices",
+                                               full.names = TRUE)
+    
+    # match on the scenario ignoring the case
+    Scenario_glacier_file <- Glacier_files[grepl(Scenario, Glacier_files, ignore.case = TRUE)]
+  
     #load scenario specific glacier index
-    Glacier_index <- readRDS(file = list.files("Data/glacier_scenario_indices",
-                                               full.names = TRUE,
-                                               pattern = Scenario))[,c("ID_loc", paste(Start_date))]
+    Glacier_index <- readRDS(Scenario_glacier_file)[,c("ID_loc", paste(Start_date))]
     
     #seperate vector of cell IDs for glacier and non-glacer cells
     Non_glacier_IDs <- Glacier_index[Glacier_index[[paste(Start_date)]]==0, "ID_loc"]
@@ -525,6 +544,10 @@ prepare_lulc_files <- function(
                 stop(paste("Unsupported mask file type for:", mask_path))
               }
               
+              # crop the lulc_layer to the extent of the mask layer
+              lulc_layer <- terra::crop(x = lulc_layer, 
+                                        y = mask_layer)
+              
               # apply the mask to the raster layer
               masked_lulc <- terra::mask(x = lulc_layer, 
                                          mask = mask_layer, 
@@ -540,7 +563,7 @@ prepare_lulc_files <- function(
               # get frequency table of the masked raster layer
               rast_tbl <- freq(masked_lulc)
               rast_tbl$layer <- NULL
-              rast_tbl$class_name <- c(unlist(sapply(rast_tbl$value, function(y) unique(unlist(Aggregation_scheme[Aggregation_scheme$Aggregated_ID == y, "Class_abbreviation"])),simplify = TRUE)), "Lake", "River")
+              rast_tbl$class_name <- c(unlist(sapply(rast_tbl$value, function(y) unique(unlist(Aggregation_scheme[Aggregation_scheme$Aggregated_ID == y, "Class_abbreviation"])),simplify = TRUE)), "lake", "river")
               rast_tbl$value <- NULL
               rast_tbl$perc_area <- rast_tbl$count / sum(rast_tbl$count) * 100
               rast_tbl$count <- NULL
@@ -620,13 +643,13 @@ prepare_lulc_files <- function(
           
           # create the area change path for this mask name
           area_change_path <- file.path(base_dir, area_chg_data_dir, 
-                                        paste0("lulc-",
+                                        paste0("lulc-",time_step, "-",
                                                config_lulc_df$Climate_scenario[config_lulc_df$Time_step == time_step], 
                                                "-",config_lulc_df$Econ_scenario[config_lulc_df$Time_step == time_step], 
                                                "-", config_lulc_df$Pop_scenario[config_lulc_df$Time_step == time_step], 
                                                "-", config_lulc_df$Scenario_ID[config_lulc_df$Time_step == time_step], 
                                                "-", mask_name, 
-                                               "-perc_area_chg-", first_time_step, "-", time_step, ".JSON"))
+                                               "-perc_area_chg.json"))
           
           # if this path already exists and overwrite is FALSE, skip to the next iteration
           if(!overwrite && file.exists(area_change_path)){
@@ -705,7 +728,7 @@ config <- config$Summarisation # only summarisation variables
 # dir for saving results
 web_platform_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform"
 # if dir doesn't exist, create it
-if(web_platform_dir){
+if(!dir.exists(web_platform_dir)){
   dir.create(web_platform_dir, recursive = TRUE, showWarnings = FALSE)
 }
 
@@ -743,6 +766,12 @@ canton_shp <- vect("Data/CH_geoms/swissBOUNDARIES3D_1_3_TLM_KANTONSGEBIET.shp")
 # filter to NAME == Bern
 canton_bern <- canton_shp[canton_shp$NAME == "Bern", ]
 
+# check to see that the CRS matches ProjCH
+if (crs(canton_bern) != ProjCH) {
+  # if not, transform the CRS
+  canton_bern <- terra::project(canton_bern, ProjCH)
+}
+
 # save the canton Bern shapefile to the mask directory
 writeVector(canton_bern,
             file.path(Mask_dir, "Canton_mask.shp"),
@@ -755,20 +784,21 @@ writeVector(canton_bern,
 
 # Apply function to prepare LULC files
 prepare_lulc_files(
-  lulcc_input_dir = "F:/KB-outputs/lulcc_output",
-  image_dir = "map_images",
-  raster_dir = "raster_data",
-  chart_data_dir = "chart_data",
-  base_dir = web_platform_dir,
-  Sim_ctrl_tbl_path = LULCC_M_SIM_CONTROL_TABLE,
-  ProjCH = ProjCH,
-  LULC_agg_path = "LULCC_CH_HPC/Tools/LULC_class_aggregation.xlsx",
-  colour_pal = LULC_pal,
-  Non_agg_lulc_path = "Data/NOAS04_2018.tif",
-  Use_parallel = FALSE,
-  num_workers = 4,
-  map_masks = list("canton" = file.path(Mask_dir, "Canton_mask.shp")),
-  overwrite = FALSE
+    lulcc_input_dir = "F:/KB-outputs/lulcc_output",
+    image_dir = "map_images",
+    raster_dir = "raster_data",
+    perc_area_data_dir = "chart_data/perc_area",
+    area_chg_data_dir = "chart_data/perc_area_change",
+    base_dir = web_platform_dir,
+    Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
+    ProjCH = ProjCH,
+    LULC_agg_path = "LULC_class_aggregation.xlsx",
+    colour_pal = LULC_pal,
+    Non_agg_lulc_path = "Data/NOAS04_2018.tif",
+    Use_parallel = FALSE,
+    num_workers = 4,
+    map_masks = list("canton" = file.path(Mask_dir, "Canton_mask.shp")),
+    overwrite = TRUE
 )
 
 
