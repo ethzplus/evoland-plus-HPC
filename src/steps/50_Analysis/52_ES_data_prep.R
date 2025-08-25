@@ -23,7 +23,7 @@ Sys.setenv(LULCC_M_SIM_CONTROL_TABLE = "Simulation_control.csv")
 # Load libraries
 packs <- c("stringr", "terra", "future", "future.apply", "readxl",
            "data.table", "tidyr", "yaml", "dplyr", "viridis", "ggplot2",
-           "tidyterra", "jsonlite", "magick", "grDevices", "classInt")
+           "tidyterra", "jsonlite", "magick", "grDevices", "classInt", "doparallel", "foreach")
 invisible(lapply(packs, require, character.only = TRUE))
 
 options(future.rng.onMisuse = "ignore")
@@ -41,7 +41,7 @@ options(future.rng.onMisuse = "ignore")
 #' @param input_dir The directory where the input ES layers are stored
 #' @param image_dir The directory where the output images will be saved
 #' @param raster_dir The directory where the output rasters will be saved
-#' @param classified_area_dir The directory where the classified area JSON files will be saved
+#' @param perc_area_dir The directory where the classified area JSON files will be saved
 #' @param base_dir The base directory where the output directories are located
 #' @param Sim_ctrl_tbl_path The path to the simulation control table CSV file
 #' @param ProjCH The projection CRS to use for the ES layers
@@ -53,8 +53,12 @@ options(future.rng.onMisuse = "ignore")
 prepare_analysis_df <- function(
     input_dir = "F:/KB-outputs/ncp_output",
     image_dir = "map_images",
+    chg_image_dir = "chg_map_images",
     raster_dir = "raster_data",
-    classified_area_dir = "chart_data/classified_area",
+    chg_raster_dir = "chg_raster_data",
+    chg_raster_init = "chg_raster_init",
+    perc_area_dir = "chart_data/perc_area",
+    area_chg_dir = "chart_data/perc_area_change",
     sample_dir = "sample_data",
     base_dir = web_platform_dir,
     Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
@@ -72,12 +76,25 @@ prepare_analysis_df <- function(
   if(!dir.exists(file.path(base_dir, raster_dir))){
     dir.create(file.path(base_dir, raster_dir), recursive = TRUE, showWarnings = FALSE)
   }
-  if(!dir.exists(file.path(base_dir, classified_area_dir))){
-    dir.create(file.path(base_dir, classified_area_dir), recursive = TRUE, showWarnings = FALSE)
+  if(!dir.exists(file.path(base_dir, perc_area_dir))){
+    dir.create(file.path(base_dir, perc_area_dir), recursive = TRUE, showWarnings = FALSE)
+  }
+  if(!dir.exists(file.path(base_dir, area_chg_dir))){
+    dir.create(file.path(base_dir, area_chg_dir), recursive = TRUE, showWarnings = FALSE)
   }
   if(!dir.exists(file.path(base_dir, sample_dir))){
     dir.create(file.path(base_dir, sample_dir), recursive = TRUE, showWarnings = FALSE)
   }
+  if(!dir.exists(file.path(base_dir, chg_image_dir))){
+    dir.create(file.path(base_dir, chg_image_dir), recursive = TRUE, showWarnings = FALSE)
+  }
+  if(!dir.exists(file.path(base_dir, chg_raster_dir))){
+    dir.create(file.path(base_dir, chg_raster_dir), recursive = TRUE, showWarnings = FALSE)
+    }
+  if(!dir.exists(file.path(base_dir, chg_raster_init))){
+    dir.create(file.path(base_dir, chg_raster_init), recursive = TRUE, showWarnings = FALSE)
+  }
+  
 
   # load the simulation control table
   Sim_ctrl_tbl <- read.csv(Sim_ctrl_tbl_path, stringsAsFactors = FALSE)
@@ -130,34 +147,33 @@ prepare_analysis_df <- function(
           input_path <- file.path(input_dir, Config_ID, ES, Time_step, paste0(ES_file_names[[ES]], ".tif"))
         }
     
+        base_file_path <- paste0(ES_lower, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
+                                                Config_details$Econ_scenario.string, "-", 
+                                                Config_details$Pop_scenario.string, "-", 
+                                                Config_details$Scenario_ID.string, "-", names(mask))
+        
+        
         # tif path structure: NCP-Time_step-Config_details$Climate_scenario.string-Config_details$Econ_scenario.string-Config_details$Pop_scenario.string-Config_details$Scenario_ID.string-full.tif’
-        tif_path <- file.path(base_dir, raster_dir, paste0(ES_lower, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
-                                                Config_details$Econ_scenario.string, "-", 
-                                                Config_details$Pop_scenario.string, "-", 
-                                                Config_details$Scenario_ID.string, "-", names(mask), ".tif")) 
+        tif_path <- file.path(base_dir, raster_dir, paste0(base_file_path, ".tif"))
+        
+        chg_tif_init_path <- file.path(base_dir, chg_raster_init, paste0(base_file_path, ".tif"))
+        
+        chg_tif_path <- file.path(base_dir, chg_raster_dir, paste0(base_file_path, ".tif"))
     
-        png_path <- file.path(base_dir, image_dir, paste0(ES_lower, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
-                                                Config_details$Econ_scenario.string, "-", 
-                                                Config_details$Pop_scenario.string, "-", 
-                                                Config_details$Scenario_ID.string, "-", names(mask), ".png"))
+        png_path <- file.path(base_dir, image_dir, paste0(base_file_path, ".png"))
         
-        sample_path <- file.path(base_dir, sample_dir, paste0(ES_lower, "-", Time_step, "-", Config_details$Climate_scenario.string, "-", 
-                                                Config_details$Econ_scenario.string, "-", 
-                                                Config_details$Pop_scenario.string, "-", 
-                                                Config_details$Scenario_ID.string, "-", names(mask), ".rds"))
+        chg_png_path <- file.path(base_dir, chg_image_dir, paste0(base_file_path, ".png"))
+        
+        sample_path <- file.path(base_dir, sample_dir, paste0(base_file_path, ".rds"))
           
-        classified_area_path <- file.path(base_dir, classified_area_dir,
-                            paste0(ES_lower, "-", Time_step, "-", 
-                                   Config_details$Climate_scenario.string, "-", 
-                                   Config_details$Econ_scenario.string, "-", 
-                                   Config_details$Pop_scenario.string, "-", 
-                                   Config_details$Scenario_ID.string, "-", names(mask), "-classifed_area.json"))
+        perc_area_path <- file.path(base_dir, perc_area_dir, paste0(base_file_path, "-perc_area.json"))
         
-
+        area_chg_path <- file.path(base_dir, area_chg_dir, paste0(base_file_path, "-perc_area_chg.json"))
+        
         
         # combine all paths into a named list
-        time_step_paths <- list(input_path, tif_path, png_path, sample_path, classified_area_path)
-        names(time_step_paths) <- c("Path", "tif_path", "png_path", "sample_path", "classified_area_path")
+        time_step_paths <- list(input_path, tif_path, chg_tif_init_path, chg_tif_path, png_path, chg_png_path, sample_path, perc_area_path, area_chg_path)
+        names(time_step_paths) <- c("Path", "tif_path", "chg_tif_init_path", "chg_tif_path", "png_path", "chg_png_path", "sample_path", "perc_area_path", "area_chg_path")
         return(time_step_paths)
         
         
@@ -174,7 +190,7 @@ prepare_analysis_df <- function(
       Config_time_paths$Time_step <- Sim_time_steps
       
       # loop over ES_time_paths and check which exist
-      #Config_time_paths$Exists <- file.exists(Config_time_paths$Path)      
+      #Config_time_paths$Exists <- file.exists(Config_time_paths$Path)
 
       return(Config_time_paths)
     }) # close loop over Config_IDs
@@ -186,13 +202,14 @@ prepare_analysis_df <- function(
   #rbind list of dataframes into a single dataframe
   ES_path_df <- do.call(rbind, ES_paths)
   
-  # # check if all files exist
+  #check if all files exist
   # if (all(ES_path_df$Exists)) {
   #   message("All ES input files exist.")
-  # } else {
+  # } else { 
+  #   missing_layers <- ES_path_df[ES_path_df$Exists == FALSE,]
   #   stop("Some ES input files do not exist. Please check the paths.")
   # }
-
+  
 return(ES_path_df)
 } 
 
@@ -228,107 +245,64 @@ return(ES_path_df)
 #' @export
 
 calc_minmaxs <- function(
-  parallel = TRUE,
   ES_layer_paths,
+  map_path = "Path",
+  save_path = ES_minmax_path,
   ES_rescaling_dir,
-  ESs_to_summarise,
-  minmax_recalc = TRUE,
   report_NAs = TRUE,
-  mask
+  mask,
+  ES
   ){
 
-  # Set parallel processing options
-  if (parallel == FALSE) {
-    future::plan(future::sequential)
-  } else {
-    # number of workers from config - if not set, use all available cores
-    n_workers <- ifelse(
-      is.null(config$NWorkers) ||
-        config$NWorkers == "" ||
-        config$NWorkers == 0,
-      future::availableCores(),
-      config$NWorkers
-    )
-    future::plan(future::multisession, workers = n_workers)
-  }
-  
-  # Create the directory to save the minmax values for each ES
-  Mask_rescaling_dir <- file.path(ES_rescaling_dir, names(mask))
-  if(!dir.exists(Mask_rescaling_dir)){
-    dir.create(Mask_rescaling_dir, recursive = TRUE, showWarnings = FALSE)
-  }
-
-  # loop over ESs calculating min max values for all rasters of each
-  lapply(ESs_to_summarise, function(ES){
-
-    # create an output file path for this ES
-    ES_minmax_path <- file.path(Mask_rescaling_dir, paste0(tolower(ES), "_minmaxs.rds"))
-
-    # check if file already exists & if minmax_recalc == FALSE then skip
-    # otherwise if the file does not exist or minmax_recalc = TRUE then re-calculate
-    if(file.exists(ES_minmax_path) & minmax_recalc == FALSE){
-      cat("Global minmax file already exists for", ES, "\n")
-      cat("Recalculation is set to FALSE, skipping to next ES \n")
-    } else if (!file.exists(ES_minmax_path) | minmax_recalc == TRUE){
-
-      if(!file.exists(ES_minmax_path)){
-        cat("Global Minmax file does not exist for", ES, "\n")
+  # Inner loop over paths for ES calculating the greatest minmax values for each
+  ES_minmax <- future_sapply(ES_layer_paths[[map_path]], function(path){
+    
+    # If mask is provided, apply it to the raster
+    if(names(mask) != "full_extent"){
+      
+      # if the mask path contains shp extension, read it as a vector
+      if(grepl("\\.shp$", unlist(mask))){
+        message(paste("Applying mask from shapefile:", mask))
+        mask_layer <- terra::vect(x = unlist(mask))
+      } else if(grepl("\\.tif$", mask)){
+        message(paste("Applying mask from raster file:", mask))
+        mask_layer <- terra::rast(unlist(mask))
+      } else {
+        stop(paste("Unsupported mask file type for:", mask))
       }
-      if(minmax_recalc == TRUE){
-        cat("Recalculation is set to TRUE, calculating minmax for", ES, "\n")
-      }
-
-        # Subset to ES records
-        ES_layer_paths <- ES_layer_paths[ES_layer_paths$ES == ES,]
-
-        # Inner loop over paths for ES calculating the greatest minmax values for each
-        ES_minmax <- future_sapply(ES_layer_paths$Path, function(path){
-
-          # If mask is provided, apply it to the raster
-          if(names(mask) != "full_extent"){
-            
-            # if the mask path contains shp extension, read it as a vector
-            if(grepl("\\.shp$", unlist(mask))){
-              message(paste("Applying mask from shapefile:", mask))
-              mask_layer <- terra::vect(x = unlist(mask))
-            } else if(grepl("\\.tif$", mask)){
-              message(paste("Applying mask from raster file:", mask))
-              mask_layer <- terra::rast(unlist(mask))
-            } else {
-              stop(paste("Unsupported mask file type for:", mask))
-            }
-          }
-          
-        # Calculate min and max for current ES
-        # Use try catch in case the file is missing or corrupt
-        File_minmax <- tryCatch({
-
-          # Load file
-          raster <- rast(path)
-          
-          # If mask is provided, apply it to the raster
-          if(names(mask) != "full_extent"){
-
-            raster <- terra::mask(x = raster, 
-                                  mask = mask_layer, 
-                                  updatevalue = NA)
-          }
-          
-          # Get min max
-          File_minmax <- minmax(raster, compute = TRUE)
-
-        }, error=function(e){File_minmax <- NA})
-
-        
-        cat("Finished calculating minmax for", path, "\n")
-        return(File_minmax)
-      }, simplify = FALSE)
-
-      # Save minmax values for ES
-      saveRDS(ES_minmax, ES_minmax_path)
     }
-  })
-
+    
+    # Calculate min and max for current ES
+    # Use try catch in case the file is missing or corrupt
+    File_minmax <- tryCatch({
+      
+      # Load file
+      raster <- rast(path)
+      
+      # If mask is provided, apply it to the raster
+      if(names(mask) != "full_extent"){
+        raster <- terra::crop(x = raster, 
+                              y = mask_layer)
+        
+        raster <- terra::mask(x = raster, 
+                              mask = mask_layer, 
+                              updatevalue = NA)
+      }
+      
+      # Get min max
+      File_minmax <- minmax(raster, compute = TRUE)
+      
+    }, error=function(e){File_minmax <- NA})
+    
+    
+    cat("Finished calculating minmax for", path, "\n")
+    return(File_minmax)
+  }, simplify = FALSE)
+  
+  # Save minmax values for ES
+  saveRDS(ES_minmax, save_path)
+  
+  
   # if report_NAs is TRUE, check for NAs and NaNs in the minmax values
   if(report_NAs == TRUE){
 
@@ -344,7 +318,7 @@ calc_minmaxs <- function(
       })
 
       # bind list of dataframes into a single dataframe
-      ES_minmax <- as.data.frame(rbindlist(ES_minmax, idcol = "Path"))
+      ES_minmax <- as.data.frame(rbindlist(ES_minmax, idcol = map_path))
     })
     names(All_ES_minmaxs) <- ESs_to_summarise
 
@@ -355,15 +329,16 @@ calc_minmaxs <- function(
     NA_indices <- which(is.na(All_ES_minmaxs$Min))
 
     # Get paths of the NA value
-    NA_records <- ES_layer_paths[NA_indices, "Path"]
+    NA_records <- ES_layer_paths[NA_indices, map_path]
 
     # Check for NaN values
     NaN_indices <- which((is.nan(All_ES_minmaxs$Min)))
 
     # What is the path of the NaN value
-    NaN_records <- ES_layer_paths[NaN_indices, "Path"]
+    NaN_records <- ES_layer_paths[NaN_indices, map_path]
   return(c(NA_records, NaN_records))
   }
+  return(ES_minmax)
   }
 
 
@@ -382,17 +357,9 @@ calc_minmaxs <- function(
 #' @export
 
 calc_global_minmaxs <- function(
-    ESs_to_summarise,
-    ES_rescaling_dir,
-    mask
+    ES_minmax = ES_minmax
     ){
   
-  # Outer loop over ESs
-  ES_global_minmaxs <- lapply(ESs_to_summarise, function(ES){
-
-    # Load the minmax values for current ES
-    ES_minmax <- readRDS(file.path(ES_rescaling_dir, names(mask), paste0(tolower(ES), "_minmaxs.rds")))
-
     #loop over list and add details to dataframe
     ES_minmax <- lapply(ES_minmax, function(x){
       data.frame(Min = x[1], Max = x[2])
@@ -411,14 +378,6 @@ calc_global_minmaxs <- function(
         ES_max <- max(ES_max, ES_minmax[i, "Max"], na.rm = TRUE)
     }
     return(data.frame(Min = ES_min, Max = ES_max))
-  })
-  names(ES_global_minmaxs) <- ESs_to_summarise
-
-  # bind list of dataframes into a single dataframe
-  ES_global_minmaxs <- as.data.frame(rbindlist(ES_global_minmaxs, idcol = "ES"))
-
-  # Save the global minmax values
-  saveRDS(ES_global_minmaxs, file = file.path(ES_rescaling_dir, names(mask), "ES_global_minmaxs.rds"))
 }
 
 
@@ -448,6 +407,9 @@ save_continuous_indexed_png <- function(raster_obj,
                                         low_color,
                                         high_color,
                                         mid_color = NULL,
+                                        low_value = 0,      # New argument for low value
+                                        high_value = 1,     # New argument for high value
+                                        mid_value = NULL,    # New argument for mid value (used when mid_color is specified)
                                         width = 25, 
                                         height = 20, 
                                         resolution = 300,
@@ -479,6 +441,17 @@ save_continuous_indexed_png <- function(raster_obj,
     stop("You must provide at least 'low_color' and 'high_color'.")
   }
   
+  # Validate value arguments
+  if (low_value >= high_value) {
+    stop("'low_value' must be less than 'high_value'.")
+  }
+  
+  if (!is.null(mid_color)) {
+    if (mid_value <= low_value || mid_value >= high_value) {
+      stop("'mid_value' must be between 'low_value' and 'high_value'.")
+    }
+  }
+  
   # Build color palette (with optional mid_color)
   if (!is.null(mid_color)) {
     if (verbose) cat("Generating continuous palette with mid color...\n")
@@ -501,8 +474,10 @@ save_continuous_indexed_png <- function(raster_obj,
   
   par(mar = margins)
   
+  # Plot with explicit zlim to ensure consistent color mapping
   plot(raster_obj, 
        col = color_palette, 
+       zlim = c(low_value, high_value),  # This is the key addition
        legend = show_legend, 
        axes = axes, 
        box = box)
@@ -547,10 +522,20 @@ save_continuous_indexed_png <- function(raster_obj,
 normalise_layers <- function(ES_layer_paths,
                              mask,
                              ES_global_minmaxs,
-                             ProjCH = ProjCH
+                             ProjCH = ProjCH,
+                             input_path_name = "Path",
+                             raster_path_name = "tif_path",
+                             image_path_name = "png_path",
+                             overwrite = TRUE,
+                             low_color = "#007CDC",
+                             high_color = "#FFEA2A",
+                             mid_color = NULL,
+                             low_value = 0,      
+                             high_value = 1,     
+                             mid_value = NULL   
                              ){
   
-  lapply(1:nrow(ES_layer_paths), function(i){
+  future_lapply(1:nrow(ES_layer_paths), function(i){
     
     # Load the mask here because rast/vect are non-Future exportable objects
     if(names(mask) != "full_extent"){
@@ -568,67 +553,81 @@ normalise_layers <- function(ES_layer_paths,
       
     }
     
-    # Load the raster
-    raster <- rast(ES_layer_paths[i, "Path"])
-    
-    # if the crs is not the same as ProjCH, reproject the raster
-    if(!is.null(crs(raster)) && !isTRUE(all.equal(crs(raster), ProjCH))){
-      raster <- terra::project(raster, ProjCH)
-      cat("Reprojected raster to", ProjCH, "\n")
-    }
-    
-    if(names(mask) != "full_extent"){
-      # If mask is provided, apply it to the raster
-      raster <- terra::mask(x = raster,
-                            mask = mask_layer,
-                            updatevalue = NA)
-    }
-    
-    ES_name <- ES_layer_paths[i, "ES"]
-    ES_min <- ES_global_minmaxs[1, "Min"]
-    ES_max <- ES_global_minmaxs[1, "Max"]
-    
-    # Normalise the raster
-    raster_norm <- (raster - ES_min) / (ES_max - ES_min)
-    
-    browser()
-    
-    #create dir
-    dir <- dirname(ES_layer_paths[i, "tif_path"])
-    if(!dir.exists(dir)){
-      dir.create(dir, recursive = TRUE, showWarnings = FALSE)
-    }
-    
-    # save as tif using the pre-prepared path
-    writeRaster(raster_norm, file = ES_layer_paths[i, "tif_path"], overwrite = TRUE)
-    
-    cat("rescaled layer saved to", ES_layer_paths[i, "tif_path"], "\n")
-    
-    # produce png img and save
-    save_continuous_indexed_png(raster_obj = raster_norm,
-                                output_path = ES_layer_paths[i, "png_path"],
-                                low_color = "#007CDC",
-                                high_color = "#FFEA2A",
-                                mid_color = NULL,
-                                width = 25,
-                                height = 20,
-                                resolution = 300,
-                                units = "cm",
-                                margins = c(0, 0, 0, 0),
-                                background = "transparent",
-                                colorspace = "sRGB",
-                                max_colors = 256,
-                                show_legend = FALSE,
-                                axes = FALSE,
-                                box = FALSE,
-                                cleanup_temp = TRUE,
-                                verbose = FALSE)
-    
-    cat("rescaled layer image saved to", ES_layer_paths[i, "png_path"], "\n")
+    if(file.exists(ES_layer_paths[i, raster_path_name]) & overwrite == TRUE){
+    return(NULL)
+    } else if(!file.exists(ES_layer_paths[i, raster_path_name]) | overwrite == TRUE){
       
+      # If the input file doesn't exist skip
+      if(!file.exists(ES_layer_paths[i, input_path_name])){
+        return(NULL)
+      }
+       
+      # Load the raster
+      raster <- rast(ES_layer_paths[i, input_path_name])
+      
+      # if the crs is not the same as ProjCH, reproject the raster
+      # if(crs(raster) != ProjCH){
+      #   raster <- terra::project(raster, ProjCH)
+      #   cat("Reprojected raster to", ProjCH, "\n")
+      # }
+      
+      if(names(mask) != "full_extent"){
+        # If mask is provided, apply it to the raster
+        
+        # crop raster to mask extent
+        raster <- terra::crop(x = raster, 
+                              y = mask_layer)
+        
+        raster <- terra::mask(x = raster,
+                              mask = mask_layer,
+                              updatevalue = NA)
+      }
+      
+      ES_name <- ES_layer_paths[i, "ES"]
+      ES_min <- ES_global_minmaxs[1, "Min"]
+      ES_max <- ES_global_minmaxs[1, "Max"]
+      
+      # Normalise the raster
+      raster_norm <- (raster - ES_min) / (ES_max - ES_min)
+      
+      #create dir
+      dir <- dirname(ES_layer_paths[i, raster_path_name])
+      if(!dir.exists(dir)){
+        dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+      }
+      
+      # save as tif using the pre-prepared path
+      writeRaster(raster_norm, file = ES_layer_paths[i, raster_path_name], overwrite = TRUE)
+      
+      cat("rescaled layer saved to", ES_layer_paths[i, raster_path_name], "\n")
+      
+      # produce png img and save
+      save_continuous_indexed_png(raster_obj = raster_norm,
+                                  output_path = ES_layer_paths[i, image_path_name],
+                                  low_color = low_color,
+                                  high_color = high_color,
+                                  mid_color = mid_color,
+                                  low_value = low_value,      # New argument for low value
+                                  high_value = high_value,     # New argument for high value
+                                  mid_value = mid_value,    # New argument for mid value (used when mid_color is specified)
+                                  width = 25, 
+                                  height = 20, 
+                                  resolution = 300,
+                                  units = "cm",
+                                  margins = c(0, 0, 0, 0),
+                                  background = "transparent",
+                                  colorspace = "sRGB",
+                                  max_colors = 256,
+                                  show_legend = FALSE,
+                                  axes = FALSE,
+                                  box = FALSE,
+                                  cleanup_temp = TRUE,
+                                  verbose = FALSE)
+      
+      cat("rescaled layer image saved to", ES_layer_paths[i, image_path_name], "\n")
+    }  
     })
 }
-
 
 #' calc_summary_stats:
 #' Calculate summary statistics for the rescaled ES layers
@@ -692,19 +691,39 @@ calc_summary_stats <- function(ES_layer_paths,
 #' @param save_samples Logical: Whether to save the samples to a file
 Calculate_areas_in_classes <- function(ES_layer_paths,
                              sample_size = 50000,
-                             save_samples = FALSE,
+                             save_samples,
                              break_types = c("quantile", "fisher", "regular"),
-                             save_plots = TRUE
+                             save_plots,
+                             parallel,
+                             input_map_path
                              ){
   
-  # create an empty vector to store all samples
-  all_samples <- c()
-  
-  # Loop over the ES_layer_paths
-  for(i in 1:nrow(ES_layer_paths)){
+  # break_types includes quantiles or fisher then it is necessary to take a 
+  # sample from each raster layer in order to calculate global breaks under these methods
+  # because calculating breaks on all raster values would be too memory intensive
+  if(any(c("quantile", "fisher") %in% break_types)){
+  # seperate looping options for parallel and non-parallel
+  if(parallel == TRUE){
     
-    # load the rescaled raster using the tif_path
-    raster_norm <- rast(ES_layer_paths[i, "tif_path"])
+    # Setup cluster
+    cl <- makeCluster(detectCores() - 1)
+    registerDoparallel(cl)
+    
+    # parallel loop
+    samples_list <- foreach(i = 1:nrow(ES_layer_paths), .combine = c, .packages = "terra") %dopar% {
+      
+      # if save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"]) == TRUE
+      if(save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"])){
+        
+        # load the sample from the file
+        samp <- readRDS(ES_layer_paths[i, "sample_path"])
+        
+        # return the sample
+        return(samp)
+      } else if(file.exists(ES_layer_paths[i, "sample_path"]) == FALSE){
+      
+      # load the rescaled raster using the tif_path
+      raster_norm <- rast(ES_layer_paths[i, "tif_path"])
     
       # Take a sample for calculating the quantiles
       vals <- values(raster_norm, mat=FALSE)
@@ -714,23 +733,74 @@ Calculate_areas_in_classes <- function(ES_layer_paths,
       
       # vector of raster values
       samp <- sample(vals, min(sample_size, length(vals)), replace=FALSE)
-    
+      
+      # if save_samples is TRUE, save the sample to the sample_path
       if(save_samples == TRUE){
-    
         # save the sample
         saveRDS(samp, file = ES_layer_paths[i, "sample_path"])
       }
+      return(samp)
+      }
+    }  # close foreach loop
+
+    stopCluster(cl)
+
+    # Combined results
+    all_samples <- samples_list
+  } else{
+    # create an empty vector to store all samples
+    all_samples <- c()
+    
+    # Loop over the ES_layer_paths
+    for(i in 1:nrow(ES_layer_paths)){
       
-      # add the sample to the all_samples vector
-      all_samples <- c(all_samples, samp)
+      # if save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"]) == TRUE
+      if(save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"])){
+        
+        # load the sample from the file
+        samp <- readRDS(ES_layer_paths[i, "sample_path"])
+        
+        # add the sample to the all_samples vector
+        all_samples <- c(all_samples, samp)
+        
+        next  # skip to the next iteration if sample already exists
+      } else if(file.exists(ES_layer_paths[i, "sample_path"]) == FALSE){
+        
+        # load the rescaled raster using the tif_path
+        raster_norm <- rast(ES_layer_paths[i, "tif_path"])
+        
+        # Take a sample for calculating the quantiles
+        vals <- values(raster_norm, mat=FALSE)
+        
+        # remove NAs
+        vals <- vals[!is.na(vals)]
+        
+        # vector of raster values
+        samp <- sample(vals, min(sample_size, length(vals)), replace=FALSE)
+        
+        # if save_samples is TRUE, save the sample to the sample_path
+        if(save_samples == TRUE){
+          # save the sample
+          saveRDS(samp, file = ES_layer_paths[i, "sample_path"])
+        }
+        
+        # add the sample to the all_samples vector
+        all_samples <- c(all_samples, samp)
+      }
+    }
+    
+  }
   }
   
   # create vector of deciles used for quantile and regular breaks
   probs <- seq(0, 1, 0.1) 
   
-  # create an empty list to store breaks
+  # create an empty list of length break_types to store breaks
   breaks <- list()
-  names(breaks) <- break_types
+  # initialise the breaks list with empty vectors for each break type
+  for(break_type in break_types){
+    breaks[[break_type]] <- rep(NA, length(probs))
+  }
 
   # loop over break_types and calculate the breaks
   for(break_type in break_types){
@@ -751,6 +821,7 @@ Calculate_areas_in_classes <- function(ES_layer_paths,
   # Now loop over the layers and produce a JSON file of the % area of the map
   #that fall within each quantile
   future_lapply(1:nrow(ES_layer_paths), function(i){
+  #future_lapply(1:5, function(i){
     
     # Load the normalised raster using the tif_path
     raster <- rast(ES_layer_paths[i, "tif_path"])
@@ -758,20 +829,41 @@ Calculate_areas_in_classes <- function(ES_layer_paths,
     # loop over breaks and classify the raster
     for(break_type in names(breaks)){
       
+      # Get the current breaks
+      current_breaks <- breaks[[break_type]]
+      
       # create a raster with the breaks
       if(break_type == "quantile"){
-        r_classified <- terra::classify(raster, rcl = cbind(breaks$quantile[-length(breaks$quantile)], 
-                                                            breaks$quantile[-1], 1:(length(breaks$quantile)-1)))
+        rcl_matrix <- cbind(current_breaks[-length(current_breaks)], 
+                            current_breaks[-1], 
+                            1:(length(current_breaks)-1))
+        r_classified <- terra::classify(raster, rcl = rcl_matrix)
       } else if(break_type == "fisher"){
-        r_classified <- terra::classify(raster, rcl = cbind(breaks$fisher[-length(breaks$fisher)], 
-                                                            breaks$fisher[-1], 1:(length(breaks$fisher)-1)))
+        rcl_matrix <- cbind(current_breaks[-length(current_breaks)], 
+                            current_breaks[-1], 
+                            1:(length(current_breaks)-1))
+        r_classified <- terra::classify(raster, rcl = rcl_matrix)
       } else if(break_type == "regular"){
-        r_classified <- terra::classify(raster, rcl = cbind(probs[-length(probs)], probs[-1], 1:(length(probs)-1)))
+        rcl_matrix <- cbind(probs[-length(probs)], 
+                            probs[-1], 
+                            1:(length(probs)-1))
+        r_classified <- terra::classify(raster, rcl = rcl_matrix)
+        current_breaks <- probs  # Use probs as breaks for regular method
       }
       
       # get frequency of each bin (counts of cells)
-      freq_tbl <- freq(r_classified)  # terra version of raster::freq
+      freq_tbl <- freq(r_classified)
       freq_tbl <- as.data.frame(freq_tbl)
+      
+      # Replace any NA values with 0
+      freq_tbl$value[is.na(freq_tbl$value)] <- 0
+
+      
+      # Check if we have data
+      if(nrow(freq_tbl) == 0) {
+        cat("Warning: No data for", break_type, "- skipping\n")
+        next
+      }
       
       # total non-NA cells
       total_cells <- sum(freq_tbl$count)
@@ -779,15 +871,45 @@ Calculate_areas_in_classes <- function(ES_layer_paths,
       # percentage per bin
       freq_tbl$percent <- 100 * freq_tbl$count / total_cells
       
-      # create labels for the bins
-      make_labels <- function(breaks, n_bins, min_value = 0) {
-        lower <- c(min_value, breaks[2:n_bins])
-        upper <- breaks[2:(n_bins+1)]
-        paste0(round(lower, 2), "–", round(upper, 2))
+      # Create labels - we need to handle bin 0 (values from min to first break)
+      n_expected_bins <- length(current_breaks) - 1
+      
+      # Create all possible labels including bin 0
+      all_labels <- character(n_expected_bins + 1)  # +1 for bin 0
+      
+      # Label for bin 0 (values from 0 to first break point)
+      all_labels[1] <- paste0("0–", round(current_breaks[1], 2))  # This is for bin 0
+      
+      # Labels for regular bins (1, 2, 3, etc.)
+      for(j in 1:n_expected_bins) {
+        lower <- current_breaks[j]
+        upper <- current_breaks[j + 1]
+        all_labels[j + 1] <- paste0(round(lower, 2), "–", round(upper, 2))  # j+1 because bin 0 takes index 1
       }
       
-      # Assign labels to the frequency table
-      freq_tbl$bin_label <- make_labels(breaks[[break_type]], n_bins = length(breaks[[break_type]]) - 1)
+      # Now match the labels to the actual bins present in freq_tbl
+      # Bin numbers start from 0, so we need to add 1 to use as array indices
+      freq_tbl$bin_label <- sapply(freq_tbl$value, function(bin_num) {
+        if(is.na(bin_num)) {
+          return("NA")
+        } else if(bin_num < 0 || bin_num + 1 > length(all_labels)) {
+          return(paste0("Bin_", bin_num, "_OutOfRange"))
+        } else {
+          return(all_labels[bin_num + 1])  # +1 because R uses 1-based indexing
+        }
+      })
+      
+      # Debug output
+      cat("Break type:", break_type, "\n")
+      cat("Expected bins:", n_expected_bins, "\n")
+      cat("Actual bins in freq_tbl:", nrow(freq_tbl), "\n")
+      cat("Bin values:", paste(freq_tbl$value, collapse = ", "), "\n")
+      cat("Length of all_labels:", length(all_labels), "\n")
+      cat("Max bin value:", max(freq_tbl$value), "\n")
+      print("freq_tbl structure:")
+      print(freq_tbl)
+      print("all_labels:")
+      print(all_labels)
       
       # add method label
       freq_tbl$method <- break_type
@@ -796,14 +918,26 @@ Calculate_areas_in_classes <- function(ES_layer_paths,
       json_data <- toJSON(setNames(as.list(freq_tbl$bin_label), freq_tbl$percent), pretty = TRUE)
       
       # modify the classified area path to include the break type
-      ES_layer_paths[i, "classified_area_path"] <- gsub(".json", paste0("_", break_type, ".json"), 
-                                                        ES_layer_paths[i, "classified_area_path"])
+      json_path <- gsub(".json", paste0("_", break_type, ".json"), 
+                                                       ES_layer_paths[i, "perc_area_path"])
       
-      # save the json data to the path_classified_area
-      write(json_data, file = ES_layer_paths[i, "classified_area_path"])
-      
+      # save the json data to the path_provision_area
+      write(json_data, file = ES_layer_paths[i, "perc_area_path"])
+  
+  
       # if save_plots is TRUE, save a bar chart of the frequency table
       if(save_plots == TRUE){
+        
+        # create a dir by swapping chart_data with chart_images
+        chart_images_dir <- gsub("chart_data", "chart_images", dirname(ES_layer_paths[i, "perc_area_path"]))
+        
+        if(!dir.exists(chart_images_dir)){
+          dir.create(chart_images_dir, recursive = TRUE, showWarnings = FALSE)
+        }
+        
+        # create a new file path with the new dir
+        chart_path <- file.path(chart_images_dir, 
+                            gsub(".json", ".png", basename(json_path)))
         
         # create a bar chart of the frequency table
         bar_plot <- ggplot(freq_tbl, aes(x = bin_label, y = percent)) +
@@ -815,16 +949,78 @@ Calculate_areas_in_classes <- function(ES_layer_paths,
           theme(axis.text.x = element_text(angle = 45, hjust = 1))
         
         # save the plot as a PNG file
-        ggsave(filename = gsub(".json", paste0("_", break_type, ".png"), 
-                               ES_layer_paths[i, "classified_area_path"]),
+        ggsave(filename = chart_path,
                plot = bar_plot,
                width = 10, height = 6)
       }
-      
     }
   })
   cat("Finished calculating breaks for all layers of current ES and saving classified area JSON files.\n")
 }
+
+Produce_change_map <- function(ES_layer_paths,
+                               output_path_name,
+                               ES_chg_minmax_path
+                               ){
+  
+  # loop over each unique configuration ID for this scenario
+  All_minmaxs <- future_lapply(unique(ES_layer_paths$Config_ID), function(Config_ID){
+    
+      # subset the data to this Config_ID
+      ES_config_paths <- ES_layer_paths[ES_layer_paths$Config_ID == Config_ID, ]
+      
+      cat(paste("Calculating change in ES provision for Config_ID:", Config_ID, "\n"))
+      
+      # get the first time step for this config
+      first_time_step <-  min(ES_config_paths$Time_step)
+      
+      # list time steps for this Config_ID
+      config_time_steps <- unique(ES_config_paths$Time_step)
+      
+      # remove the first time step from the list of time steps
+      config_time_steps <- config_time_steps[config_time_steps != first_time_step]
+      
+      # load the normalized ES raster for the first time step
+      ES_rast_first <- rast(ES_config_paths$tif_path[ES_config_paths$Time_step == first_time_step])
+      
+      # load the other time steps layers as a multi-layer raster
+      ES_rast_comp_steps <- rast(ES_config_paths$tif_path[ES_config_paths$Time_step %in% config_time_steps])
+      
+      # name the layers
+      names(ES_rast_comp_steps) <- as.character(config_time_steps)
+      
+      # calculate the differences 
+      ES_diff_rast <- ES_rast_comp_steps - ES_rast_first
+      
+      # create an empty list for capturing the minmax values
+      Time_step_minmaxs <- list()
+      
+      # loop over the time steps saving the image and calculating the area with different values of change in provision.
+      for(time_step in as.character(config_time_steps)){
+        
+        cat(paste("Saving image of change from", first_time_step, "to", time_step, "\n"))
+        
+        Time_step_path <- ES_config_paths[ES_config_paths$Time_step == time_step, output_path_name]
+        
+        # save as tif using the pre-prepared path
+        writeRaster(ES_diff_rast[[time_step]], file = Time_step_path, overwrite = TRUE)
+        
+        mm <- minmax(ES_diff_rast[[time_step]], compute = TRUE)
+      
+        # calculate the min max values and add to the list
+        Time_step_minmaxs[[time_step]] <- mm
+        } # close for loop over time steps
+      
+      cat("finished all time steps for Config_ID:", Config_ID, "\n")
+      return(Time_step_minmaxs)
+    }) # close for loop over unique Config_IDs
+  
+  All_minmaxs <-unlist(All_minmaxs, recursive = FALSE)
+  
+  # save the result
+  saveRDS(All_minmaxs, ES_chg_minmax_path)
+  return(All_minmaxs)
+  }
 
 
 #' normalise_and_summarize:
@@ -841,20 +1037,20 @@ Calculate_areas_in_classes <- function(ES_layer_paths,
 #' @param ES_rescaling_dir Directory to load the global minmaxs values used for normalization 
 #' @param ES_summary_stats_dir Directory to save the summary statistics for individual ESs
 #' @param ES_summarisation_dir Directory to save the summary statistics for all ESs
-#' @param Recalc_rescaled_layers Logical: If TRUE, the function will recalculate the rescaled layers
+#' @param recalc_rescaled_layers Logical: If TRUE, the function will recalculate the rescaled layers
 #' If FALSE, the function will skip the recalculation if the rescaled layers already exist
-#' @param Recalc_summary Logical: If TRUE, the function will recalculate the summary statistics
+#' @param recalc_summary_stats Logical: If TRUE, the function will recalculate the summary statistics
 #' If FALSE, the function will skip the recalculation if the summary statistics already exist
-#' @param Recalc_classified_area Logical: If TRUE, the function will recalculate the classified area
+#' @param recalc_perc_area Logical: If TRUE, the function will recalculate the classified area
 #' If FALSE, the function will skip the recalculation if the classified area already exists
 #' @param Sim_ctrl_tbl_path Character: The path to the simulation control table
 #' @param Summarize_across_ES Logical: If TRUE, the function will summarize the results across all ESs
 #' @param Rescale_cross_ES_results Logical: If TRUE, the function will rescale the summary results across all ESs
-#' @param Parallel Logical: If TRUE, the function will run in parallel using the number of workers specified in the config file
+#' @param parallel Logical: If TRUE, the function will run in parallel using the number of workers specified in the config file
 #' @param mask Character: The path to the mask to apply to the layers
 #' @param sample_size Integer: The number of samples to take from each layer for calculating global breaks
-#' @param classified_area_break_types Character: The types of breaks to calculate for classified area, options are "quantile", "fisher" and "regular"
-#' @param save_classified_area_plots Logical: Whether to save the classified area plots
+#' @param provision_area_break_types Character: The types of breaks to calculate for classified area, options are "quantile", "fisher" and "regular"
+#' @param save_provision_area_plots Logical: Whether to save the classified area plots
 #' @param save_break_samples Logical: Whether to save the samples used for calculating breaks
 #' @return: NULL
 #' 
@@ -868,22 +1064,26 @@ normalise_and_summarize <- function(
     ES_rescaling_dir,
     ES_summary_stats_dir,
     ES_summarisation_dir,
-    Recalc_rescaled_layers = FALSE,
-    Recalc_summary = TRUE,
-    Recalc_classified_area = FALSE,
+    recalc_minmax = FALSE,
+    recalc_rescaled_layers = FALSE,
+    recalc_summary_stats = TRUE,
+    recalc_perc_area = FALSE,
+    recalc_es_chg = TRUE,
+    recalc_es_chg_maps = TRUE,
+    recalc_chg_perc_area = TRUE,
     Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
     Summarize_across_ES = TRUE,
     Rescale_cross_ES_results = TRUE,
-    Parallel = TRUE,
+    parallel = TRUE,
     mask,
     sample_size = 50000,
-    classified_area_break_types = c("quantile", "fisher", "regular"),
-    save_classified_area_plots = TRUE,
+    provision_area_break_types = c("quantile", "fisher", "regular"),
+    save_provision_area_plots = TRUE,
     save_break_samples = FALSE
   ){
 
   # Set parallel processing options
-  if (Parallel == FALSE) {
+  if (parallel == FALSE) {
     future::plan(future::sequential)
   } else {
     # number of workers from config - if not set, use all available cores
@@ -896,9 +1096,6 @@ normalise_and_summarize <- function(
     )
     future::plan(future::multisession, workers = n_workers)
   }
-  
-  # Load back in the global minmax values
-  ES_global_minmaxs <- readRDS(file.path(ES_rescaling_dir, names(mask), "ES_global_minmaxs.rds"))
   
   # load the simulation control table
   Sim_ctrl_tbl <- read.csv(Sim_ctrl_tbl_path, stringsAsFactors = FALSE)
@@ -927,18 +1124,54 @@ normalise_and_summarize <- function(
     # subset to ES records
     ES_layer_paths <- ES_layer_paths[ES_layer_paths$ES == ES,]
     
-    # subset the global minmaxs to the current ES
-    ES_global_minmaxs <- ES_global_minmaxs[ES_global_minmaxs$ES == ES,]
+    # Step 1: Calculate minmaxs for this ES
+    # Create the directory to save the minmax values for each ES
+    Mask_rescaling_dir <- file.path(ES_rescaling_dir, names(mask))
+    if(!dir.exists(Mask_rescaling_dir)){
+      dir.create(Mask_rescaling_dir, recursive = TRUE, showWarnings = FALSE)
+    }
     
-    # 1. Rescale the ES layers
-    if(Recalc_rescaled_layers == TRUE){
+    # create an output file path for this ES
+    ES_minmax_path <- file.path(Mask_rescaling_dir, paste0(ES, "_minmaxs.rds"))
+    
+    if(file.exists(ES_minmax_path) & recalc_minmax == FALSE){
+      ES_minmax <- readRDS(ES_minmax_path)
+    } else if (!file.exists(ES_minmax_path) | recalc_minmax == TRUE){
+    
+      ES_minmax <- calc_minmaxs(
+        ES_layer_paths = ES_layer_paths,
+        save_path = ES_minmax_path,
+        report_NAs = FALSE,
+        mask = mask,
+        map_path = "Path",
+        ES = ES
+      )
+    }
+    
+    # Step 2: Calculate the global min max values for this ES
+    ES_global_minmaxs <- calc_global_minmaxs(ES_minmax = ES_minmax)
+    
+    # Step 3. Rescale the ES layers
+    cat("Rescaling layers for", ES, "\n")
+    if(recalc_rescaled_layers == TRUE){
       
       # Apply the normalisation function to the ES layers
       normalise_layers(ES_layer_paths = ES_layer_paths,
-                       mask = mask,
-                      ES_global_minmaxs = ES_global_minmaxs)
+                             mask = mask,
+                             ES_global_minmaxs = ES_global_minmaxs,
+                             ProjCH = ProjCH,
+                             input_path_name = "Path",
+                             raster_path_name = "tif_path",
+                             image_path_name = "png_path",
+                             overwrite = TRUE,
+                             low_color = "#007CDC",
+                             high_color = "#FFEA2A",
+                             mid_color = NULL,
+                             low_value = 0,      
+                             high_value = 1,     
+                             mid_value = NULL)
       
-    } else if(Recalc_rescaled_layers == FALSE){
+    } else if(recalc_rescaled_layers == FALSE){
       cat("Recalculation of rescaled layers is set to FALSE, identifying which layers already exist for", ES, "\n")
       
       # Count how many of the rescaled layers for this ES exist and how many
@@ -963,54 +1196,117 @@ normalise_and_summarize <- function(
         # If there are layers to rescale, apply the normalisation function
         normalise_layers(ES_layer_paths = ES_layer_paths_remaining,
                          mask = mask,
-                         ES_global_minmaxs = ES_global_minmaxs)
+                         ES_global_minmaxs = ES_global_minmaxs,
+                         ProjCH = ProjCH,
+                         input_path_name = "Path",
+                         raster_path_name = "tif_path",
+                         image_path_name = "png_path",
+                         overwrite = TRUE,
+                         low_color = "#007CDC",
+                         high_color = "#FFEA2A",
+                         mid_color = NULL,
+                         low_value = 0,      
+                         high_value = 1,     
+                         mid_value = NULL)
       }
     
     }
     
-    # 2. Calculate summary statistics for the rescaled layers
+    # Step 4: Calculate summary statistics for the rescaled layers
     # create path to save the combined results for this ES
     ES_sum_stats_path <- file.path(Mask_summary_stats_dir, paste0(tolower(ES), "_summary_stats.rds"))
     
-    # check if the summary file already exists & if Recalc_summary == FALSE then skip
-    # otherwise if the file does not exist or Recalc_summary = TRUE then re-calculate
-    if(file.exists(ES_sum_stats_path) & Recalc_summary == FALSE){
+    # check if the summary file already exists & if recalc_summary_stats == FALSE then skip
+    # otherwise if the file does not exist or recalc_summary_stats = TRUE then re-calculate
+    cat("Calculating summary stats for", ES, "\n")
+    if(file.exists(ES_sum_stats_path) & recalc_summary_stats == FALSE){
       cat("Summary stats file already exists for", ES, "\n")
       cat("Recalculation of summary is set to FALSE, skipping to next step \n")
-    } else if (!file.exists(ES_sum_stats_path) | Recalc_summary == TRUE){
+    } else if (!file.exists(ES_sum_stats_path) | recalc_summary_stats == TRUE){
       
       if(!file.exists(ES_sum_stats_path)){
         cat("Summary stats file does not exist for", ES, "\n")
       }
-      if(Recalc_summary == TRUE){
+      if(recalc_summary_stats == TRUE){
         cat("Recalculation of summary is set to TRUE, calculating Summary stats for", ES, "\n")
       }
       
       # Apply function to calculate summary statistics for the rescaled layers
       ES_sum_stats <- calc_summary_stats(ES_layer_paths,
-                             metrics = metrics
-                             )
+                             metrics = metrics)
       # Save the results for the current ES
       saveRDS(ES_sum_stats, file = ES_sum_stats_path)
       cat("Summary stats for", ES, "have been saved to", ES_sum_stats_path, "\n")
     }
       
-    browser()
-    # 3. Classify the rescaled layers and calculate the area of each class
-    if(Recalc_classified_area == TRUE){
+    # Step 5: Classify the rescaled layers and calculate the area of each class
+    cat("Calculating areas in classes for", ES, "\n")
+    if(recalc_perc_area == TRUE){
       
       # Calculate the areas in classes for the rescaled layers
       Calculate_areas_in_classes(ES_layer_paths = ES_layer_paths,
                                  sample_size = sample_size,
                                  save_samples = save_break_samples,
-                                 break_types = classified_area_break_types,
-                                 save_plots = save_classified_area_plots)
+                                 break_types = provision_area_break_types,
+                                 save_plots = save_provision_area_plots,
+                                 parallel = parallel)
       cat("Areas in classes for", ES, "have been calculated and saved to JSON files \n")
     }
+    
+    # Step 6: Produce rasters of change in ES provision over time
+    # and calculate minmax values
+    if(recalc_es_chg == TRUE){
+    
+      ES_chg_minmax_path <- file.path(Mask_rescaling_dir, paste0(ES, "_chg_minmaxs.rds"))
+      
+      if(recalc_es_chg_maps == FALSE){
+        ES_chg_minmax <- readRDS(ES_chg_minmax_path)
+      } else {
+        cat("Producing maps of change in ES provision over time for", ES, "\n")
+        ES_chg_minmaxs <- Produce_change_map(ES_layer_paths = ES_layer_paths,
+                                             output_path_name = "chg_tif_init_path",
+                                             ES_chg_minmax_path = ES_chg_minmax_path)
+      }
+    
+      # Step 7: Summarize global min max values of change in provision
+      ES_chg_global_minmaxs <- calc_global_minmaxs(ES_minmax = ES_chg_minmaxs)
+
+      # Step 8: rescale rasters of change in ES provision
+      cat("Calculating % area in classes of ES change in provision for", ES, "")
+      normalise_layers(ES_layer_paths = ES_layer_paths,
+                       mask = mask,
+                       ES_global_minmaxs = ES_chg_global_minmaxs,
+                       ProjCH = ProjCH,
+                       input_path_name = "chg_tif_init_path",
+                       raster_path_name = "chg_tif_path",
+                       image_path_name = "chg_png_path",
+                       overwrite = TRUE,
+                       low_color = "#D10062",
+                       high_color = "#D1FF61",
+                       mid_color = "#B2B2B2",
+                       low_value = -1,      
+                       high_value = 1,     
+                       mid_value = 0)
+    
+      # Step 9: Classify the change layers and calculate the area of each class
+      if(recalc_chg_perc_area == TRUE){
+      
+      # Calculate the areas in classes for the rescaled layers
+      Calculate_areas_in_classes(ES_layer_paths = ES_layer_paths,
+                                 sample_size = sample_size,
+                                 save_samples = save_break_samples,
+                                 break_types = provision_area_break_types,
+                                 save_plots = save_provision_area_plots,
+                                 parallel = parallel)
+      cat("Areas in classes for", ES, "have been calculated and saved to JSON files \n")
+    }
+    
+    }
+    
   }) # close loop over ESs_to_summarise
 
   # if parallel == TRUE set back to sequential processing
-  if(Parallel == TRUE){
+  if(parallel == TRUE){
     future::plan(future::sequential)
   }
   
@@ -1131,7 +1427,9 @@ Summarise_for_masks <- function(
       input_dir = "F:/KB-outputs/ncp_output",
       image_dir = "map_images",
       raster_dir = "raster_data",
-      classified_area_dir = "chart_data/classified_area",
+      perc_area_dir = "chart_data/perc_area",
+      area_chg_dir = "chart_data/perc_area_change",
+      chg_raster_dir = "chg_raster_dir",
       base_dir = web_platform_dir,
       Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
       ProjCH = ProjCH,
@@ -1140,24 +1438,6 @@ Summarise_for_masks <- function(
       ES_file_names = config$ES_file_names,
       mask = masks[i]
     )
-    
-    # Calculate minmaxs for this mask
-    # calc_minmaxs(
-    #   parallel = config$Parallel,
-    #   ES_layer_paths = ES_layer_paths,
-    #   ES_rescaling_dir = ES_rescaling_dir,
-    #   ESs_to_summarise = config$ESs_to_summarise,
-    #   minmax_recalc = TRUE,
-    #   report_NAs = TRUE,
-    #   mask = masks[i]
-    # )
-    # 
-    # # Calculate global minmaxs for this mask
-    # calc_global_minmaxs(
-    #   ESs_to_summarise = config$ESs_to_summarise,
-    #   ES_rescaling_dir = ES_rescaling_dir,
-    #   mask = masks[i]
-    # )
     
     # Normalise and summarise the ESs for this mask
     normalise_and_summarize(
@@ -1168,18 +1448,21 @@ Summarise_for_masks <- function(
       ES_rescaling_dir = ES_rescaling_dir,
       ES_summary_stats_dir = ES_summary_stats_dir,
       ES_summarisation_dir = ES_summarisation_dir,
-      Recalc_rescaled_layers = TRUE,
-      Recalc_summary = TRUE,
-      Recalc_classified_area = FALSE,
+      recalc_minmax = FALSE,
+      recalc_rescaled_layers = FALSE,
+      recalc_summary_stats = FALSE,
+      recalc_perc_area = FALSE,
+      recalc_es_chg = TRUE,
+      recalc_es_chg_maps = TRUE,
       Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
-      Summarize_across_ES = TRUE,
-      Rescale_cross_ES_results = TRUE,
-      Parallel = TRUE,
+      Summarize_across_ES = FALSE,
+      Rescale_cross_ES_results = FALSE,
+      parallel = TRUE,
       mask = masks[i],
       sample_size = 50000,
-      classified_area_break_types = c("quantile", "fisher", "regular"),
-      save_classified_area_plots = TRUE,
-      save_break_samples = FALSE
+      provision_area_break_types = c("regular"),
+      save_provision_area_plots = TRUE,
+      save_break_samples = TRUE
       )
   
   }
@@ -1302,4 +1585,40 @@ if (!dir.exists(ES_SSIM_dir)) {
   dir.create(ES_SSIM_dir, recursive = TRUE)
 }
 
+# temporary fix renaming REC layers
+# to match the expected names in the config file
+
+REC_paths <- list.files(
+  path = config$InputDir,
+  pattern = "REC_.*\\.tif$",
+  full.names = TRUE,
+  recursive = TRUE
+)
+
+Scenario_names <- c("_EI_NAT_", "_EI_CUL_", "_EI_SOC_", "_GR_EX_", "_BAU_")
+
+
+REC_paths_renamed <- lapply(REC_paths, function(path) {
+
+  # Extract the base name of the file
+  base_name <- basename(path)
+
+  # extract the 4 digiti numeric from the base name
+  year <- str_extract(base_name, "\\d{4}")
+
+  new_name <- paste0("REC_S_CH_", year, ".tif")
+
+  # Remove the scenario name that follows "REC_S_CH matching on scenario_names
+  #and replacing with ""
+  #new_name <- gsub(paste0("REC_S_CH", paste(Scenario_names, collapse = "|")),
+  #                  "REC_S_CH_", base_name)
+
+  # Create the new path with the renamed file
+  new_path <- file.path(dirname(path), new_name)
+
+  # Rename the file
+  file.rename(path, new_path)
+
+  return(new_path)
+})
 

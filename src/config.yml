@@ -90,7 +90,7 @@ Summarisation:
   Parallel: TRUE
   ProjCH: +proj=somerc +init=epsg:2056
   NWorkers: 0  # 0 means use all available cores
-  ESs_to_summarise: ['HAB'] # 'REC' , 'CAR', 'FF', 'NDR', 'POL', 'SDR', 'WY', 
+  ESs_to_summarise: ['REC', 'CAR',  'FF','HAB','NDR', 'POL', 'SDR','WY'] #   
   ES_file_names: {
     CAR: tot_c_cur, FF: FF_S_CH, HAB: quality_c, NDR: n_total_export,
     POL: POL_S_CH, REC: REC_S_CH, SDR: avoided_erosion, WY: per_pixel/wyield

@@ -1,0 +1,12 @@
+name: ncps-python
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - natcap.invest>=3.13.0
+  - gdal>=3.4.0
+  - ruamel.yaml
+  - pyyaml
+  - numpy
+  - scipy
+  - pandas

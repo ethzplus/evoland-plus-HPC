@@ -1,0 +1,15 @@
+name: ncps-r
+channels:
+  - conda-forge
+dependencies:
+  - r-base=4.3
+  - r-remotes
+  - r-codetools
+  - r-pak
+  - r-terra
+  - r-raster
+  - r-data.table
+  - r-sf
+  - r-yaml
+  - gdal
+  - proj

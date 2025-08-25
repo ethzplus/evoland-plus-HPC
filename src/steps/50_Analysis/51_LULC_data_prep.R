@@ -396,6 +396,12 @@ prepare_lulc_files <- function(
     colour <- colour_pal[[paste(x)]]
   })
   
+  # sort LULC_rat by ascending ID
+  LULC_rat <- LULC_rat[order(LULC_rat$ID),]
+  
+  # convert LULC_rat$lulc_name into an ordered factor
+  LULC_rat$lulc_name <- factor(LULC_rat$lulc_name, levels = LULC_rat$lulc_name)
+  
   # Create a named vector for color mapping
   col_map <- setNames(LULC_rat$colour, LULC_rat$ID)
   
@@ -473,20 +479,20 @@ prepare_lulc_files <- function(
     
     # loop over the rows of lulc_df for this scenario
     for(i in 1:nrow(scenario_lulc_df)){
-      
+
       # print the simulation id and time step
-      cat(paste("Processing simulation:", scenario_lulc_df$Config_ID[i], 
+      cat(paste("Processing simulation:", scenario_lulc_df$Config_ID[i],
                 "at time step:", scenario_lulc_df$Time_step[i], "\n"))
-      
+
       # check if the tif file exists
       if (scenario_lulc_df$Exists[i]) {
-        
+
         # read the raster layer
         lulc_layer <- rast(scenario_lulc_df$Path[i])
-        
+
         # add the crs to the raster layer
         crs(lulc_layer) <- ProjCH
-        
+
         # if the time step is the first one, we need to replace the glacier, river and lake values
         # which are the current mask values if not then we only need to replace rivers and lakes
         if(scenario_lulc_df$Time_step[i] == min(scenario_lulc_df$Time_step)){
@@ -494,45 +500,45 @@ prepare_lulc_files <- function(
         } else {
           time_step_mask_values <- mask_values[names(mask_values) %in% c(20, 21)]
         }
-        
+
         #loop over lulc mask values
         for(j in 1:length(mask_values)){
           lulc_layer <- terra::mask(x = lulc_layer,
                                     mask = scenario_LULC,
                                     maskvalues = time_step_mask_values[j],
                                     updatevalue = as.numeric(names(time_step_mask_values)[j]))
-          
+
         } #close for loop over mask values
-        
+
         # Now loop over any masks provided in the map_masks list
         if(length(map_masks) > 0){
-          
+
           cat("Masking map to specificed areas \n")
-          
+
           for(mask_name in names(map_masks)){
-            
+
             cat(paste("Applying mask:", mask_name, "\n"))
-            
+
             # Check if the mask file exists
             mask_path <- map_masks[[mask_name]]
-            
+
             # If the mask file exists, apply it to the raster layer
             if(file.exists(mask_path)){
-              
+
               # get the mask paths
               mask_path_tif <- scenario_lulc_df[i,paste0("lulc_path_tif_", mask_name)]
               map_path_png <- scenario_lulc_df[i,paste0("lulc_path_png_", mask_name)]
               mask_path_data <- scenario_lulc_df[i, paste0("lulc_path_perc_area_", mask_name)]
-              
+
               # if all of these files already exist and overwrite == FALSE, skip to the next iteration
-              if(!overwrite && 
-                 file.exists(mask_path_tif) && 
-                 file.exists(map_path_png) && 
+              if(!overwrite &&
+                 file.exists(mask_path_tif) &&
+                 file.exists(map_path_png) &&
                  file.exists(mask_path_data)){
                 message(paste("Files already exist, skipping:", mask_path_tif, map_path_png, mask_path_data))
                 next
               }
-              
+
               # if the mask path contains shp extension, read it as a vector
               if(grepl("\\.shp$", mask_path)){
                 message(paste("Applying mask from shapefile:", mask_path))
@@ -543,48 +549,55 @@ prepare_lulc_files <- function(
               } else {
                 stop(paste("Unsupported mask file type for:", mask_path))
               }
-              
+
               # crop the lulc_layer to the extent of the mask layer
-              lulc_layer <- terra::crop(x = lulc_layer, 
+              lulc_layer <- terra::crop(x = lulc_layer,
                                         y = mask_layer)
-              
+
               # apply the mask to the raster layer
-              masked_lulc <- terra::mask(x = lulc_layer, 
-                                         mask = mask_layer, 
+              masked_lulc <- terra::mask(x = lulc_layer,
+                                         mask = mask_layer,
                                          updatevalue = NA)
-              
+
               # save the masked raster layer
               writeRaster(masked_lulc,
                           filename = mask_path_tif,
                           overwrite = TRUE)
-              
+
               cat(paste("Saved masked raster layer to:", mask_path_tif, "\n"))
-              
+
               # get frequency table of the masked raster layer
               rast_tbl <- freq(masked_lulc)
               rast_tbl$layer <- NULL
               rast_tbl$class_name <- c(unlist(sapply(rast_tbl$value, function(y) unique(unlist(Aggregation_scheme[Aggregation_scheme$Aggregated_ID == y, "Class_abbreviation"])),simplify = TRUE)), "lake", "river")
+
+              # sort the table by increasing values
+              rast_tbl <- rast_tbl[order(rast_tbl$value),]
+
+              # make sure the class_name is a factor with levels in the current order
+              rast_tbl$class_name <- factor(rast_tbl$class_name, levels = rast_tbl$class_name)
+
               rast_tbl$value <- NULL
               rast_tbl$perc_area <- rast_tbl$count / sum(rast_tbl$count) * 100
               rast_tbl$count <- NULL
-              
+
               # convert the df to json
               json_data <- toJSON(setNames(as.list(rast_tbl$class_name), rast_tbl$perc_area), pretty = TRUE)
-              
+
               # save the json data to the mask_path_data
               write(json_data, file = mask_path_data)
-              
+
               cat(paste("Saved table of LULC % areas to:", mask_path_data, "\n"))
-              
+
               # plot the raster layer matching the values to colours in LULC_rat
-              
+
               # use the save_indexed_png function to save the raster layer as a png
               save_indexed_png(
-                raster_obj = masked_lulc, 
-                output_path = map_path_png, 
+                raster_obj = masked_lulc,
+                output_path = map_path_png,
                 color_palette = col_map,
-                width = 25, 
-                height = 20, 
+                width = 25,
+                height = 20,
                 resolution = 300,
                 units = "cm",
                 margins = c(0, 0, 0, 0),
@@ -596,9 +609,9 @@ prepare_lulc_files <- function(
                 box = FALSE,
                 cleanup_temp = TRUE,
                 verbose = FALSE)
-              
+
               cat(paste("Saved map image to:", map_path_png, "\n"))
-  
+
             } else {
               message(paste("Mask file does not exist:", mask_path))
             }
@@ -675,28 +688,29 @@ prepare_lulc_files <- function(
           current_data <- fromJSON(current_mask_path)
           current_data <- data.frame(class_name = unlist(current_data), perc_area = as.numeric(names(current_data)), stringsAsFactors = FALSE, row.names = NULL)
           
-          
+      
           # calculate the difference in % area for each class as a % of the area at the start
           area_change <- merge(first_data, current_data, by = "class_name", suffixes = c("_start", "_end"))
-          
-          
           area_change$perc_area_change <- ((area_change$perc_area_end - area_change$perc_area_start)/area_change$perc_area_start)*100
           
+          # sort area_change using the order of the LULC_rat$lulc_name
+          area_change <- area_change[order(match(area_change$class_name, first_data$class_name)), ]
+          
           # remove the lakes and rivers from the area change data
-          area_change <- area_change[!area_change$class_name %in% c("Lake", "River"), ]
+          #area_change <- area_change[!area_change$class_name %in% c("Lake", "River"), ]
           
-          # sort from largest to smallest change
-          area_change <- area_change %>% arrange(desc(perc_area_change))
-          
-          # make sure the class_name is a factor with levels in the current order
-          area_change$class_name <- factor(area_change$class_name, levels = area_change$class_name)
+          # # sort from largest to smallest change
+          # area_change <- area_change %>% arrange(desc(perc_area_change))
+          # 
+          # # make sure the class_name is a factor with levels in the current order
+          # area_change$class_name <- factor(area_change$class_name, levels = area_change$class_name)
         
           # convert the df to json
           area_change_json <- toJSON(setNames(as.list(area_change$class_name), area_change$perc_area_change), pretty = TRUE)
               
           # save the json data to the mask_path_data
           write(area_change_json, file = area_change_path)
-          
+
           cat(paste("Saved area change data to:", area_change_path, "\n"))
         } # close for loop over mask names
         } # close for loop over time steps
@@ -795,8 +809,8 @@ prepare_lulc_files(
     LULC_agg_path = "LULC_class_aggregation.xlsx",
     colour_pal = LULC_pal,
     Non_agg_lulc_path = "Data/NOAS04_2018.tif",
-    Use_parallel = FALSE,
-    num_workers = 4,
+    Use_parallel = TRUE,
+    num_workers = 5,
     map_masks = list("canton" = file.path(Mask_dir, "Canton_mask.shp")),
     overwrite = TRUE
 )
