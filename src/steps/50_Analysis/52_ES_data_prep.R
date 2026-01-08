@@ -706,10 +706,10 @@ normalise_layers <- function(
       raster <- rast(ES_layer_paths[i, input_path_name])
 
       # if the crs is not the same as ProjCH, reproject the raster
-      # if(crs(raster) != ProjCH){
-      #   raster <- terra::project(raster, ProjCH)
-      #   cat("Reprojected raster to", ProjCH, "\n")
-      # }
+      if (crs(raster) != ProjCH) {
+        raster <- terra::project(raster, ProjCH)
+        cat("Reprojected raster to", ProjCH, "\n")
+      }
 
       if (names(mask) != "full_extent") {
         # If mask is provided, apply it to the raster
@@ -1279,7 +1279,7 @@ summarize_cumulative_ES_change_maps <- function(
     "mean",
     #"stdev",
     #"mean-variance",
-    "undesirable_deviation"
+    "undesirable-deviation"
   )
 ) {
   ensure_dir(robustness_dir)
@@ -1487,6 +1487,7 @@ summarize_cumulative_ES_change_maps <- function(
 #' @param quantile_probs Numeric vector: Quantiles to use for quantile-based scaling (default: c(0.02, 0.98))
 #' @param robust_probs Numeric vector: Quantiles to use for robust scaling rescaling (default: c(0.01, 0.99))
 #' @param winsor_probs Numeric vector: Quantiles to use for winsorization (default: c(0.05, 0.95))
+#' @param ProjCH Character: Coordinate reference system to project rasters to (default: bash_vars$ProjCH)
 #' @param verbose Logical: Whether to print progress messages (default: TRUE)
 #'
 #' @return NULL (saves files to disk)
@@ -1541,6 +1542,7 @@ create_robustness_maps <- function(
   quantile_probs = c(0.02, 0.98),
   robust_probs = c(0.01, 0.99),
   winsor_probs = c(0.05, 0.95),
+  ProjCH = config$ProjCH,
   verbose = TRUE
 ) {
   # Ensure robustness directory exists
@@ -1574,9 +1576,21 @@ create_robustness_maps <- function(
     Performance <- rast(performance_file)
     Variation <- rast(variation_file)
 
+    # project to desired CRS if needed
+    if (!is.null(ProjCH)) {
+      Performance <- project(Performance, ProjCH)
+      Variation <- project(Variation, ProjCH)
+    }
+
     # Stack the Performance and undesirable deviation rasters
     Combined_var <- c(Performance, Variation)
     names(Combined_var) <- c("Performance", "Var")
+
+    # Get raster extent for consistent plotting
+    raster_ext <- ext(Performance)
+    x_range <- raster_ext$xmax - raster_ext$xmin
+    y_range <- raster_ext$ymax - raster_ext$ymin
+    data_aspect_ratio <- y_range / x_range
 
     # Convert to df
     Mean_var_df <- as.data.frame(Combined_var, xy = TRUE)
@@ -1770,7 +1784,7 @@ create_robustness_maps <- function(
           split = FALSE
         )
 
-        # Create map
+        # Create map with ggplot2
         Full_robustness_map <- ggplot() +
           geom_raster(
             data = Mean_var_class,
@@ -1784,16 +1798,33 @@ create_robustness_maps <- function(
             rotate_pal = FALSE,
             na.value = "white"
           ) +
-          theme_void() +
-          theme(
-            plot.margin = margin(0, 0, 0, 0),
-            panel.background = element_rect(fill = 'transparent', color = NA),
-            plot.background = element_rect(fill = 'transparent', color = NA),
-            legend.position = "none"
-          ) +
-          coord_equal()
+          coord_equal() +
+          theme_void()
 
-        # Create legend
+        # Save map using ggsave with same dimensions as base R
+        map_filename <- file.path(
+          robustness_dir,
+          paste0(
+            group,
+            "_",
+            method_name,
+            "_",
+            class_name,
+            "_robustness_map.png"
+          )
+        )
+
+        ggsave(
+          plot = Full_robustness_map,
+          filename = map_filename,
+          width = map_width,
+          height = map_height,
+          units = "cm",
+          dpi = map_dpi,
+          bg = "transparent"
+        )
+
+        # Create and save legend
         Full_map_legend <- bi_legend(
           pal = palette,
           flip_axes = FALSE,
@@ -1812,28 +1843,6 @@ create_robustness_maps <- function(
             plot.background = element_rect(fill = 'transparent', color = NA)
           )
 
-        # Save map
-        ggsave(
-          Full_robustness_map,
-          filename = file.path(
-            robustness_dir,
-            paste0(
-              group,
-              "_",
-              method_name,
-              "_",
-              class_name,
-              "_robustness_map.png"
-            )
-          ),
-          width = map_width,
-          height = map_height,
-          units = "cm",
-          dpi = map_dpi,
-          bg = "transparent"
-        )
-
-        # Save legend
         ggsave(
           Full_map_legend,
           filename = file.path(
@@ -1854,32 +1863,33 @@ create_robustness_maps <- function(
           bg = "transparent"
         )
 
-        # Save JSON palette information
-        if (save_json) {
-          bi_colors_plot <- bi_pal(
+        # Get bivariate color palette for JSON
+        bi_colors_plot <- bi_pal(
+          pal = palette,
+          dim = num_classes,
+          flip_axes = FALSE,
+          rotate_pal = FALSE
+        )
+
+        bi_colors <- ggplot_build(bi_colors_plot)$data[[1]]$fill
+
+        bi_class_values <- paste0(
+          rep(1:num_classes, each = num_classes),
+          "-",
+          rep(1:num_classes, num_classes)
+        )
+
+        if (length(bi_colors) != length(bi_class_values)) {
+          bi_colors <- biscale:::bi_pal_manual(
             pal = palette,
             dim = num_classes,
             flip_axes = FALSE,
             rotate_pal = FALSE
           )
+        }
 
-          bi_colors <- ggplot_build(bi_colors_plot)$data[[1]]$fill
-
-          bi_class_values <- paste0(
-            rep(1:num_classes, each = num_classes),
-            "-",
-            rep(1:num_classes, num_classes)
-          )
-
-          if (length(bi_colors) != length(bi_class_values)) {
-            bi_colors <- biscale:::bi_pal_manual(
-              pal = palette,
-              dim = num_classes,
-              flip_axes = FALSE,
-              rotate_pal = FALSE
-            )
-          }
-
+        # Save JSON palette information
+        if (save_json) {
           palette_info <- list()
 
           for (i in 1:length(bi_class_values)) {
@@ -1974,7 +1984,7 @@ create_robustness_maps <- function(
 #' @export
 #
 summarize_ES_outputs <- function(
-  ProjCH = "+proj=somerc +init=epsg:2056",
+  ProjCH = "EPSG:2056",
   metrics = c("sum", "mean", "sd"),
   ES_layer_paths,
   ESs_to_summarise,
@@ -2627,7 +2637,7 @@ ensure_dir(ES_summary_stats_dir)
 # run function to summarise for masks
 Summarise_for_masks(
   config = config,
-  ProjCH = bash_vars$ProjCH,
+  ProjCH = config$ProjCH,
   ES_rescaling_dir = ES_rescaling_dir,
   ES_summary_stats_dir = ES_summary_stats_dir,
   ES_summarisation_dir = ES_summarisation_dir,
@@ -2637,11 +2647,11 @@ Summarise_for_masks(
   ),
   metrics = c("sum", "mean", "sd"),
   recalc_minmax = FALSE,
-  recalc_rescaled_layers = FALSE,
-  recalc_summary_stats = FALSE,
+  recalc_rescaled_layers = TRUE,
+  recalc_summary_stats = TRUE,
   recalc_perc_area = TRUE,
-  recalc_es_chg_maps = FALSE,
-  recalc_norm_chg_maps = FALSE,
+  recalc_es_chg_maps = TRUE,
+  recalc_norm_chg_maps = TRUE,
   recalc_chg_perc_area = TRUE,
   recalc_cumulative_summary = TRUE,
   Summarize_across_ES = TRUE,
@@ -2653,13 +2663,105 @@ Summarise_for_masks(
 ### =========================================================================
 
 # # Define directory to save robustness maps
-# robustness_dir <- file.path(config$OutputDir, config$RobustnessDir)
+robustness_dir <- file.path(config$OutputDir, config$RobustnessDir)
+
+# because the SDM outputs were calculated seperately and cumulative sums have not been calculated yet we need to do so here
+sdm_chg_rast_dir <- "X:/CH_Kanton_Bern/03_Workspaces/02_SDM/sdm_summarisation/chg_raster_data"
+
+# list all tif files that contain the string uzl_npa-all
+sdm_files <- list.files(
+  sdm_chg_rast_dir,
+  pattern = "uzl_npa.*\\.tif$",
+  full.names = TRUE
+)
+
+# remove the string sdm-XXXX- (where XXXX is a four digit numeric) from the start of the file names
+unique_configs <- unique(gsub(
+  "sdm-\\d{4}-",
+  "",
+  basename(sdm_files)
+))
+
+# path to the sum_chg_rast_dir
+sum_chg_rast_dir <- file.path(
+  config$OutputDir,
+  config$SumChgRasterDir
+)
+
+# the extent of the sdm rasters does not match all others in one dimension, use one of the lulc rasters to modify the extent
+es_test <- rast(
+  "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/raster_data/hab-2030-rcp85-ref_peri_urban-ref-ei_soc-canton.tif"
+)
+
+# loop over the unique configs and calculate the cumulative sum of change rasters
+for (config_name in unique_configs) {
+  # list all files for this config
+  config_files <- sdm_files[grepl(config_name, sdm_files)]
+
+  # read in the rasters and calculate the cumulative sum
+  rasters <- rast(config_files)
+  cum_sum_raster <- sum(rasters)
+
+  # resample to match the lulc_test raster
+  cum_sum_raster <- resample(cum_sum_raster, es_test, method = "bilinear")
+
+  # reproject to the project CRS
+  cum_sum_raster <- project(cum_sum_raster, crs(es_test))
+
+  # run camparegeom for the first ratser only
+  if (config_name == unique_configs[1]) {
+    compareGeom(cum_sum_raster, es_test, stopOnError = TRUE)
+  }
+
+  # define output file path
+  output_file <- file.path(
+    sum_chg_rast_dir,
+    paste0("sdm-", config_name)
+  )
+
+  # write the cumulative sum raster to file
+  terra::writeRaster(
+    cum_sum_raster,
+    filename = output_file,
+    overwrite = TRUE
+  )
+}
+
+# Apply function to summarize cumulative ES change maps
+summarize_cumulative_ES_change_maps(
+  sum_chg_rast_dir = file.path(config$OutputDir, config$SumChgRasterDir),
+  robustness_dir = file.path(config$OutputDir, config$RobustnessDir),
+  ES_groups = list(
+    "BD-ES" = c('sdm', 'REC', 'CAR', 'NDR', 'POL', 'SDR', 'WY', 'FF', 'HAB')
+  ),
+  spatial_summary_metrics = c(
+    "mean",
+    #"stdev",
+    #"mean-variance",
+    "undesirable-deviation"
+  )
+)
+
 
 # NOTE: FOR THE ES ONLY MAP I HAVE USED WINSOR NORMALISATION AND 'EQUAL' FOR THE MAP CATEGORIES
 
 # # Create robustness maps with default settings
-# create_robustness_maps(
-#   robustness_dir = robustness_dir,
-#   group_names = c("ES"), # , "BD", "ES_and_BD"
-#   verbose = TRUE
-# )
+create_robustness_maps(
+  robustness_dir = robustness_dir,
+  group_names = c("BD", "BD-ES"), # , "BD", "BD-ES"
+  verbose = TRUE,
+  ProjCH = config$ProjCH,
+  scaling_methods = list(
+    "winsor" = list(
+      var_col = "Var_norm_winsor",
+      perf_col = "Performance_norm_winsor",
+      description = "Winsorized Scaling"
+    )
+  ),
+  classification_methods = list(
+    "quantile" = list(
+      style = "quantile",
+      description = "Quantile Breaks"
+    )
+  )
+)

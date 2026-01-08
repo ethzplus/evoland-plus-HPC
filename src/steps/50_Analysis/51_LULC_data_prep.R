@@ -278,12 +278,22 @@ prepare_lulc_files <- function(
   # Vector IDs of configurations to be analysed
   # Note Manually adjust this to analyse specific configurations
   Config_IDs <- unique(Sim_ctrl_tbl$Simulation_num.)
+
+  # subset to only range required by Manuel
+  Config_IDs <- c(64, 180, 185, 104, 19)
   
   # Load the LULC aggregation scheme
   Aggregation_scheme <- read_excel(LULC_agg_path)
   
   # convert the values in Class_abbreviation to lower case
   Aggregation_scheme$Class_abbreviation <- tolower(Aggregation_scheme$Class_abbreviation)
+
+  # if map_masks is NULL, set to full canton mask
+  if(is.null(map_masks)){
+    mask_names <- "full"
+  } else {
+    mask_names <- names(map_masks)
+  }
   
   # Loop over config_IDs creating a dataframe with paths for saving the rasters, pngs and chart data
   lulc_paths <- lapply(Config_IDs, function(Config_ID){
@@ -321,15 +331,15 @@ prepare_lulc_files <- function(
                                    Config_details$Scenario_ID.string, "-full-perc_area.json"))
       
       # loop over the mask names in map_masks modifying the tif, png and perc_area paths
-      mask_paths_tif <- sapply(names(map_masks), function(mask_name){
+      mask_paths_tif <- sapply(mask_names, function(mask_name){
         gsub("full", mask_name, tif_path)
       })
       
-      mask_paths_png <- sapply(names(map_masks), function(mask_name){
+      mask_paths_png <- sapply(mask_names, function(mask_name){
         gsub("full", mask_name, png_path)
       })
           
-      mask_paths_perc_area <- sapply(names(map_masks), function(mask_name){
+      mask_paths_perc_area <- sapply(mask_names, function(mask_name){
         gsub("full", mask_name, perc_area_path)
       })
         
@@ -337,9 +347,9 @@ prepare_lulc_files <- function(
       time_step_paths <- list(input_path, tif_path, png_path, perc_area_path, 
                                   mask_paths_tif, mask_paths_png, mask_paths_perc_area)
       names(time_step_paths) <- c("Path", "lulc_path_tif", "lulc_path_png", "lulc_path_perc_area",
-                             paste0("lulc_path_tif_", names(map_masks)),
-                             paste0("lulc_path_png_", names(map_masks)),
-                             paste0("lulc_path_perc_area_", names(map_masks)))
+                             paste0("lulc_path_tif_", mask_names),
+                             paste0("lulc_path_png_", mask_names),
+                             paste0("lulc_path_perc_area_", mask_names))
       
       return(time_step_paths)
       })))
@@ -515,7 +525,7 @@ prepare_lulc_files <- function(
 
           cat("Masking map to specificed areas \n")
 
-          for(mask_name in names(map_masks)){
+          for(mask_name in mask_names){
 
             cat(paste("Applying mask:", mask_name, "\n"))
 
@@ -617,7 +627,54 @@ prepare_lulc_files <- function(
             }
           }
         } else {
-          message("No masks provided.")
+          message("No masks provided, analysing at full extent only.")
+
+          # save the full extent raster
+          writeRaster(lulc_layer,
+                      filename = scenario_lulc_df$lulc_path_tif[i],
+                      overwrite = TRUE)
+          
+          cat(paste("Saved raster layer to:", scenario_lulc_df$lulc_path_tif[i], "\n"))
+
+          # get frequency table of the raster layer
+          rast_tbl <- freq(lulc_layer)
+          rast_tbl$layer <- NULL
+          rast_tbl$class_name <- c(unlist(sapply(rast_tbl$value, function(y) unique(unlist(Aggregation_scheme[Aggregation_scheme$Aggregated_ID == y, "Class_abbreviation"])),simplify = TRUE)), "lake", "river")
+          # sort the table by increasing values
+          rast_tbl <- rast_tbl[order(rast_tbl$value),]
+          # make sure the class_name is a factor with levels in the current order
+          rast_tbl$class_name <- factor(rast_tbl$class_name, levels = rast_tbl$class_name)
+          rast_tbl$value <- NULL
+          rast_tbl$perc_area <- rast_tbl$count / sum(rast_tbl$count) * 100
+          rast_tbl$count <- NULL
+          # convert the df to json
+          json_data <- toJSON(setNames(as.list(rast_tbl$class_name), rast_tbl$perc_area), pretty = TRUE)
+          # save the json data to the perc_area_path
+          write(json_data, file = scenario_lulc_df$lulc_path_perc_area[i])
+          cat(paste("Saved table of LULC % areas to:", scenario_lulc_df$lulc_path_perc_area[i], "\n"))
+
+          # plot the raster layer matching the values to colours in LULC_rat
+          # use the save_indexed_png function to save the raster layer as a png
+          save_indexed_png(
+            raster_obj = lulc_layer,
+            output_path = scenario_lulc_df$lulc_path_png[i],
+            color_palette = col_map,
+            width = 25,
+            height = 20,
+            resolution = 300,
+            units = "cm",
+            margins = c(0, 0, 0, 0),
+            background = "transparent",
+            colorspace = "sRGB",
+            max_colors = 256,
+            show_legend = FALSE,
+            axes = FALSE,
+            box = FALSE,
+            cleanup_temp = TRUE,
+            verbose = FALSE)
+          
+          cat(paste("Saved map image to:", scenario_lulc_df$lulc_path_png[i], "\n"))
+
         }
       } else {
         message(paste("File does not exist:", scenario_lulc_df$Path[i]))
@@ -652,7 +709,7 @@ prepare_lulc_files <- function(
         cat(paste("Calculating area change from", first_time_step, "to", time_step, "\n"))
         
         # loop over mask names in the map_masks list
-        for(mask_name in names(map_masks)){
+        for(mask_name in mask_names){
           
           # create the area change path for this mask name
           area_change_path <- file.path(base_dir, area_chg_data_dir, 
@@ -740,7 +797,7 @@ config <- config$Summarisation # only summarisation variables
 
 
 # dir for saving results
-web_platform_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform"
+web_platform_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/full_extent_lulc"
 # if dir doesn't exist, create it
 if(!dir.exists(web_platform_dir)){
   dir.create(web_platform_dir, recursive = TRUE, showWarnings = FALSE)
@@ -796,6 +853,9 @@ writeVector(canton_bern,
 ### Finalising LULC tifs and images
 ### =========================================================================
 
+# set higher max size for future.globals
+options(future.globals.maxSize = 8 * 1024 ^ 3) # 8 GB
+
 # Apply function to prepare LULC files
 prepare_lulc_files(
     lulcc_input_dir = "F:/KB-outputs/lulcc_output",
@@ -809,9 +869,10 @@ prepare_lulc_files(
     LULC_agg_path = "LULC_class_aggregation.xlsx",
     colour_pal = LULC_pal,
     Non_agg_lulc_path = "Data/NOAS04_2018.tif",
-    Use_parallel = TRUE,
+    Use_parallel = FALSE,
     num_workers = 5,
-    map_masks = list("canton" = file.path(Mask_dir, "Canton_mask.shp")),
+    #map_masks = list("canton" = file.path(Mask_dir, "Canton_mask.shp")),
+    map_masks = NULL,
     overwrite = TRUE
 )
 
