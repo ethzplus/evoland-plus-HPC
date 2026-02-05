@@ -841,6 +841,7 @@ Calculate_areas_in_classes <- function(
   break_types = c("quantile", "fisher", "regular"),
   save_plots,
   parallel,
+  n_workers = NULL,
   input_map_path_name,
   output_tbl_path_name,
   regular_min = -1,
@@ -851,7 +852,12 @@ Calculate_areas_in_classes <- function(
   # sample from each raster layer in order to calculate global breaks under these methods
   if (any(c("quantile", "fisher") %in% break_types)) {
     if (parallel == TRUE) {
-      cl <- makeCluster(detectCores() - 1)
+      # Use provided n_workers or default to detectCores() - 1
+      if (is.null(n_workers) || n_workers == 0) {
+        n_workers <- detectCores() - 1
+      }
+
+      cl <- makeCluster(n_workers)
       registerDoParallel(cl)
 
       samples_list <- foreach(
@@ -975,9 +981,6 @@ Calculate_areas_in_classes <- function(
         next
       }
 
-      # Calculate total cells for percentage calculation
-      total_cells <- sum(freq_tbl$count)
-
       # Generate all expected bin numbers and labels
       n_expected_bins <- length(current_breaks) - 1
       all_bin_numbers <- 1:n_expected_bins
@@ -1011,7 +1014,13 @@ Calculate_areas_in_classes <- function(
           )
           complete_freq_tbl <- rbind(complete_freq_tbl, out_of_range_row)
         }
-      } # Calculate percentages for the complete table
+      }
+
+      # Calculate total cells for percentage calculation AFTER updating complete_freq_tbl
+      # This ensures out-of-range bins are included in the total
+      total_cells <- sum(complete_freq_tbl$count)
+
+      # Calculate percentages for the complete table
       complete_freq_tbl$percent <- 100 * complete_freq_tbl$count / total_cells
 
       # Create bin labels for all entries (including out-of-range)
@@ -1032,15 +1041,16 @@ Calculate_areas_in_classes <- function(
       freq_tbl <- complete_freq_tbl
 
       freq_tbl$method <- break_type
+
+      # Round percentages to avoid floating point precision issues
+      freq_tbl$percent <- round(freq_tbl$percent, 2)
+
       json_data <- toJSON(
         setNames(as.list(freq_tbl$bin_label), freq_tbl$percent),
         pretty = TRUE
       )
-      json_path <- gsub(
-        ".json",
-        paste0("_", break_type, ".json"),
-        ES_layer_paths[i, output_tbl_path_name]
-      )
+
+      # Write JSON to output path (no suffix since only using regular breaks)
       write(json_data, file = ES_layer_paths[i, output_tbl_path_name])
 
       if (save_plots == TRUE) {
@@ -1052,7 +1062,11 @@ Calculate_areas_in_classes <- function(
         ensure_dir(chart_images_dir)
         chart_path <- file.path(
           chart_images_dir,
-          gsub(".json", ".png", basename(json_path))
+          gsub(
+            ".json",
+            ".png",
+            basename(ES_layer_paths[i, output_tbl_path_name])
+          )
         )
         bar_plot <- ggplot(freq_tbl, aes(x = bin_label, y = percent)) +
           geom_bar(stat = "identity", fill = "steelblue") +
@@ -2003,6 +2017,7 @@ summarize_ES_outputs <- function(
   Summarize_across_ES = TRUE,
   Rescale_cross_ES_results = TRUE,
   parallel = TRUE,
+  n_workers = NULL,
   mask,
   sample_size = 50000,
   perc_area_break_types = c("quantile", "fisher", "regular"),
@@ -2013,14 +2028,10 @@ summarize_ES_outputs <- function(
   if (parallel == FALSE) {
     future::plan(future::sequential)
   } else {
-    # number of workers from config - if not set, use all available cores
-    n_workers <- ifelse(
-      is.null(config$NWorkers) ||
-        config$NWorkers == "" ||
-        config$NWorkers == 0,
-      future::availableCores(),
-      config$NWorkers
-    )
+    # Use provided n_workers or default to all available cores
+    if (is.null(n_workers) || n_workers == 0) {
+      n_workers <- future::availableCores()
+    }
     future::plan(future::multisession, workers = n_workers)
   }
 
@@ -2235,6 +2246,7 @@ summarize_ES_outputs <- function(
         break_types = perc_area_break_types,
         save_plots = save_provision_area_plots,
         parallel = parallel,
+        n_workers = n_workers,
         input_map_path_name = "tif_path",
         output_tbl_path_name = "perc_area_path",
         regular_min = 0,
@@ -2330,6 +2342,7 @@ summarize_ES_outputs <- function(
         break_types = perc_area_break_types,
         save_plots = save_provision_area_plots,
         parallel = parallel,
+        n_workers = n_workers,
         input_map_path_name = "chg_tif_path",
         output_tbl_path_name = "area_chg_path",
         regular_min = -1,
@@ -2481,6 +2494,8 @@ summarize_ES_outputs <- function(
 #' #' @param ES_rescaling_dir Character: The directory where the rescaled ES layers are stored
 #' #' @param masks List: A named list of masks to apply to the ES layers if the
 #' #  name is full_extent then the list item can be empty and the summary will be performed on the entire map
+#' #' @param parallel Logical: If TRUE, parallel processing will be used (read from config)
+#' #' @param n_workers Integer: Number of workers for parallel processing (read from config)
 Summarise_for_masks <- function(
   config = config,
   ProjCH,
@@ -2499,8 +2514,35 @@ Summarise_for_masks <- function(
   recalc_chg_perc_area = TRUE,
   recalc_cumulative_summary = FALSE,
   Summarize_across_ES = FALSE,
-  Rescale_cross_ES_results = FALSE
+  Rescale_cross_ES_results = FALSE,
+  parallel = NULL,
+  n_workers = NULL
 ) {
+  # Set parallel processing from config if not explicitly provided
+  if (is.null(parallel)) {
+    parallel <- ifelse(
+      is.null(config$Parallel) || config$Parallel == "",
+      FALSE,
+      config$Parallel
+    )
+  }
+
+  # Set number of workers from config if not explicitly provided
+  if (is.null(n_workers)) {
+    n_workers <- ifelse(
+      is.null(config$NWorkers) || config$NWorkers == "" || config$NWorkers == 0,
+      future::availableCores(),
+      config$NWorkers
+    )
+  }
+
+  cat(paste0(
+    "Parallel processing: ",
+    parallel,
+    " (workers: ",
+    n_workers,
+    ")\n"
+  ))
   # loop over the masks
   for (i in seq_along(masks)) {
     cat(paste0("Processing ES outputs for mask: ", names(masks)[i], "\n"))
@@ -2546,7 +2588,8 @@ Summarise_for_masks <- function(
       Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
       Summarize_across_ES = Summarize_across_ES,
       Rescale_cross_ES_results = Rescale_cross_ES_results,
-      parallel = config$Parallel,
+      parallel = parallel,
+      n_workers = n_workers,
       sample_size = 50000,
       perc_area_break_types = c("regular"),
       save_provision_area_plots = TRUE,
@@ -2643,7 +2686,7 @@ Summarise_for_masks(
   ES_summarisation_dir = ES_summarisation_dir,
   masks = list(
     #"full_extent" = "",
-    "canton" = file.path(Mask_dir, "Canton_mask.shp")
+    "canton" = file.path(Mask_dir, "Kanton_Bern_shape.shp")
   ),
   metrics = c("sum", "mean", "sd"),
   recalc_minmax = FALSE,
