@@ -269,7 +269,7 @@ prepare_lulc_files <- function(
   Non_agg_lulc_path = "Data/NOAS04_2018.tif",
   Use_parallel = FALSE,
   num_workers = 4,
-  map_masks = list("full" = file.path(Mask_dir, "Canton_mask.shp")),
+  map_masks = list("full" = file.path(Mask_dir, "Kanton_Bern_shape.shp")),
   overwrite = TRUE
 ) {
   # if the directories do not exist, create them
@@ -1121,7 +1121,7 @@ config <- config$Summarisation # only summarisation variables
 
 
 # dir for saving results
-web_platform_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/full_extent_lulc"
+web_platform_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform"
 # if dir doesn't exist, create it
 if (!dir.exists(web_platform_dir)) {
   dir.create(web_platform_dir, recursive = TRUE, showWarnings = FALSE)
@@ -1134,8 +1134,6 @@ if (!dir.exists(Mask_dir)) {
   dir.create(Mask_dir, recursive = TRUE, showWarnings = FALSE)
 }
 
-#crs for maps
-ProjCH <- config$ProjCH
 
 #define colour palette as list using LULC_rat$lulc_name as names
 LULC_pal <- list(
@@ -1157,25 +1155,24 @@ LULC_pal <- list(
 ### Prepare canton Bern mask
 ### =========================================================================
 
-# Load shapefile of swiss cantons
-canton_shp <- vect("Data/CH_geoms/swissBOUNDARIES3D_1_3_TLM_KANTONSGEBIET.shp")
+# # Load shapefile of swiss cantons
+# canton_shp <- vect("Data/CH_geoms/swissBOUNDARIES3D_1_3_TLM_KANTONSGEBIET.shp")
 
-# filter to NAME == Bern
-canton_bern <- canton_shp[canton_shp$NAME == "Bern", ]
+# # filter to NAME == Bern
+# canton_bern <- canton_shp[canton_shp$NAME == "Bern", ]
 
-# check to see that the CRS matches ProjCH
-if (crs(canton_bern) != ProjCH) {
-  # if not, transform the CRS
-  canton_bern <- terra::project(canton_bern, ProjCH)
-}
+# # check to see that the CRS matches ProjCH
+# if (crs(canton_bern) != ProjCH) {
+#   # if not, transform the CRS
+#   canton_bern <- terra::project(canton_bern, ProjCH)
+# }
 
-# save the canton Bern shapefile to the mask directory
-writeVector(
-  canton_bern,
-  file.path(Mask_dir, "Canton_mask.shp"),
-  overwrite = TRUE
-)
-
+# # save the canton Bern shapefile to the mask directory
+# writeVector(
+#   canton_bern,
+#   file.path(Mask_dir, "Canton_mask.shp"),
+#   overwrite = TRUE
+# )
 
 ### =========================================================================
 ### Finalising LULC tifs and images
@@ -1193,47 +1190,12 @@ prepare_lulc_files(
   area_chg_data_dir = "chart_data/perc_area_change",
   base_dir = web_platform_dir,
   Sim_ctrl_tbl_path = Sys.getenv("LULCC_M_SIM_CONTROL_TABLE"),
-  ProjCH = ProjCH,
+  ProjCH = config$ProjCH,
   LULC_agg_path = "LULC_class_aggregation.xlsx",
   colour_pal = LULC_pal,
   Non_agg_lulc_path = "Data/NOAS04_2018.tif",
-  Use_parallel = FALSE,
-  num_workers = 5,
-  #map_masks = list("canton" = file.path(Mask_dir, "Canton_mask.shp")),
-  map_masks = NULL,
+  Use_parallel = config$Parallel,
+  num_workers = config$NWorkers,
+  map_masks = list("full" = file.path(Mask_dir, "Kanton_Bern_shape.shp")),
   overwrite = TRUE
 )
-
-
-# copy all LULC rasters for final data archiving
-current_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/raster_data"
-archive_dir <- file.path(
-  "X:/CH_Kanton_Bern/03_Workspaces/09_Data_archiving/blce-lulc-data-archive"
-)
-if (!dir.exists(archive_dir)) {
-  dir.create(archive_dir, recursive = TRUE, showWarnings = FALSE)
-}
-
-all_lulc_rasters <- list.files(
-  current_dir,
-  pattern = "^lulc-.*\\.tif$",
-  full.names = TRUE
-)
-
-# copy files to archive directory
-file.copy(
-  all_lulc_rasters,
-  archive_dir,
-  overwrite = TRUE
-)
-
-# produce a file tree of the archived data using fs
-library(fs)
-
-# include only file names not directories
-file_tree <- dir_tree(
-  archive_dir,
-  recurse = TRUE,
-  type = "file"
-)
-writeLines(file_tree, con = file.path(archive_dir, "README.txt"))

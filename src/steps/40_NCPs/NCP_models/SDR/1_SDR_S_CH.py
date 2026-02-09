@@ -10,75 +10,82 @@
 import logging
 import sys
 from os import listdir, remove
-from os.path import join, dirname
+from os.path import join, dirname, isfile, isdir
 from shutil import rmtree
 
 import natcap.invest.sdr.sdr
 import natcap.invest.utils
 
-sys.path.append(join(dirname(__file__), '..'))
+sys.path.append(join(dirname(__file__), ".."))
 from load_params import load_params
 
 params = load_params(
     check_params=[
-        ['run_params', 'NCP_RUN_SCENARIO_ID'],
-        ['run_params', 'NCP_RUN_YEAR'],
-        ['run_params', 'NCP_RUN_OUTPUT_DIR'],
-        ['data', 'lulc'],
-        ['data', 'dem_filled'],
-        ['data', 'erodibility_path'],
-        ['data', 'erosivity_path'],
-        ['data', 'watersheds'],
-        ['SDR', 'biophysical_table_path'],
-        ['SDR', 'ic_0_param'],
-        ['SDR', 'k_param'],
-        ['SDR', 'l_max'],
-        ['other', 'n_workers'],
-        ['SDR', 'sdr_max'],
-        ['SDR', 'threshold_flow_accumulation'],
-        ['other', 'remove_temp_files'],
+        ["run_params", "NCP_RUN_SCENARIO_ID"],
+        ["run_params", "NCP_RUN_YEAR"],
+        ["run_params", "NCP_RUN_OUTPUT_DIR"],
+        ["data", "lulc"],
+        ["data", "dem_filled"],
+        ["data", "erodibility_path"],
+        ["data", "erosivity_path"],
+        ["data", "watersheds"],
+        ["SDR", "biophysical_table_path"],
+        ["SDR", "ic_0_param"],
+        ["SDR", "k_param"],
+        ["SDR", "l_max"],
+        ["other", "n_workers"],
+        ["SDR", "sdr_max"],
+        ["SDR", "threshold_flow_accumulation"],
+        ["other", "remove_temp_files"],
     ]
 )
 
 args = {
     # This dictionary contains the input parameters required to run the SDR model.
     # Each key-value pair specifies a parameter and its corresponding value.
-    'lulc_path': params['data']['lulc'],
-    'biophysical_table_path': params['SDR']['biophysical_table_path'],
-    'dem_path': params['data']['dem_filled'],
+    "lulc_path": params["data"]["lulc"],
+    "biophysical_table_path": params["SDR"]["biophysical_table_path"],
+    "dem_path": params["data"]["dem_filled"],
     # If SDR does not terminate, pass normal dem instead of filled dem.
     # Filled dem can be found in the intermediate_outputs folder.
     # Pass it here if you want to reuse it to save time.
-    'erodibility_path': params['data']['erodibility_path'],
-    'erosivity_path': params['data']['erosivity_path'],
-    'ic_0_param': params['SDR']['ic_0_param'],
-    'k_param': params['SDR']['k_param'],
-    'l_max': params['SDR']['l_max'],
-    'n_workers': params['other']['n_workers'],  # most SDR can only use 1 worker
-    'sdr_max': params['SDR']['sdr_max'],
-    'threshold_flow_accumulation': params['SDR']['threshold_flow_accumulation'],
-    'watersheds_path': params['data']['watersheds'],
-    'workspace_dir': (work_dir := join(
-        params['run_params']['NCP_RUN_OUTPUT_DIR'],
-        params['run_params']['NCP_RUN_SCENARIO_ID'],
-        'SDR',
-        params['run_params']['NCP_RUN_YEAR'])),
+    "erodibility_path": params["data"]["erodibility_path"],
+    "erosivity_path": params["data"]["erosivity_path"],
+    "ic_0_param": params["SDR"]["ic_0_param"],
+    "k_param": params["SDR"]["k_param"],
+    "l_max": params["SDR"]["l_max"],
+    "n_workers": params["other"]["n_workers"],  # most SDR can only use 1 worker
+    "sdr_max": params["SDR"]["sdr_max"],
+    "threshold_flow_accumulation": params["SDR"]["threshold_flow_accumulation"],
+    "watersheds_path": params["data"]["watersheds"],
+    "workspace_dir": (
+        work_dir := join(
+            params["run_params"]["NCP_RUN_OUTPUT_DIR"],
+            params["run_params"]["NCP_RUN_SCENARIO_ID"],
+            "SDR",
+            params["run_params"]["NCP_RUN_YEAR"],
+        )
+    ),
 }
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("SDR: Starting Sediment Delivery Ratio model...")
     natcap.invest.sdr.sdr.execute(args)
     print("SDR: ...done!")
 
-    if params['other']['remove_temp_files']:
+    if params["other"]["remove_temp_files"]:
         # remove intermediate outputs
-        intermediate_output_dir = join(work_dir, 'intermediate_outputs')
+        intermediate_output_dir = join(work_dir, "intermediate_outputs")
         print(f"Removing intermediate outputs in {intermediate_output_dir}")
         # delete folder
         rmtree(intermediate_output_dir)
 
-        # Only keep *.tif files, delete other files from folder
+        # Only keep *.tif files, delete other files and directories from folder
         print("Removing non-tif files from work_dir")
-        non_tif_files = [f for f in listdir(work_dir) if not f.endswith('.tif')]
+        non_tif_files = [f for f in listdir(work_dir) if not f.endswith(".tif")]
         for f in non_tif_files:
-            remove(join(work_dir, f))
+            item_path = join(work_dir, f)
+            if isdir(item_path):
+                rmtree(item_path)
+            else:
+                remove(item_path)

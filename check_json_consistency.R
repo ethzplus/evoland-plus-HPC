@@ -1,4 +1,5 @@
 # Check consistency of class values across JSON files in perc_area directory
+# Also checks that percentage values don't exceed 100% in any single file
 # Excludes lulc files as they have a different structure
 
 library(jsonlite)
@@ -11,7 +12,7 @@ config <- yaml::read_yaml(config_file)
 # Define the directory path from config
 perc_area_dir <- file.path(
   config$Summarisation$OutputDir,
-  config$Summarisation$AreaChgDir
+  config$Summarisation$PercAreaDir
 )
 
 cat("Checking JSON files in directory:", perc_area_dir, "\n\n")
@@ -29,7 +30,7 @@ if (length(json_files_filtered) == 0) {
   stop("No non-lulc JSON files found in the directory!")
 }
 
-# Function to extract class values from a JSON file
+# Function to extract class values and check percentage sums from a JSON file
 extract_classes <- function(file_path) {
   tryCatch(
     {
@@ -39,19 +40,29 @@ extract_classes <- function(file_path) {
       # Extract class values (the array values in the JSON)
       # The structure should be: percentage -> [class_label]
       classes <- character(0)
+      percentages <- numeric(0)
+
       for (percentage in names(data)) {
         if (is.list(data[[percentage]]) && length(data[[percentage]]) > 0) {
           classes <- c(classes, data[[percentage]][[1]])
+          # Convert percentage key to numeric value
+          percentages <- c(percentages, as.numeric(percentage))
         }
       }
 
       # Sort classes for comparison
       sorted_classes <- sort(classes)
 
+      # Calculate total percentage
+      total_percentage <- sum(percentages)
+      exceeds_100 <- total_percentage > 100.01 # Allow small floating point tolerance
+
       return(list(
         file = basename(file_path),
         classes = sorted_classes,
         n_classes = length(sorted_classes),
+        total_percentage = total_percentage,
+        exceeds_100 = exceeds_100,
         success = TRUE,
         error = NULL
       ))
@@ -61,6 +72,8 @@ extract_classes <- function(file_path) {
         file = basename(file_path),
         classes = character(0),
         n_classes = 0,
+        total_percentage = NA,
+        exceeds_100 = NA,
         success = FALSE,
         error = e$message
       ))
@@ -116,6 +129,79 @@ failed_count <- sum(failed_files)
 cat("=== PROCESSING SUMMARY ===\n")
 cat("Successfully processed:", success_count, "files\n")
 cat("Failed to process:", failed_count, "files\n\n")
+
+# Check for files exceeding 100%
+if (success_count > 0) {
+  successful_results <- all_results[!failed_files]
+  exceeds_100_files <- sapply(successful_results, function(x) x$exceeds_100)
+  exceeds_count <- sum(exceeds_100_files, na.rm = TRUE)
+
+  cat("=== PERCENTAGE SUM CHECK ===\n")
+  if (exceeds_count == 0) {
+    cat("✅ ALL FILES HAVE PERCENTAGES SUMMING TO ≤100%!\n\n")
+
+    # Show distribution of percentage totals
+    all_totals <- unlist(sapply(successful_results, function(x) {
+      x$total_percentage
+    }))
+    cat("Distribution of percentage totals:\n")
+    cat("  Min:", round(min(all_totals, na.rm = TRUE), 2), "%\n")
+    cat("  Max:", round(max(all_totals, na.rm = TRUE), 2), "%\n")
+    cat("  Mean:", round(mean(all_totals, na.rm = TRUE), 2), "%\n")
+    cat("  Median:", round(median(all_totals, na.rm = TRUE), 2), "%\n\n")
+
+    # Count files at exactly 100%
+    exactly_100 <- sum(abs(all_totals - 100) < 0.01, na.rm = TRUE)
+    cat(
+      "Files with totals at exactly 100%:",
+      exactly_100,
+      "(",
+      round(exactly_100 / success_count * 100, 1),
+      "%)\n\n"
+    )
+  } else {
+    cat("❌ FOUND", exceeds_count, "FILES WITH PERCENTAGES EXCEEDING 100%!\n\n")
+
+    exceeds_info <- successful_results[exceeds_100_files]
+
+    # Show first 20 problematic files
+    cat("Files exceeding 100% (first 20):\n")
+    for (i in 1:min(20, length(exceeds_info))) {
+      info <- exceeds_info[[i]]
+      cat(sprintf("  %-60s Total: %.2f%%\n", info$file, info$total_percentage))
+    }
+    if (exceeds_count > 20) {
+      cat("  ... and", exceeds_count - 20, "more files\n")
+    }
+    cat("\n")
+
+    # Distribution of percentage totals for exceeding files
+    exceeds_totals <- unlist(sapply(exceeds_info, function(x) {
+      x$total_percentage
+    }))
+    cat("Distribution of totals for files exceeding 100%:\n")
+    cat("  Min:", round(min(exceeds_totals, na.rm = TRUE), 2), "%\n")
+    cat("  Max:", round(max(exceeds_totals, na.rm = TRUE), 2), "%\n")
+    cat("  Mean:", round(mean(exceeds_totals, na.rm = TRUE), 2), "%\n")
+    cat("  Median:", round(median(exceeds_totals, na.rm = TRUE), 2), "%\n\n")
+
+    # Check if specific ES types are affected
+    cat("Files exceeding 100% by ES type:\n")
+    es_types <- c("ndr", "pol", "ff", "wy", "car", "rec", "sdr", "hab")
+    for (es_type in es_types) {
+      es_exceeds <- grep(
+        paste0("^", es_type, "-"),
+        sapply(exceeds_info, function(x) x$file),
+        value = FALSE
+      )
+      if (length(es_exceeds) > 0) {
+        cat("  ", toupper(es_type), ":", length(es_exceeds), "files\n")
+      }
+    }
+    cat("\n")
+  }
+}
+
 
 if (failed_count > 0) {
   cat("Failed files (first 10):\n")
@@ -295,15 +381,19 @@ saveRDS(
       total_files = length(json_files_filtered),
       successful = success_count,
       failed = failed_count,
-      n_patterns = length(class_patterns)
+      n_patterns = length(class_patterns),
+      exceeds_100_count = if (success_count > 0) exceeds_count else NA
     ),
     class_patterns = class_patterns,
-    failed_files = if (failed_count > 0) all_results[failed_files] else NULL
+    failed_files = if (failed_count > 0) all_results[failed_files] else NULL,
+    exceeds_100_files = if (success_count > 0 && exceeds_count > 0) {
+      successful_results[exceeds_100_files]
+    } else {
+      NULL
+    }
   ),
   output_file
 )
 
 cat("\nDetailed results saved to:", output_file, "\n")
 cat("\nAnalysis completed!\n")
-
-json_check <- readRDS("json_consistency_analysis_results.rds")

@@ -15,9 +15,9 @@
 # on all 10_LULCC output land use maps.
 
 echo "Current working directory: $(pwd)"
-source "/cluster/project/eawag/p01002/Future-EI/src/de_activate.sh" focal_lulc 1
+source "/cluster/home/bblack/Future-EI/src/de_activate.sh" focal_lulc 1
 echo "FUTURE_EI_CONFIG_FILE: $FUTURE_EI_CONFIG_FILE"
-Rscript /cluster/project/eawag/p01002/Future-EI/src/steps/20_FocalLULC/20_focal_statistics.R
+Rscript /cluster/home/bblack/Future-EI/src/steps/20_FocalLULC/20_focal_statistics.R
 
 # With tail -f logs/20_focal_statistics-*.out you can follow the progress of the job
 # To follow both .out and .err files, use tail -f logs/20_focal_statistics-*.out logs/20_focal_statistics-*.err

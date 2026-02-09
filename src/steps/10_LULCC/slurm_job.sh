@@ -28,7 +28,7 @@ echo "Running script from: $SCRIPT_DIR"
 source "$SCRIPT_DIR/../../bash_common.sh"
 
 # Run the land use change model
-source /cluster/project/eawag/p01002/Future-EI/src/steps/10_LULCC/10_land_use.sh
+source /cluster/home/bblack/Future-EI/src/steps/10_LULCC/10_land_use.sh
 
 # With tail -f logs/10_land_use-*.out you can follow the progress of the job
 # To follow both .out and .err files, use tail -f logs/10_land_use-*.out logs/10_land_use-*.err

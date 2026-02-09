@@ -20,12 +20,12 @@ scenario_id=1
 # Note: For the Slurm job that runs all scenarios, move one folder up.
 
 echo "Current working directory: $(pwd)"
-source /cluster/project/eawag/p01002/Future-EI/src/bash_common.sh
+source /cluster/home/bblack/Future-EI/src/bash_common.sh
 mkdir -p "$NCP_OUTPUT_BASE_DIR"
 mkdir -p "$NCP_SCRATCH_BASE_DIR"
 
-#source /cluster/project/eawag/p01002/Future-EI/src/steps/40_NCPs/NCP_models/prepare_ncps.sh
-source /cluster/project/eawag/p01002/Future-EI/src/steps/40_NCPs/NCP_models/run_all_ncps.sh \
+#source /cluster/home/bblack/Future-EI/src/steps/40_NCPs/NCP_models/prepare_ncps.sh
+source /cluster/home/bblack/Future-EI/src/steps/40_NCPs/NCP_models/run_all_ncps.sh \
        $scenario_id $year \
        "$LULCC_CH_OUTPUT_BASE_DIR" \
        "$NCP_OUTPUT_BASE_DIR" \

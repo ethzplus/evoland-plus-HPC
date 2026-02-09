@@ -72,7 +72,7 @@ CAR:
   # 1_CAR_S_CH.R
   # 2_CAR_S_CH.py
   bp_tables_dir:
-    Future-EI/src/steps/40_NCPs/NCP_models/CAR/BPTABLE/
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/CAR/BPTABLE/
   # 3_CAR_S_CH.R
   # output prefix
   out_prefix: tot_c_cur_
@@ -80,25 +80,25 @@ CAR:
 FF:
   # 0_FF_ecocrop.R
   crops_data:
-    Future-EI/src/steps/40_NCPs/NCP_models/FF/crops.txt
-  ecocrop_dir: Future-EI-Output/FF_preprocessing_ecocrop/
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/FF/crops.txt
+  ecocrop_dir: ~/Future-EI-Output/FF_preprocessing_ecocrop/
 
 HAB:
   # 0_thread_layers_generation.R
   # 1_HAB_S_CH.py
   half_saturation_constant: 0.075
   bp_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/
   sensitivity_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/hab_sensitivity.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/hab_sensitivity.csv
   threats_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/threats.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/HAB/BPTABLE/threats.csv
 
 NDR:
   # 1_NDR_S_CH.py
   # Biophysical table
   biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/NDR/BPTABLE/ndr_bptable_ds25_futei.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/NDR/BPTABLE/ndr_bptable_ds25_futei.csv
   calc_n: true
   calc_p: true
   k_param: 2
@@ -116,17 +116,17 @@ POL:
   farm_vector_path: ''
   # Guild table path
   guild_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/guild.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/guild.csv
   # Landcover biophysical table path
   landcover_biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/pollination_bptable_ds25_futei.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/POL/BPTABLE/pollination_bptable_ds25_futei.csv
   # 2_POL_S_CH_aggregating.R
 
 SDR:
   # 1_SDR_S_CH.py
   # Biophysical table
   biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/SDR/BPTABLE/bptable_SDR_v2_futei.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/SDR/BPTABLE/bptable_SDR_v2_futei.csv
   # Drainage path
   ic_0_param: 0.4
   k_param: 2
@@ -140,7 +140,7 @@ WY:
   # 1_WY_S_CH.py
   # Biophysical table
   biophysical_table_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/WY/BPTABLE/wy_bptable_ds25_futei.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/WY/BPTABLE/wy_bptable_ds25_futei.csv
   # Do scarcity and valuation
   #  do_scarcity_and_valuation: False,
   # Seasonality constant
@@ -150,4 +150,4 @@ REC:
   # 1_REC.R
   # lulc naturality lookup table
   lutable_nat_path:
-    Future-EI/src/steps/40_NCPs/NCP_models/REC/BPTABLE/lutable_naturality.csv
+    ~/Future-EI/src/steps/40_NCPs/NCP_models/REC/BPTABLE/lutable_naturality.csv

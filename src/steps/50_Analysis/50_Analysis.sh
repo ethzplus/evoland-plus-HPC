@@ -10,10 +10,10 @@
 #SBATCH --mail-type=NONE       # Mail events (NONE, BEGIN, END, FAIL, ALL)
 
 echo "Current working directory: $(pwd)"
-source "/cluster/project/eawag/p01002/Future-EI/src/de_activate.sh" ncp_summarisation 1
+source "/cluster/home/bblack/Future-EI/src/de_activate.sh" ncp_summarisation 1
 echo "FUTURE_EI_CONFIG_FILE: $FUTURE_EI_CONFIG_FILE"
-Rscript /cluster/project/eawag/p01002/Future-EI/src/steps/50_Analysis/51_Summarisation.R
-#Rscript /cluster/project/eawag/p01002/Future-EI/src/steps/50_Analysis/52_Clustering.R
+Rscript /cluster/home/bblack/Future-EI/src/steps/50_Analysis/51_Summarisation.R
+#Rscript /cluster/home/bblack/Future-EI/src/steps/50_Analysis/52_Clustering.R
 
 # With tail -f logs/50_analysis-*.out you can follow the progress of the job
 # To follow both .out and .err files, use tail -f logs/50_analysis-*.out logs/50_analysis-*.err

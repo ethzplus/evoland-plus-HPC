@@ -89,7 +89,7 @@ Summarisation:
   OutputDir: X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
   Parallel: True
   ProjCH: "EPSG:2056"
-  NWorkers: 0  # 0 means use all available cores
+  NWorkers: 4  # 0 means use all available cores
   ESs_to_summarise: ['REC', 'CAR', 'NDR', 'POL', 'SDR', 'WY', 'HAB', 'FF'] # ,
   ES_file_names: {
     CAR: tot_c_cur, FF: FF_S_CH, HAB: quality_c, NDR: n_total_export,

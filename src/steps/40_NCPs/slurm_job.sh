@@ -17,9 +17,9 @@
 # '10_40_combined_array_job.sh'.
 
 echo "Current working directory: $(pwd)"
-source /cluster/project/eawag/p01002/Future-EI/src/bash_common.sh
+source /cluster/home/bblack/Future-EI/src/bash_common.sh
 
-source /cluster/project/eawag/p01002/Future-EI/src/steps/40_NCPs/40_NCPs.sh
+source /cluster/home/bblack/Future-EI/src/steps/40_NCPs/40_NCPs.sh
 
 # With tail -f logs/40_NCPs_multiple-*.out you can follow the progress of the job
 # To follow both .out and .err files, use tail -f logs/40_NCPs_multiple-*.out logs/40_NCPs_multiple-*.err
