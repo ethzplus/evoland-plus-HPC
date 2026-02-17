@@ -345,11 +345,14 @@ prepare_lulc_files <- function(
   # Note Manually adjust this to analyse specific configurations
   Config_IDs <- unique(Sim_ctrl_tbl$Simulation_num.)
 
-  # subset to only range required by Manuel
-  Config_IDs <- c(64, 180, 185, 104, 19)
-
   # Load the LULC aggregation scheme
+  cat("Loading LULC aggregation scheme from:", LULC_agg_path, "\n")
   Aggregation_scheme <- read_excel(LULC_agg_path)
+  cat(
+    "Successfully loaded aggregation scheme with",
+    nrow(Aggregation_scheme),
+    "rows\n"
+  )
 
   # convert the values in Class_abbreviation to lower case
   Aggregation_scheme$Class_abbreviation <- tolower(
@@ -364,8 +367,10 @@ prepare_lulc_files <- function(
   }
 
   # Loop over config_IDs creating a dataframe with paths for saving the rasters, pngs and chart data
+  cat("Building file paths for", length(Config_IDs), "configurations\n")
   lulc_paths <- lapply(Config_IDs, function(Config_ID) {
     # use Config_ID to subset Sim_ctrl_tbl to get scenario details
+    cat("  Processing Config_ID:", Config_ID, "\n")
     Config_details <- Sim_ctrl_tbl[Sim_ctrl_tbl$Simulation_num. == Config_ID, ]
 
     # Create a dataframe of file paths for each time step
@@ -503,21 +508,30 @@ prepare_lulc_files <- function(
   })
 
   # Bind list of dataframes into a single dataframe
+  cat("Combining file paths into single dataframe\n")
   lulc_df <- do.call(rbind, lulc_paths)
+  cat("Total files to process:", nrow(lulc_df), "\n")
 
   # check if all files exist
   if (all(lulc_df$Exists)) {
     message("All LULC files exist.")
   } else {
+    missing_count <- sum(!lulc_df$Exists)
+    cat("WARNING:", missing_count, "files do not exist\n")
+    cat("Missing files:\n")
+    print(lulc_df$Path[!lulc_df$Exists])
     stop("Some LULC files do not exist. Please check the paths.")
   }
 
   # next step is to replace the glacier , rivers and lakes values in the LULC maps
   # Using one of the LULC rasters and the aggregation scheme to create a raster attribute table
   # get unique class values from raster and add 20 and 21 to represent Lake and River
+  cat("Creating raster attribute table from first LULC file\n")
+  cat("Reading raster from:", lulc_df$Path[1], "\n")
   LULC_rat <- data.frame(
     ID = c(sort(unique(values(rast(lulc_df$Path[1])))), 20, 21)
   )
+  cat("LULC_rat created with", nrow(LULC_rat), "classes\n")
   LULC_rat$lulc_name <- c(
     unlist(sapply(
       LULC_rat$ID,
@@ -555,11 +569,16 @@ prepare_lulc_files <- function(
   col_map <- setNames(LULC_rat$colour, LULC_rat$ID)
 
   #Load in most recent non-aggregated LULC raster
+  cat("Loading reference LULC raster from:", Non_agg_lulc_path, "\n")
   ref_LULC <- rast(Non_agg_lulc_path)
+  cat("Reference LULC raster loaded with dimensions:", dim(ref_LULC), "\n")
 
   # check if the raster has the correct projection
   if (crs(ref_LULC) != ProjCH) {
+    cat("Reprojecting reference LULC to ProjCH\n")
     ref_LULC <- project(ref_LULC, ProjCH)
+  } else {
+    cat("Reference LULC already has correct projection\n")
   }
 
   # get raster values of lakes and rivers
@@ -593,18 +612,25 @@ prepare_lulc_files <- function(
   # and an inner loop over the scenario specific simulations
 
   if (Use_parallel) {
+    cat("Setting up parallel processing with", num_workers, "workers\n")
     plan(multisession, workers = num_workers)
   } else {
+    cat("Using sequential processing (no parallelization)\n")
     plan(sequential)
   }
 
-  future_sapply(unique(lulc_df$Scenario_ID), function(Scenario) {
-    cat(paste("Processing scenario:", Scenario, "\n"))
+  cat("\n=== Starting scenario processing ===\n")
+  cat("Total scenarios to process:", length(unique(lulc_df$Scenario_ID)), "\n")
 
+  future_sapply(unique(lulc_df$Scenario_ID), function(Scenario) {
+    cat(paste("\n### Processing scenario:", Scenario, "###\n"))
+
+    cat("Loading glacier scenario files from: Data/glacier_scenario_indices\n")
     Glacier_files <- list.files(
       "Data/glacier_scenario_indices",
       full.names = TRUE
     )
+    cat("Found", length(Glacier_files), "glacier files\n")
 
     # match on the scenario ignoring the case
     Scenario_glacier_file <- Glacier_files[grepl(
@@ -612,12 +638,15 @@ prepare_lulc_files <- function(
       Glacier_files,
       ignore.case = TRUE
     )]
+    cat("Matched glacier file:", Scenario_glacier_file, "\n")
 
     #load scenario specific glacier index
+    cat("Loading glacier index for start date:", Start_date, "\n")
     Glacier_index <- readRDS(Scenario_glacier_file)[, c(
       "ID_loc",
       paste(Start_date)
     )]
+    cat("Glacier index loaded with", nrow(Glacier_index), "locations\n")
 
     #seperate vector of cell IDs for glacier and non-glacer cells
     Non_glacier_IDs <- Glacier_index[
@@ -628,8 +657,16 @@ prepare_lulc_files <- function(
       Glacier_index[[paste(Start_date)]] == 1,
       "ID_loc"
     ]
+    cat(
+      "Identified",
+      length(Glacier_IDs),
+      "glacier cells and",
+      length(Non_glacier_IDs),
+      "non-glacier cells\n"
+    )
 
     # create a copy of ref_LULC_dat for this scenario
+    cat("Creating scenario-specific LULC data\n")
     scenario_LULC_dat <- ref_LULC_dat
 
     #replace the 1's and 0's with the correct LULC
@@ -660,13 +697,16 @@ prepare_lulc_files <- function(
     ])
 
     #convert back to raster
+    cat("Converting scenario LULC data back to raster\n")
     scenario_LULC <- rast(
       scenario_LULC_dat[, c("x", "y", "NOAS04_2018")],
       crs = ProjCH
     )
+    cat("Scenario LULC raster created\n")
 
     # seperate the scenario specific lulc_df
     scenario_lulc_df <- lulc_df[lulc_df$Scenario_ID == Scenario, ]
+    cat("Processing", nrow(scenario_lulc_df), "time steps for this scenario\n")
 
     # loop over the rows of lulc_df for this scenario
     for (i in 1:nrow(scenario_lulc_df)) {
@@ -682,9 +722,11 @@ prepare_lulc_files <- function(
       # check if the tif file exists
       if (scenario_lulc_df$Exists[i]) {
         # read the raster layer
+        cat("Reading LULC raster from:", scenario_lulc_df$Path[i], "\n")
         lulc_layer <- rast(scenario_lulc_df$Path[i])
 
         # add the crs to the raster layer
+        cat("Setting CRS to ProjCH\n")
         crs(lulc_layer) <- ProjCH
 
         # if the time step is the first one, we need to replace the glacier, river and lake values
@@ -698,7 +740,13 @@ prepare_lulc_files <- function(
         }
 
         #loop over lulc mask values
+        cat(
+          "Applying",
+          length(time_step_mask_values),
+          "mask values to LULC layer\n"
+        )
         for (j in 1:length(mask_values)) {
+          cat("  Masking value", j, "of", length(time_step_mask_values), "\n")
           lulc_layer <- terra::mask(
             x = lulc_layer,
             mask = scenario_LULC,
@@ -706,6 +754,7 @@ prepare_lulc_files <- function(
             updatevalue = as.numeric(names(time_step_mask_values)[j])
           )
         } #close for loop over mask values
+        cat("Completed masking for all values\n")
 
         # Now loop over any masks provided in the map_masks list
         if (length(map_masks) > 0) {
@@ -761,14 +810,17 @@ prepare_lulc_files <- function(
               }
 
               # crop the lulc_layer to the extent of the mask layer
+              cat("Cropping LULC layer to mask extent\n")
               lulc_layer <- terra::crop(x = lulc_layer, y = mask_layer)
 
               # apply the mask to the raster layer
+              cat("Applying mask to raster layer\n")
               masked_lulc <- terra::mask(
                 x = lulc_layer,
                 mask = mask_layer,
                 updatevalue = NA
               )
+              cat("Masking complete\n")
 
               # save the masked raster layer
               writeRaster(
@@ -780,8 +832,10 @@ prepare_lulc_files <- function(
               cat(paste("Saved masked raster layer to:", mask_path_tif, "\n"))
 
               # get frequency table of the masked raster layer
+              cat("Computing frequency table for masked raster\n")
               rast_tbl <- freq(masked_lulc)
               rast_tbl$layer <- NULL
+              cat("Frequency table computed with", nrow(rast_tbl), "classes\n")
               rast_tbl$class_name <- c(
                 unlist(sapply(
                   rast_tbl$value,
@@ -828,6 +882,7 @@ prepare_lulc_files <- function(
               # plot the raster layer matching the values to colours in LULC_rat
 
               # use the save_indexed_png function to save the raster layer as a png
+              cat("Saving indexed PNG image\n")
               save_indexed_png(
                 raster_obj = masked_lulc,
                 output_path = map_path_png,
@@ -946,13 +1001,19 @@ prepare_lulc_files <- function(
     # we can calculate the difference in % class area between simulation start and end
 
     # loop over each unique configuration ID for this scenario
+    cat("\n=== Calculating area changes ===\n")
     for (Config_ID in unique(scenario_lulc_df$Config_ID)) {
       # subset the data to this Config_ID
       config_lulc_df <- scenario_lulc_df[
         scenario_lulc_df$Config_ID == Config_ID,
       ]
 
-      cat(paste("Calculating area change for Config_ID:", Config_ID, "\n"))
+      cat(paste("\nCalculating area change for Config_ID:", Config_ID, "\n"))
+      cat(
+        "Number of time steps:",
+        length(unique(config_lulc_df$Time_step)),
+        "\n"
+      )
 
       # get the first time step for this scenario
       first_time_step <- min(config_lulc_df$Time_step)
@@ -1036,6 +1097,7 @@ prepare_lulc_files <- function(
           ]
 
           # read the first and current time step data
+          cat("Reading first time step data from:", first_mask_path, "\n")
           first_data <- fromJSON(first_mask_path, simplifyDataFrame = TRUE)
 
           # convert to df with names as a column called perc_area and values as a column called class_name
@@ -1046,6 +1108,7 @@ prepare_lulc_files <- function(
             row.names = NULL
           )
 
+          cat("Reading current time step data from:", current_mask_path, "\n")
           current_data <- fromJSON(current_mask_path)
           current_data <- data.frame(
             class_name = unlist(current_data),
@@ -1055,6 +1118,7 @@ prepare_lulc_files <- function(
           )
 
           # calculate the difference in % area for each class as a % of the area at the start
+          cat("Calculating area change percentages\n")
           area_change <- merge(
             first_data,
             current_data,
@@ -1065,6 +1129,7 @@ prepare_lulc_files <- function(
             area_change$perc_area_start) /
             area_change$perc_area_start) *
             100
+          cat("Area change calculated for", nrow(area_change), "classes\n")
 
           # sort area_change using the order of the LULC_rat$lulc_name
           area_change <- area_change[
@@ -1096,9 +1161,13 @@ prepare_lulc_files <- function(
         } # close for loop over mask names
       } # close for loop over time steps
 
-      cat("finished all time steps for Config_ID:", Config_ID, "\n")
+      cat("Finished all time steps for Config_ID:", Config_ID, "\n")
     } # close for loop over unique Config_IDs
+
+    cat("\n### Completed scenario:", Scenario, "###\n")
   })
+
+  cat("\n=== All scenarios processed successfully ===\n")
 }
 
 
@@ -1107,7 +1176,10 @@ prepare_lulc_files <- function(
 ### =========================================================================
 
 # Load config from $FUTURE_EI_CONFIG_FILE
+cat("\n=== Starting LULC Data Preparation Script ===\n")
+cat("Loading configuration file\n")
 config_file <- Sys.getenv("FUTURE_EI_CONFIG_FILE")
+cat("Config file path:", config_file, "\n")
 if (!file.exists(config_file)) {
   stop(paste0(
     "Config file FUTURE_EI_CONFIG_FILE (",
@@ -1116,22 +1188,33 @@ if (!file.exists(config_file)) {
   ))
 }
 config <- yaml.load_file(config_file)
+cat("Configuration loaded successfully\n")
 bash_vars <- config$bash_variables # general bash variables
 config <- config$Summarisation # only summarisation variables
+cat("Using summarisation configuration\n")
 
 
 # dir for saving results
+cat("\n=== Setting up directories ===\n")
 web_platform_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform"
+cat("Web platform directory:", web_platform_dir, "\n")
 # if dir doesn't exist, create it
 if (!dir.exists(web_platform_dir)) {
+  cat("Creating web platform directory\n")
   dir.create(web_platform_dir, recursive = TRUE, showWarnings = FALSE)
+} else {
+  cat("Web platform directory already exists\n")
 }
 
 # Mask directory
 Mask_dir <- file.path(web_platform_dir, "Masks")
+cat("Mask directory:", Mask_dir, "\n")
 # if dir doesn't exist, create it
 if (!dir.exists(Mask_dir)) {
+  cat("Creating mask directory\n")
   dir.create(Mask_dir, recursive = TRUE, showWarnings = FALSE)
+} else {
+  cat("Mask directory already exists\n")
 }
 
 
@@ -1178,10 +1261,14 @@ LULC_pal <- list(
 ### Finalising LULC tifs and images
 ### =========================================================================
 
+cat("\n=== Starting LULC file preparation ===\n")
+
 # set higher max size for future.globals
+cat("Setting future.globals.maxSize to 8 GB\n")
 options(future.globals.maxSize = 8 * 1024^3) # 8 GB
 
 # Apply function to prepare LULC files
+cat("Calling prepare_lulc_files function\n")
 prepare_lulc_files(
   lulcc_input_dir = "F:/KB-outputs/lulcc_output",
   image_dir = "map_images",

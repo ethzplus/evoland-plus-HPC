@@ -1045,8 +1045,10 @@ Calculate_areas_in_classes <- function(
       # Round percentages to avoid floating point precision issues
       freq_tbl$percent <- round(freq_tbl$percent, 2)
 
+      # Create unique keys by using bin_label as key instead of percent
+      # This ensures all bins are present and keys are unique
       json_data <- toJSON(
-        setNames(as.list(freq_tbl$bin_label), freq_tbl$percent),
+        setNames(as.list(freq_tbl$percent), freq_tbl$bin_label),
         pretty = TRUE
       )
 
@@ -2689,7 +2691,7 @@ Summarise_for_masks(
     "canton" = file.path(Mask_dir, "Kanton_Bern_shape.shp")
   ),
   metrics = c("sum", "mean", "sd"),
-  recalc_minmax = FALSE,
+  recalc_minmax = TRUE,
   recalc_rescaled_layers = TRUE,
   recalc_summary_stats = TRUE,
   recalc_perc_area = TRUE,

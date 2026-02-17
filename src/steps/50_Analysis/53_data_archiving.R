@@ -24,7 +24,7 @@ if (!dir.exists(lulc_archive_dir)) {
 
 all_lulc_rasters <- list.files(
   raster_dir,
-  pattern = "^lulc-.*\\.tif$",
+  pattern = "^lulc-.*//.tif$",
   full.names = TRUE
 )
 
@@ -39,7 +39,7 @@ file.copy(
 # match on string LULC with extension pdf
 lulc_metadata_files <- list.files(
   metadata_dir,
-  pattern = "LULC.*\\.pdf$",
+  pattern = "LULC.*//.pdf$",
   full.names = TRUE
 )
 
@@ -173,7 +173,7 @@ es_abbreviations <- c('rec', 'car', 'ndr', 'pol', 'sdr', 'wy', 'hab', 'ff')
 all_es_rasters <- c(sapply(es_abbreviations, function(abbr) {
   list.files(
     raster_dir,
-    pattern = paste0("^", abbr, ".*\\.tif$"),
+    pattern = paste0("^", abbr, ".*//.tif$"),
     full.names = TRUE
   )
 }))
@@ -189,7 +189,7 @@ file.copy(
 # Move the corresponding metadata file to the archive directory
 es_metadata_files <- list.files(
   metadata_dir,
-  pattern = "Oekosystemleistungen.*\\.pdf$",
+  pattern = "Oekosystemleistungen.*//.pdf$",
   full.names = TRUE
 )
 
@@ -303,7 +303,7 @@ if (!dir.exists(sdm_archive_dir)) {
 
 all_sdm_rasters <- list.files(
   sdm_dir,
-  pattern = ".*\\.tif$",
+  pattern = ".*//.tif$",
   full.names = TRUE
 )
 
@@ -317,7 +317,7 @@ file.copy(
 # Move the corresponding metadata file to the archive directory
 sdm_metadata_files <- list.files(
   metadata_dir,
-  pattern = "Habitateignung.*\\.pdf$",
+  pattern = "Habitateignung.*//.pdf$",
   full.names = TRUE
 )
 file.copy(
@@ -435,7 +435,7 @@ if (!dir.exists(robustness_archive_dir)) {
 
 all_robustness_files <- list.files(
   robustness_dir,
-  pattern = ".*\\.tif$",
+  pattern = ".*//.tif$",
   full.names = TRUE
 )
 
@@ -454,7 +454,7 @@ file.copy(
 # Move the corresponding metadata file to the archive directory
 robustness_metadata_files <- list.files(
   metadata_dir,
-  pattern = "Robustheit.*\\.pdf$",
+  pattern = "Robustheit.*//.pdf$",
   full.names = TRUE
 )
 
@@ -546,25 +546,28 @@ pandoc_convert(
 ### Ecosystem condition and potential data archiving
 ### =========================================================================
 
-ecopot_dir <- "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/restoration_potential"
+ecopot_dir <- c(
+  "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/restoration_potential/December/Updated_ES_Gap",
+  "X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/restoration_potential/December/Updated_EC"
+)
+all_ecopot_files <- c()
+for (dir in ecopot_dir) {
+  files <- list.files(
+    dir,
+    full.names = TRUE,
+    pattern = ".tif",
+    recursive = TRUE
+  )
+  all_ecopot_files <- c(all_ecopot_files, files)
+}
+
+
 ecopot_archive_dir <- file.path(
   "X:/CH_Kanton_Bern/03_Workspaces/09_Data_archiving/blce-oekosystemzustand-potenzial-data-archive"
 )
 if (!dir.exists(ecopot_archive_dir)) {
   dir.create(ecopot_archive_dir, recursive = TRUE, showWarnings = FALSE)
 }
-
-all_ecopot_files <- c(
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/4. ES_gap/HAB_gap.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/4. ES_gap/POL_gap.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/4. ES_gap/REC_gap.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/4. ES_gap/CAR_gap.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/4. ES_gap/FF_gap.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/1. Condition/ec_index_LU_17.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/1. Condition/ec_index_combined.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/1. Condition/ec_index_LU_13.tif",
-  "X:/CH_Kanton_Bern/03_Workspaces/03_Habitat_condition/Restoration_potential/Outputs/1. Condition/ec_index_LU_15.tif"
-)
 
 # copy files to archive directory
 file.copy(
@@ -576,7 +579,7 @@ file.copy(
 # Move the corresponding metadata file to the archive directory
 ecopot_metadata_files <- list.files(
   metadata_dir,
-  pattern = "Oekosystemzustand_Potenzial.*\\.pdf$",
+  pattern = "Oekosystemzustand_Potenzial.*//.pdf$",
   full.names = TRUE
 )
 
