@@ -775,6 +775,147 @@ normalise_layers <- function(
   })
 }
 
+#' normalise_layers:
+#' Normalise the ES layers using the global minmax values
+#' This function normalises the ES layers using the global minmax values
+#' saving the layers as tif and png files using the provided paths in Es_layer_paths
+#' called by normalise_summarize function
+#' @param ES_layer_paths Dataframe: containing info for each ES layer
+#' i.e. config_ID, time step, raw layer path and path to save rescaled layer
+#' @param mask Character: The path to the mask to apply to the layers
+#' @param ES_global_minmaxs Dataframe: containing the global min and max values for each ES
+#' @return: NULL
+normalise_layers_PATCH <- function(
+  ES_layer_paths,
+  mask,
+  ES_global_minmaxs,
+  ProjCH = ProjCH,
+  input_path_name = "Path",
+  raster_path_name = "tif_path",
+  image_path_name = "png_path",
+  overwrite = TRUE,
+  low_color = "#007CDC",
+  high_color = "#FFEA2A",
+  mid_color = NULL,
+  low_value = 0,
+  high_value = 1,
+  mid_value = NULL
+) {
+  future_lapply(1:nrow(ES_layer_paths), function(i) {
+    # Load the mask here because rast/vect are non-Future exportable objects
+    if (names(mask) != "full_extent") {
+      # if the mask path contains shp extension, read it as a vector
+      if (grepl("\\.shp$", unlist(mask))) {
+        message(paste("Applying mask from shapefile:", mask))
+        mask_layer <- terra::vect(x = unlist(mask))
+      } else if (grepl("\\.tif$", mask)) {
+        message(paste("Applying mask from raster file:", mask))
+        mask_layer <- terra::rast(unlist(mask))
+      } else {
+        stop(paste("Unsupported mask file type for:", mask))
+      }
+    }
+
+    if (file.exists(ES_layer_paths[i, raster_path_name]) & overwrite == FALSE) {
+      return(NULL)
+    } else if (
+      !file.exists(ES_layer_paths[i, raster_path_name]) | overwrite == TRUE
+    ) {
+      # If the input file doesn't exist skip
+      if (!file.exists(ES_layer_paths[i, input_path_name])) {
+        return(NULL)
+      }
+
+      # # Load the raster
+      # raster <- rast(ES_layer_paths[i, input_path_name])
+
+      # # if the crs is not the same as ProjCH, reproject the raster
+      # if (crs(raster) != ProjCH) {
+      #   raster <- terra::project(raster, ProjCH)
+      #   cat("Reprojected raster to", ProjCH, "\n")
+      # }
+
+      # if (names(mask) != "full_extent") {
+      #   # If mask is provided, apply it to the raster
+
+      #   # crop raster to mask extent
+      #   raster <- terra::crop(x = raster, y = mask_layer)
+
+      #   raster <- terra::mask(x = raster, mask = mask_layer, updatevalue = NA)
+      # }
+
+      # ES_name <- ES_layer_paths[i, "ES"]
+      # ES_min <- ES_global_minmaxs[1, "Min"]
+      # ES_max <- ES_global_minmaxs[1, "Max"]
+
+      # # Normalise the raster
+      # raster_norm <- ((raster - ES_min) / (ES_max - ES_min)) *
+      #   (high_value - low_value) +
+      #   low_value
+
+      # #create dir
+      # dir <- dirname(ES_layer_paths[i, raster_path_name])
+      # ensure_dir(dir)
+
+      # START BY RE-LOADING THE ALREADY NORMALISED RASTER TO AVOID RE-DOING THE NORMALISATION STEPS
+      raster_norm <- rast(ES_layer_paths[i, raster_path_name])
+
+      # mask IT TO THE NEW MASK IF NECESSARY
+      if (names(mask) != "full_extent") {
+        # If mask is provided, apply it to the raster
+
+        # crop raster to mask extent
+        raster_norm <- terra::crop(x = raster_norm, y = mask_layer)
+
+        raster_norm <- terra::mask(
+          x = raster_norm,
+          mask = mask_layer,
+          updatevalue = NA
+        )
+      }
+
+      # save as tif using the pre-prepared path
+      writeRaster(
+        raster_norm,
+        file = ES_layer_paths[i, raster_path_name],
+        overwrite = TRUE
+      )
+
+      cat("rescaled layer saved to", ES_layer_paths[i, raster_path_name], "\n")
+
+      # produce png img and save
+      save_continuous_indexed_png(
+        raster_obj = raster_norm,
+        output_path = ES_layer_paths[i, image_path_name],
+        low_color = low_color,
+        high_color = high_color,
+        mid_color = mid_color,
+        low_value = low_value, # New argument for low value
+        high_value = high_value, # New argument for high value
+        mid_value = mid_value, # New argument for mid value (used when mid_color is specified)
+        width = 25,
+        height = 20,
+        resolution = 300,
+        units = "cm",
+        margins = c(0, 0, 0, 0),
+        background = "transparent",
+        colorspace = "sRGB",
+        max_colors = 256,
+        show_legend = FALSE,
+        axes = FALSE,
+        box = FALSE,
+        cleanup_temp = TRUE,
+        verbose = FALSE
+      )
+      cat(
+        "rescaled layer image saved to",
+        ES_layer_paths[i, image_path_name],
+        "\n"
+      )
+    }
+  })
+}
+
 #' calc_summary_stats:
 #' Calculate summary statistics for the rescaled ES layers
 #' This function calculates the summary statistics for the rescaled ES layers
@@ -822,18 +963,387 @@ calc_summary_stats <- function(
   return(ES_sum_stats)
 }
 
+#' tabulate_area_in_classes: Classify a raster against a single break vector and return bin percentages
+#'
+#' Extracted from Calculate_areas_in_classes so the same logic can be reused
+#' for the whole-extent raster ("canton") and for each focus-area masked raster.
+#' Returns a named list of bin_label -> percent suitable for embedding as one
+#' entry inside a multi-area JSON object. JSON writing and plot saving are handled
+#' by the caller so that all areas can be combined into a single output file.
+#'
+#' @param raster         A terra SpatRaster object to classify.
+#' @param break_vector   Numeric vector of break boundaries for one break type.
+#' @param context_label  String used in warning messages (e.g. "carbon – canton").
+#' @return Named list of bin_label -> percent, or NULL if the raster has no data.
+tabulate_area_in_classes <- function(raster, break_vector, context_label = "") {
+  # ── Classify raster ──────────────────────────────────────────────────────
+  rcl_matrix <- cbind(
+    break_vector[-length(break_vector)],
+    break_vector[-1],
+    1:(length(break_vector) - 1)
+  )
+  rcl_matrix[1, 1] <- rcl_matrix[1, 1] - 0.001
+  rcl_matrix[nrow(rcl_matrix), 2] <- rcl_matrix[nrow(rcl_matrix), 2] + 0.001
+
+  r_classified <- terra::classify(
+    raster,
+    rcl = rcl_matrix,
+    include.lowest = TRUE
+  )
+
+  # ── Frequency table ──────────────────────────────────────────────────────
+  freq_tbl <- as.data.frame(freq(r_classified))
+  freq_tbl$value[is.na(freq_tbl$value)] <- 0
+
+  if (nrow(freq_tbl) == 0) {
+    cat("Warning: No data for", context_label, "- skipping\n")
+    return(NULL)
+  }
+
+  # ── Build complete bin table (fills zeros for missing bins) ──────────────
+  n_expected_bins <- length(break_vector) - 1
+  all_labels <- character(n_expected_bins)
+  for (j in 1:n_expected_bins) {
+    all_labels[j] <- paste0(
+      round(break_vector[j], 2),
+      " \u2013 ",
+      round(break_vector[j + 1], 2)
+    )
+  }
+
+  complete_freq_tbl <- data.frame(
+    value = 1:n_expected_bins,
+    count = 0L,
+    stringsAsFactors = FALSE
+  )
+
+  for (k in 1:nrow(freq_tbl)) {
+    bin_num <- freq_tbl$value[k]
+    if (!is.na(bin_num) && bin_num >= 1 && bin_num <= n_expected_bins) {
+      complete_freq_tbl$count[bin_num] <- freq_tbl$count[k]
+    } else if (!is.na(bin_num)) {
+      complete_freq_tbl <- rbind(
+        complete_freq_tbl,
+        data.frame(
+          value = bin_num,
+          count = freq_tbl$count[k],
+          stringsAsFactors = FALSE
+        )
+      )
+    }
+  }
+
+  total_cells <- sum(complete_freq_tbl$count)
+  complete_freq_tbl$percent <- round(
+    100 * complete_freq_tbl$count / total_cells,
+    2
+  )
+
+  complete_freq_tbl$bin_label <- sapply(
+    complete_freq_tbl$value,
+    function(bin_num) {
+      if (is.na(bin_num)) {
+        return("NA")
+      }
+      if (bin_num < 1 || bin_num > length(all_labels)) {
+        return(paste0("Bin_", bin_num, "_OutOfRange"))
+      }
+      all_labels[bin_num]
+    }
+  )
+
+  # Return named list of bin_label -> percent (serialises as {"0 – 0.1": [84.42], ...})
+  setNames(as.list(complete_freq_tbl$percent), complete_freq_tbl$bin_label)
+}
+
+
+# #' Calculate areas_in_classes:
+# #' Calculate the areas of land that fall within discrete classes of the ES provision values
+# #' This function calculates the areas of land that fall within discrete classes of the ES provision values
+# #' and saves the results to a JSON file, it is capable of calculating using different break types including
+# #' quantile, fisher and regular breaks that are calculated from samples taken acorss all the rescaled layers
+# #' called by normalise_summarize function
+# #' @param ES_layer_paths Dataframe: containing info for each ES layer
+# #' i.e. config_ID, time step, raw layer path and path to save rescaled layer
+# #' @param sample_size Integer: The number of samples to take from each layer for calculating global breaks
+# #' @param break_types Character: The types of breaks to calculate, options are "quantile", "fisher" and "regular"
+# #' @param save_samples Logical: Whether to save the samples to a file
+# Calculate_areas_in_classes <- function(
+#   ES_layer_paths,
+#   sample_size = 50000,
+#   save_samples,
+#   break_types = c("quantile", "fisher", "regular"),
+#   save_plots,
+#   parallel,
+#   n_workers = NULL,
+#   input_map_path_name,
+#   output_tbl_path_name,
+#   regular_min = -1,
+#   regular_max = 1,
+#   regular_by = 0.25
+# ) {
+#   # break_types includes quantiles or fisher then it is necessary to take a
+#   # sample from each raster layer in order to calculate global breaks under these methods
+#   if (any(c("quantile", "fisher") %in% break_types)) {
+#     if (parallel == TRUE) {
+#       # Use provided n_workers or default to detectCores() - 1
+#       if (is.null(n_workers) || n_workers == 0) {
+#         n_workers <- detectCores() - 1
+#       }
+
+#       cl <- makeCluster(n_workers)
+#       registerDoParallel(cl)
+
+#       samples_list <- foreach(
+#         i = 1:nrow(ES_layer_paths),
+#         .combine = c,
+#         .packages = "terra"
+#       ) %dopar%
+#         {
+#           if (
+#             save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"])
+#           ) {
+#             samp <- readRDS(ES_layer_paths[i, "sample_path"])
+#             return(samp)
+#           } else if (file.exists(ES_layer_paths[i, "sample_path"]) == FALSE) {
+#             raster_norm <- rast(ES_layer_paths[i, "tif_path"])
+#             vals <- values(raster_norm, mat = FALSE)
+#             vals <- vals[!is.na(vals)]
+#             samp <- sample(
+#               vals,
+#               min(sample_size, length(vals)),
+#               replace = FALSE
+#             )
+#             if (save_samples == TRUE) {
+#               saveRDS(samp, file = ES_layer_paths[i, "sample_path"])
+#             }
+#             return(samp)
+#           }
+#         }
+#       stopCluster(cl)
+#       all_samples <- samples_list
+#     } else {
+#       all_samples <- c()
+#       for (i in 1:nrow(ES_layer_paths)) {
+#         if (
+#           save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"])
+#         ) {
+#           samp <- readRDS(ES_layer_paths[i, "sample_path"])
+#           all_samples <- c(all_samples, samp)
+#           next
+#         } else if (file.exists(ES_layer_paths[i, "sample_path"]) == FALSE) {
+#           raster_norm <- rast(ES_layer_paths[i, input_map_path_name])
+#           vals <- values(raster_norm, mat = FALSE)
+#           vals <- vals[!is.na(vals)]
+#           samp <- sample(vals, min(sample_size, length(vals)), replace = FALSE)
+#           if (save_samples == TRUE) {
+#             saveRDS(samp, file = ES_layer_paths[i, "sample_path"])
+#           }
+#           all_samples <- c(all_samples, samp)
+#         }
+#       }
+#     }
+#   }
+
+#   # default deciles for quantile/fisher
+#   probs <- seq(0, 1, 0.1)
+
+#   # empty breaks list
+#   breaks <- list()
+#   for (break_type in break_types) {
+#     breaks[[break_type]] <- NA
+#   }
+
+#   for (break_type in break_types) {
+#     if (break_type == "quantile") {
+#       breaks$quantile <- unique(quantile(
+#         all_samples,
+#         probs = probs,
+#         na.rm = TRUE
+#       ))
+#     } else if (break_type == "fisher") {
+#       fisher <- classIntervals(all_samples, n = length(probs), style = "fisher")
+#       breaks$fisher <- fisher$brks
+#     } else if (break_type == "regular") {
+#       breaks$regular <- seq(regular_min, regular_max, by = regular_by)
+#     }
+#   }
+
+#   future_lapply(1:nrow(ES_layer_paths), function(i) {
+#     raster <- rast(ES_layer_paths[i, input_map_path_name])
+
+#     for (break_type in names(breaks)) {
+#       current_breaks <- breaks[[break_type]]
+
+#       if (break_type %in% c("quantile", "fisher")) {
+#         rcl_matrix <- cbind(
+#           current_breaks[-length(current_breaks)],
+#           current_breaks[-1],
+#           1:(length(current_breaks) - 1)
+#         )
+#         # Extend the range slightly to capture edge values
+#         rcl_matrix[1, 1] <- rcl_matrix[1, 1] - 0.001 # Extend lower bound
+#         rcl_matrix[nrow(rcl_matrix), 2] <- rcl_matrix[nrow(rcl_matrix), 2] +
+#           0.001 # Extend upper bound
+#         r_classified <- terra::classify(
+#           raster,
+#           rcl = rcl_matrix,
+#           include.lowest = TRUE
+#         )
+#       } else if (break_type == "regular") {
+#         rcl_matrix <- cbind(
+#           current_breaks[-length(current_breaks)],
+#           current_breaks[-1],
+#           1:(length(current_breaks) - 1)
+#         )
+#         # Extend the range slightly to capture edge values
+#         rcl_matrix[1, 1] <- rcl_matrix[1, 1] - 0.001 # Extend lower bound
+#         rcl_matrix[nrow(rcl_matrix), 2] <- rcl_matrix[nrow(rcl_matrix), 2] +
+#           0.001 # Extend upper bound
+#         r_classified <- terra::classify(
+#           raster,
+#           rcl = rcl_matrix,
+#           include.lowest = TRUE
+#         )
+#       }
+
+#       freq_tbl <- freq(r_classified)
+#       freq_tbl <- as.data.frame(freq_tbl)
+#       freq_tbl$value[is.na(freq_tbl$value)] <- 0
+#       if (nrow(freq_tbl) == 0) {
+#         cat("Warning: No data for", break_type, "- skipping\n")
+#         next
+#       }
+
+#       # Generate all expected bin numbers and labels
+#       n_expected_bins <- length(current_breaks) - 1
+#       all_bin_numbers <- 1:n_expected_bins
+#       all_labels <- character(n_expected_bins)
+#       for (j in 1:n_expected_bins) {
+#         lower <- current_breaks[j]
+#         upper <- current_breaks[j + 1]
+#         all_labels[j] <- paste0(round(lower, 2), " – ", round(upper, 2))
+#       }
+
+#       # Create complete frequency table with all expected bins
+#       complete_freq_tbl <- data.frame(
+#         layer = rep(1, n_expected_bins), # Assuming single layer
+#         value = all_bin_numbers,
+#         count = 0, # Initialize all counts to 0
+#         stringsAsFactors = FALSE
+#       )
+
+#       # Update counts for bins that actually have data
+#       for (k in 1:nrow(freq_tbl)) {
+#         bin_num <- freq_tbl$value[k]
+#         if (!is.na(bin_num) && bin_num >= 1 && bin_num <= n_expected_bins) {
+#           complete_freq_tbl$count[bin_num] <- freq_tbl$count[k]
+#         } else if (!is.na(bin_num)) {
+#           # Handle out-of-range bins by adding them to the complete table
+#           out_of_range_row <- data.frame(
+#             layer = 1,
+#             value = bin_num,
+#             count = freq_tbl$count[k],
+#             stringsAsFactors = FALSE
+#           )
+#           complete_freq_tbl <- rbind(complete_freq_tbl, out_of_range_row)
+#         }
+#       }
+
+#       # Calculate total cells for percentage calculation AFTER updating complete_freq_tbl
+#       # This ensures out-of-range bins are included in the total
+#       total_cells <- sum(complete_freq_tbl$count)
+
+#       # Calculate percentages for the complete table
+#       complete_freq_tbl$percent <- 100 * complete_freq_tbl$count / total_cells
+
+#       # Create bin labels for all entries (including out-of-range)
+#       complete_freq_tbl$bin_label <- sapply(
+#         complete_freq_tbl$value,
+#         function(bin_num) {
+#           if (is.na(bin_num)) {
+#             return("NA")
+#           } else if (bin_num < 1 || bin_num > length(all_labels)) {
+#             return(paste0("Bin_", bin_num, "_OutOfRange"))
+#           } else {
+#             return(all_labels[bin_num])
+#           }
+#         }
+#       )
+
+#       # Use the complete frequency table for further processing
+#       freq_tbl <- complete_freq_tbl
+
+#       freq_tbl$method <- break_type
+
+#       # Round percentages to avoid floating point precision issues
+#       freq_tbl$percent <- round(freq_tbl$percent, 2)
+
+#       # Create unique keys by using bin_label as key instead of percent
+#       # This ensures all bins are present and keys are unique
+#       json_data <- toJSON(
+#         setNames(as.list(freq_tbl$percent), freq_tbl$bin_label),
+#         pretty = TRUE
+#       )
+
+#       # Write JSON to output path (no suffix since only using regular breaks)
+#       write(json_data, file = ES_layer_paths[i, output_tbl_path_name])
+
+#       if (save_plots == TRUE) {
+#         chart_images_dir <- gsub(
+#           "chart_data",
+#           "chart_images",
+#           dirname(ES_layer_paths[i, output_tbl_path_name])
+#         )
+#         ensure_dir(chart_images_dir)
+#         chart_path <- file.path(
+#           chart_images_dir,
+#           gsub(
+#             ".json",
+#             ".png",
+#             basename(ES_layer_paths[i, output_tbl_path_name])
+#           )
+#         )
+#         bar_plot <- ggplot(freq_tbl, aes(x = bin_label, y = percent)) +
+#           geom_bar(stat = "identity", fill = "steelblue") +
+#           labs(
+#             title = paste(
+#               "Area in Classes for",
+#               ES_layer_paths[i, "ES"],
+#               "using",
+#               break_type,
+#               "breaks"
+#             ),
+#             x = "Class",
+#             y = "Percentage of Area"
+#           ) +
+#           theme_minimal() +
+#           theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#         ggsave(filename = chart_path, plot = bar_plot, width = 10, height = 6)
+#       }
+#     }
+#   })
+#   cat(
+#     "Finished calculating breaks for all layers of current ES and saving classified area JSON files.\n"
+#   )
+# }
 
 #' Calculate areas_in_classes:
 #' Calculate the areas of land that fall within discrete classes of the ES provision values
 #' This function calculates the areas of land that fall within discrete classes of the ES provision values
 #' and saves the results to a JSON file, it is capable of calculating using different break types including
-#' quantile, fisher and regular breaks that are calculated from samples taken acorss all the rescaled layers
+#' quantile, fisher and regular breaks that are calculated from samples taken across all the rescaled layers
 #' called by normalise_summarize function
-#' @param ES_layer_paths Dataframe: containing info for each ES layer
-#' i.e. config_ID, time step, raw layer path and path to save rescaled layer
-#' @param sample_size Integer: The number of samples to take from each layer for calculating global breaks
-#' @param break_types Character: The types of breaks to calculate, options are "quantile", "fisher" and "regular"
-#' @param save_samples Logical: Whether to save the samples to a file
+#' @param ES_layer_paths  Dataframe: containing info for each ES layer
+#'   i.e. config_ID, time step, raw layer path and path to save rescaled layer
+#' @param sample_size     Integer: The number of samples to take from each layer for calculating global breaks
+#' @param break_types     Character: The types of breaks to calculate, options are "quantile", "fisher" and "regular"
+#' @param save_samples    Logical: Whether to save the samples to a file
+#' @param focus_regions     Named list: Optional masks to apply to each layer before calculating area-in-classes.
+#'   Each element is a file path to a raster that will be used as a mask.
+#'   e.g. list("oberland_ost" = "Masks/focus_area_tifs/oberland_ost.tif")
+#'   Results are written to a path derived from \code{output_tbl_path_name} by inserting
+#'   the focus-area name before the file extension.
 Calculate_areas_in_classes <- function(
   ES_layer_paths,
   sample_size = 50000,
@@ -846,13 +1356,12 @@ Calculate_areas_in_classes <- function(
   output_tbl_path_name,
   regular_min = -1,
   regular_max = 1,
-  regular_by = 0.25
+  regular_by = 0.25,
+  focus_regions = NULL # <-- NEW: named list(area_name = mask_tif_path)
 ) {
-  # break_types includes quantiles or fisher then it is necessary to take a
-  # sample from each raster layer in order to calculate global breaks under these methods
+  # ── Global break calculation (quantile / fisher need a pooled sample) ─────
   if (any(c("quantile", "fisher") %in% break_types)) {
     if (parallel == TRUE) {
-      # Use provided n_workers or default to detectCores() - 1
       if (is.null(n_workers) || n_workers == 0) {
         n_workers <- detectCores() - 1
       }
@@ -869,9 +1378,8 @@ Calculate_areas_in_classes <- function(
           if (
             save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"])
           ) {
-            samp <- readRDS(ES_layer_paths[i, "sample_path"])
-            return(samp)
-          } else if (file.exists(ES_layer_paths[i, "sample_path"]) == FALSE) {
+            return(readRDS(ES_layer_paths[i, "sample_path"]))
+          } else if (!file.exists(ES_layer_paths[i, "sample_path"])) {
             raster_norm <- rast(ES_layer_paths[i, "tif_path"])
             vals <- values(raster_norm, mat = FALSE)
             vals <- vals[!is.na(vals)]
@@ -894,10 +1402,12 @@ Calculate_areas_in_classes <- function(
         if (
           save_samples == TRUE & file.exists(ES_layer_paths[i, "sample_path"])
         ) {
-          samp <- readRDS(ES_layer_paths[i, "sample_path"])
-          all_samples <- c(all_samples, samp)
+          all_samples <- c(
+            all_samples,
+            readRDS(ES_layer_paths[i, "sample_path"])
+          )
           next
-        } else if (file.exists(ES_layer_paths[i, "sample_path"]) == FALSE) {
+        } else if (!file.exists(ES_layer_paths[i, "sample_path"])) {
           raster_norm <- rast(ES_layer_paths[i, input_map_path_name])
           vals <- values(raster_norm, mat = FALSE)
           vals <- vals[!is.na(vals)]
@@ -911,14 +1421,9 @@ Calculate_areas_in_classes <- function(
     }
   }
 
-  # default deciles for quantile/fisher
+  # ── Build breaks list ─────────────────────────────────────────────────────
   probs <- seq(0, 1, 0.1)
-
-  # empty breaks list
-  breaks <- list()
-  for (break_type in break_types) {
-    breaks[[break_type]] <- NA
-  }
+  breaks <- setNames(vector("list", length(break_types)), break_types)
 
   for (break_type in break_types) {
     if (break_type == "quantile") {
@@ -935,165 +1440,112 @@ Calculate_areas_in_classes <- function(
     }
   }
 
+  # ── Per-layer processing ──────────────────────────────────────────────────
   future_lapply(1:nrow(ES_layer_paths), function(i) {
     raster <- rast(ES_layer_paths[i, input_map_path_name])
+    base_output <- ES_layer_paths[i, output_tbl_path_name]
+    es_label <- ES_layer_paths[i, "ES"]
+
+    # Pre-load masked rasters once per layer (avoids re-reading inside break_type loop)
+    masked_rasters <- list()
+    if (!is.null(focus_regions) && length(focus_regions) > 0) {
+      for (area_name in names(focus_regions)) {
+        mask_path <- focus_regions[[area_name]]
+        if (!file.exists(mask_path)) {
+          cat(
+            "Warning: mask file not found for focus area '",
+            area_name,
+            "': ",
+            mask_path,
+            " – skipping.\n",
+            sep = ""
+          )
+          next
+        }
+        masked_rasters[[area_name]] <- terra::mask(raster, rast(mask_path))
+      }
+    }
 
     for (break_type in names(breaks)) {
-      current_breaks <- breaks[[break_type]]
+      break_vector <- breaks[[break_type]]
 
-      if (break_type %in% c("quantile", "fisher")) {
-        rcl_matrix <- cbind(
-          current_breaks[-length(current_breaks)],
-          current_breaks[-1],
-          1:(length(current_breaks) - 1)
-        )
-        # Extend the range slightly to capture edge values
-        rcl_matrix[1, 1] <- rcl_matrix[1, 1] - 0.001 # Extend lower bound
-        rcl_matrix[nrow(rcl_matrix), 2] <- rcl_matrix[nrow(rcl_matrix), 2] +
-          0.001 # Extend upper bound
-        r_classified <- terra::classify(
-          raster,
-          rcl = rcl_matrix,
-          include.lowest = TRUE
-        )
-      } else if (break_type == "regular") {
-        rcl_matrix <- cbind(
-          current_breaks[-length(current_breaks)],
-          current_breaks[-1],
-          1:(length(current_breaks) - 1)
-        )
-        # Extend the range slightly to capture edge values
-        rcl_matrix[1, 1] <- rcl_matrix[1, 1] - 0.001 # Extend lower bound
-        rcl_matrix[nrow(rcl_matrix), 2] <- rcl_matrix[nrow(rcl_matrix), 2] +
-          0.001 # Extend upper bound
-        r_classified <- terra::classify(
-          raster,
-          rcl = rcl_matrix,
-          include.lowest = TRUE
-        )
-      }
+      # ── Accumulate results: whole input raster first, then each focus area ─────────────
+      # Output JSON structure:
+      # {
+      #   "canton":       { "0 – 0.1": [84.42], ... },
+      #   "oberland_ost": { "0 – 0.1": [72.3],  ... },
+      #   ...
+      # }
+      area_results <- list()
 
-      freq_tbl <- freq(r_classified)
-      freq_tbl <- as.data.frame(freq_tbl)
-      freq_tbl$value[is.na(freq_tbl$value)] <- 0
-      if (nrow(freq_tbl) == 0) {
-        cat("Warning: No data for", break_type, "- skipping\n")
-        next
-      }
-
-      # Generate all expected bin numbers and labels
-      n_expected_bins <- length(current_breaks) - 1
-      all_bin_numbers <- 1:n_expected_bins
-      all_labels <- character(n_expected_bins)
-      for (j in 1:n_expected_bins) {
-        lower <- current_breaks[j]
-        upper <- current_breaks[j + 1]
-        all_labels[j] <- paste0(round(lower, 2), " – ", round(upper, 2))
-      }
-
-      # Create complete frequency table with all expected bins
-      complete_freq_tbl <- data.frame(
-        layer = rep(1, n_expected_bins), # Assuming single layer
-        value = all_bin_numbers,
-        count = 0, # Initialize all counts to 0
-        stringsAsFactors = FALSE
+      area_results[["canton"]] <- tabulate_area_in_classes(
+        raster = raster,
+        break_vector = break_vector,
+        context_label = paste(es_label, break_type, "canton")
       )
 
-      # Update counts for bins that actually have data
-      for (k in 1:nrow(freq_tbl)) {
-        bin_num <- freq_tbl$value[k]
-        if (!is.na(bin_num) && bin_num >= 1 && bin_num <= n_expected_bins) {
-          complete_freq_tbl$count[bin_num] <- freq_tbl$count[k]
-        } else if (!is.na(bin_num)) {
-          # Handle out-of-range bins by adding them to the complete table
-          out_of_range_row <- data.frame(
-            layer = 1,
-            value = bin_num,
-            count = freq_tbl$count[k],
-            stringsAsFactors = FALSE
-          )
-          complete_freq_tbl <- rbind(complete_freq_tbl, out_of_range_row)
-        }
+      for (area_name in names(masked_rasters)) {
+        area_results[[area_name]] <- tabulate_area_in_classes(
+          raster = masked_rasters[[area_name]],
+          break_vector = break_vector,
+          context_label = paste(es_label, break_type, area_name)
+        )
       }
 
-      # Calculate total cells for percentage calculation AFTER updating complete_freq_tbl
-      # This ensures out-of-range bins are included in the total
-      total_cells <- sum(complete_freq_tbl$count)
+      # Drop any areas that returned NULL (no data / skipped)
+      area_results <- Filter(Negate(is.null), area_results)
 
-      # Calculate percentages for the complete table
-      complete_freq_tbl$percent <- 100 * complete_freq_tbl$count / total_cells
+      browser()
+      # ── Write combined JSON ─────────────────────────────────────────────────
+      write(toJSON(area_results, pretty = TRUE), file = base_output)
 
-      # Create bin labels for all entries (including out-of-range)
-      complete_freq_tbl$bin_label <- sapply(
-        complete_freq_tbl$value,
-        function(bin_num) {
-          if (is.na(bin_num)) {
-            return("NA")
-          } else if (bin_num < 1 || bin_num > length(all_labels)) {
-            return(paste0("Bin_", bin_num, "_OutOfRange"))
-          } else {
-            return(all_labels[bin_num])
-          }
-        }
-      )
-
-      # Use the complete frequency table for further processing
-      freq_tbl <- complete_freq_tbl
-
-      freq_tbl$method <- break_type
-
-      # Round percentages to avoid floating point precision issues
-      freq_tbl$percent <- round(freq_tbl$percent, 2)
-
-      # Create unique keys by using bin_label as key instead of percent
-      # This ensures all bins are present and keys are unique
-      json_data <- toJSON(
-        setNames(as.list(freq_tbl$percent), freq_tbl$bin_label),
-        pretty = TRUE
-      )
-
-      # Write JSON to output path (no suffix since only using regular breaks)
-      write(json_data, file = ES_layer_paths[i, output_tbl_path_name])
-
-      if (save_plots == TRUE) {
+      # ── Optional bar charts (one per area) ─────────────────────────────────
+      if (save_plots) {
         chart_images_dir <- gsub(
           "chart_data",
           "chart_images",
-          dirname(ES_layer_paths[i, output_tbl_path_name])
+          dirname(base_output)
         )
         ensure_dir(chart_images_dir)
-        chart_path <- file.path(
-          chart_images_dir,
-          gsub(
-            ".json",
-            ".png",
-            basename(ES_layer_paths[i, output_tbl_path_name])
+
+        for (area_name in names(area_results)) {
+          # Build a data frame from the bin list for ggplot
+          bin_data <- data.frame(
+            bin_label = names(area_results[[area_name]]),
+            percent = unlist(area_results[[area_name]]),
+            stringsAsFactors = FALSE
           )
-        )
-        bar_plot <- ggplot(freq_tbl, aes(x = bin_label, y = percent)) +
-          geom_bar(stat = "identity", fill = "steelblue") +
-          labs(
-            title = paste(
-              "Area in Classes for",
-              ES_layer_paths[i, "ES"],
-              "using",
-              break_type,
-              "breaks"
-            ),
-            x = "Class",
-            y = "Percentage of Area"
-          ) +
-          theme_minimal() +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1))
-        ggsave(filename = chart_path, plot = bar_plot, width = 10, height = 6)
+          chart_path <- file.path(
+            chart_images_dir,
+            gsub(".json", paste0("_", area_name, ".png"), basename(base_output))
+          )
+          bar_plot <- ggplot(bin_data, aes(x = bin_label, y = percent)) +
+            geom_bar(stat = "identity", fill = "steelblue") +
+            labs(
+              title = paste(
+                "Area in Classes –",
+                es_label,
+                "/",
+                area_name,
+                "(",
+                break_type,
+                "breaks)"
+              ),
+              x = "Class",
+              y = "Percentage of Area"
+            ) +
+            theme_minimal() +
+            theme(axis.text.x = element_text(angle = 45, hjust = 1))
+          ggsave(filename = chart_path, plot = bar_plot, width = 10, height = 6)
+        }
       }
     }
   })
+
   cat(
     "Finished calculating breaks for all layers of current ES and saving classified area JSON files.\n"
   )
 }
-
 
 #' Produce_change_map:
 #' Produce change maps for each configuration
@@ -2023,6 +2475,11 @@ summarize_ES_outputs <- function(
   mask,
   sample_size = 50000,
   perc_area_break_types = c("quantile", "fisher", "regular"),
+  perc_area_focus_regions = list(
+    "All" = NULL,
+    "High_prov" = c("High_prov"),
+    "Low_prov" = c("Low_prov")
+  ),
   save_provision_area_plots = TRUE,
   save_break_samples = FALSE
 ) {
@@ -2107,7 +2564,7 @@ summarize_ES_outputs <- function(
     if (recalc_rescaled_layers == TRUE) {
       cat("recalc_rescaled_layers == TRUE: Recaling all layers")
       # Apply the normalisation function to the ES layers
-      normalise_layers(
+      normalise_layers_PATCH(
         ES_layer_paths = ES_layer_paths,
         mask = mask,
         ES_global_minmaxs = ES_global_minmaxs,
@@ -2171,7 +2628,7 @@ summarize_ES_outputs <- function(
         )
 
         # If there are layers to rescale, apply the normalisation function
-        normalise_layers(
+        normalise_layers_PATCH(
           ES_layer_paths = ES_layer_paths_remaining,
           mask = mask,
           ES_global_minmaxs = ES_global_minmaxs,
@@ -2246,6 +2703,7 @@ summarize_ES_outputs <- function(
         sample_size = sample_size,
         save_samples = save_break_samples,
         break_types = perc_area_break_types,
+        focus_regions = perc_area_focus_regions,
         save_plots = save_provision_area_plots,
         parallel = parallel,
         n_workers = n_workers,
@@ -2342,6 +2800,7 @@ summarize_ES_outputs <- function(
         sample_size = sample_size,
         save_samples = save_break_samples,
         break_types = perc_area_break_types,
+        focus_regions = perc_area_focus_regions,
         save_plots = save_provision_area_plots,
         parallel = parallel,
         n_workers = n_workers,
@@ -2570,6 +3029,10 @@ Summarise_for_masks <- function(
       mask = masks[i]
     )
 
+    # Add output dir to focus areas
+    perc_area_focus_regions <- lapply(config$PercAreaFocusRegions, function(x) file.path(config$OutputDir, x))
+    names(perc_area_focus_regions) <- names(config$PercAreaFocusRegions)
+
     # Normalise and summarise the ESs for this mask
     summarize_ES_outputs(
       ProjCH = ProjCH,
@@ -2594,6 +3057,7 @@ Summarise_for_masks <- function(
       n_workers = n_workers,
       sample_size = 50000,
       perc_area_break_types = c("regular"),
+      perc_area_focus_regions = perc_area_focus_regions,
       save_provision_area_plots = TRUE,
       save_break_samples = TRUE,
       mask = masks[i]
@@ -2686,14 +3150,13 @@ Summarise_for_masks(
   ES_rescaling_dir = ES_rescaling_dir,
   ES_summary_stats_dir = ES_summary_stats_dir,
   ES_summarisation_dir = ES_summarisation_dir,
-  masks = list(
-    #"full_extent" = "",
-    "canton" = file.path(Mask_dir, "Kanton_Bern_shape.shp")
+  masks = c(
+    "canton" = file.path(Mask_dir, "Bern_Canton_w_lakes.shp")
   ),
   metrics = c("sum", "mean", "sd"),
-  recalc_minmax = TRUE,
-  recalc_rescaled_layers = TRUE,
-  recalc_summary_stats = TRUE,
+  recalc_minmax = FALSE,
+  recalc_rescaled_layers = FALSE,
+  recalc_summary_stats = FALSE,
   recalc_perc_area = TRUE,
   recalc_es_chg_maps = TRUE,
   recalc_norm_chg_maps = TRUE,

@@ -85,9 +85,9 @@ CheckLULCC:
 
 # Summarisation
 Summarisation:
-  InputDir:  F:/KB-outputs/ncp_output # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
-  OutputDir: X:/CH_Kanton_Bern/03_Workspaces/05_Web_platform # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
-  Parallel: True
+  InputDir:  Y:/CH_Kanton_Bern/03_Workspaces/06_NCP/ncp_output # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
+  OutputDir: Y:/CH_Kanton_Bern/03_Workspaces/05_Web_platform # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
+  Parallel: False
   ProjCH: "EPSG:2056"
   NWorkers: 4  # 0 means use all available cores
   ESs_to_summarise: ['REC', 'CAR', 'NDR', 'POL', 'SDR', 'WY', 'HAB', 'FF'] # ,
@@ -109,4 +109,18 @@ Summarisation:
   PercAreaDir: "chart_data/perc_area"
   AreaChgDir: "chart_data/perc_area_change"
   RobustnessDir: "robustness"
+  PercAreaFocusRegions: {
+    "seeland_biel": "Masks/focus_area_tifs/seeland_biel.tif",
+    "agricultural_land": "Masks/focus_area_tifs/agricultural_land.tif",
+    "bern_mittelland": "Masks/focus_area_tifs/bern_mittelland.tif",
+    "crop_rotation_areas": "Masks/focus_area_tifs/crop_rotation_areas.tif",
+    "emmental": "Masks/focus_area_tifs/emmental.tif",
+    "entwicklungsraum_thun": "Masks/focus_area_tifs/entwicklungsraum_thun.tif",
+    "jura_bernois_bienne": "Masks/focus_area_tifs/jura_bernois_bienne.tif",
+    "kandertal": "Masks/focus_area_tifs/kandertal.tif",
+    "oberaargau": "Masks/focus_area_tifs/oberaargau.tif",
+    "oberland_ost": "Masks/focus_area_tifs/oberland_ost.tif",
+    "obersimmental_saanenland": "Masks/focus_area_tifs/obersimmental_saanenland.tif",
+    "protected_areas": "Masks/focus_area_tifs/protected_areas.tif"
+  }
 
