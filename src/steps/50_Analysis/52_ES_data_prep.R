@@ -3030,7 +3030,9 @@ Summarise_for_masks <- function(
     )
 
     # Add output dir to focus areas
-    perc_area_focus_regions <- lapply(config$PercAreaFocusRegions, function(x) file.path(config$OutputDir, x))
+    perc_area_focus_regions <- lapply(config$PercAreaFocusRegions, function(x) {
+      file.path(config$OutputDir, x)
+    })
     names(perc_area_focus_regions) <- names(config$PercAreaFocusRegions)
 
     # Normalise and summarise the ESs for this mask
@@ -3143,6 +3145,11 @@ ensure_dir(ES_summary_stats_dir)
 ### Produce ES outputs for web platform
 ### =========================================================================
 
+# remove rec from config$ESs_to_summarise because this is not an ES that we want to summarise for the web platform
+config$ESs_to_summarise <- config$ESs_to_summarise[
+  !config$ESs_to_summarise %in% c("REC")
+]
+
 # run function to summarise for masks
 Summarise_for_masks(
   config = config,
@@ -3155,15 +3162,15 @@ Summarise_for_masks(
   ),
   metrics = c("sum", "mean", "sd"),
   recalc_minmax = FALSE,
-  recalc_rescaled_layers = FALSE,
+  recalc_rescaled_layers = TRUE,
   recalc_summary_stats = FALSE,
-  recalc_perc_area = TRUE,
+  recalc_perc_area = FALSE,
   recalc_es_chg_maps = TRUE,
   recalc_norm_chg_maps = TRUE,
-  recalc_chg_perc_area = TRUE,
-  recalc_cumulative_summary = TRUE,
-  Summarize_across_ES = TRUE,
-  Rescale_cross_ES_results = TRUE
+  recalc_chg_perc_area = FALSE,
+  recalc_cumulative_summary = FALSE,
+  Summarize_across_ES = FALSE,
+  Rescale_cross_ES_results = FALSE
 )
 
 ### =========================================================================

@@ -1,0 +1,155 @@
+# ------------------------------------------------#
+# Central config file for the Robust conservation #
+# decisions sub-module of the Future-EI project   #
+# ------------------------------------------------#
+
+# Bash variables
+bash_variables:
+  FUTURE_EI_LOG_LEVEL: debug
+  FUTURE_EI_CONFIG_FILE: ~/Future-EI/src/config.yml
+  FUTURE_EI_OUTPUT_DIR: ~/Future-EI-Output
+  # Output Directories are relative to the $FUTURE_EI_OUTPUT_DIR
+  LULCC_CH_OUTPUT_BASE_DIR: /lulcc_output # Location of all scenario folders, named by IDs
+  # LULCC Check
+  CHECK_LULCC_OUTPUT_DIR: /lulcc_check
+  # Focal Prep
+  FOCAL_OUTPUT_BASE_DIR: /focal_output
+  # NCP
+  NCP_OUTPUT_BASE_DIR: /ncp_output
+  NCP_SCRATCH_BASE_DIR: /ncp_scratch
+  # NSDM
+  NSDM_OUTPUT_BASE_DIR: /nsdm_outputs
+  # Species Aggregation
+  SPAGG_OUTPUT_BASE_DIR: /spagg_output
+  # Summarisation
+  SUMMARISATION_OUTPUT_DIR: /summarisation_output
+  # Time series clustering
+  CLUSTERING_OUTPUT_DIR: /clustering_output
+  # Factor Mapping
+  FACTOR_MAPPING_OUTPUT_DIR: /factor_mapping_output
+  # Visualisations and outputs
+  VISUALISATION_OUTPUT_DIR: /visualisation_output
+
+  SIM_ID: # simulation id, can be used to look up in control table, set automatically
+  # Variables for the docker container
+  LULCC_DOCKER_NAMESPACE: cbueth
+  LULCC_DOCKER_REPO: lulcc
+  LULCC_DOCKER_VERSION: 0.3.0
+  # Dinamica
+  # UNCONDITIONAL=0, ERROR=1, WARNING=2, RESULT=3,
+  # INFO=4, INFO2=5, DEBUG=6, DEBUG2=7
+  DINAMICA_EGO_CLI_LOG_LEVEL: 7
+  # LULCC HPC version
+  LULCC_CH_HPC_DIR: ~/LULCC_CH_HPC
+  # Model Variables - from LULCC_CH_HPC root
+  LULCC_M_CLASS_AGG: Tools/LULC_class_aggregation.xlsx
+  LULCC_M_SPEC: Tools/Model_specs.csv
+  LULCC_M_PARAM_GRID: Tools/param-grid.xlsx
+  LULCC_M_PRED_TABLE: Tools/Predictor_table.xlsx
+  LULCC_M_REF_GRID: Data/Ref_grid.tif
+  LULCC_M_CAL_PARAM_DIR: Data/Allocation_parameters/Calibration
+  LULCC_M_SIM_PARAM_DIR: Data/Allocation_parameters/Simulation
+  LULCC_M_RATE_TABLE_DIR: Data/Transition_tables/prepared_trans_tables
+  LULCC_M_SIM_CONTROL_TABLE: ~/LULCC_CH_HPC/Tools/Simulation_control.csv
+  LULCC_M_SPAT_INTS_TABLE: Tools/Spatial_interventions.csv
+  LULCC_M_EI_INTS_TABLE: Tools/EI_interventions.csv
+  LULCC_M_SCENARIO_SPEC: Tools/Scenario_specs.csv
+  LULCC_M_EI_LAYER_DIR: Data/EI_intervention_layers
+  LULCC_M_REMOVE_PRED_PROB_MAPS: True # remove prediction probability maps after
+  # simulation if 1, True or TRUE
+  # NCP variables
+  NCP_PARAMS_YML: ~/Future-EI/src/steps/40_NCPs/NCP_models/40_NCPs_params.yml
+  NCP_RUN_SCENARIO_ID: # Scenario ID, automatically set for each configuration
+  NCP_RUN_YEAR: # Year for which to run NCPs, automatically set
+  NCP_RUN_OUTPUT_DIR: # Output directory for NCPs, automatically set
+  NCP_RUN_SCRATCH_DIR: # Scratch directory for NCPs, automatically set
+  # Apptainer variables for the apptainer container
+  APPTAINER_CONTAINERDIR: ~/apptainer_containers
+  APPTAINER_CACHEDIR: /scratch/apptainer_cache
+  # Overwrites $TMPDIR if not set by the system. $TMPDIR is used by Dinamica EGO.
+  # and conda/libmamba
+  ALTERNATIVE_TMPDIR: /scratch
+
+# Focal LULC
+FocalLULCC:
+  InputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/LULCC_CH_OUTPUT_BASE_DIR
+  OutputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/FOCAL_OUTPUT_BASE_DIR
+  BaseName: ch_lulc_agg11_future_pixel  # Underscores will be split into folders
+  RadiusList: [ 100, 200, 500, 1500, 3000 ]
+  WindowType: circle
+  FocalFunction: mean
+  Overwrite: False # False -> skip if output exists, True -> overwrite
+  Parallel: True
+  NWorkers: 0  # 0 means use all available cores
+
+# LULC check
+CheckLULCC:
+  InputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/LULCC_CH_OUTPUT_BASE_DIR
+  OutputDir: # keep empty to use FUTURE_EI_OUTPUT_DIR/CHECK_LULCC_OUTPUT_DIR
+  BaseName: LULCC_intensity_analysis
+  Parallel: True
+  NWorkers: 0  # 0 means use all available cores
+
+# Summarisation
+Summarisation:
+  InputDir: F:/Future-EI/Future-EI_output/ncp_output # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
+  OutputDir: F:/Future-EI/Future-EI_output/Results # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
+  Parallel: True
+  NWorkers: 8  # 0 means use all available cores
+  NCPs_to_summarise: ['FF','ID', 'PC', 'HAB', 'CAR', 'NDR', 'POL', 'REC', 'SDR', 'WY'] # 
+  NCP_file_names: {
+    CAR: tot_c_cur, FF: FF_S_CH, HAB: quality_c, NDR: n_total_export,
+    POL: POL_S_CH, REC: REC_S_CH, SDR: avoided_erosion, WY: per_pixel/wyield, ID: ID, PC: PC
+  }
+  NCP_nesting: {
+    CAR: FALSE, FF: FALSE, HAB: TRUE, NDR: TRUE, POL: FALSE, REC: FALSE,
+    SDR: TRUE, WY: TRUE, ID: FALSE, PC: FALSE
+  }
+  minmax_recalc: True
+  
+# Time series clustering
+Clustering: 
+  InputDir:  F:/Future-EI_output/Results/NCP_summarisation/ # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
+  OutputDir: F:/Future-EI_output/Results/clustering_output/  # keep empty to use FUTURE_EI_OUTPUT_DIR/CLUSTERING_OUTPUT_DIR
+  Parallel: False
+  NWorkers: 0  # 0 means use all available cores
+  NCPs_to_cluster: [ 'ID', 'PC', 'HAB', 'CAR', 'FF', 'NDR', 'POL', 'REC', 'SDR', 'WY']
+  Metric_summary_path: NCP_aggregated_metric_unscaled.rds # path to the summarisation output
+  metrics: [ 'Agg_metric']
+  Scenario_clustering_strategy: Within
+  NCP_clustering_strategy: individually
+  Return_cluster_objs: True
+  Use_best_configs: True
+  Max_k: 4
+  Eval_perf_balance: perf_balance # Either 'perf' or 'perf_balance'
+  
+# Factor mapping
+FactorMapping:
+  InputDir: clustering_output/Clustering_results # keep empty to use FUTURE_EI_OUTPUT_DIR/CLUSTERING_OUTPUT_DIR
+  OutputDir: factor_mapping_output # keep empty to use FUTURE_EI_OUTPUT_DIR/FACTOR_MAPPING_OUTPUT_DIR
+  Parallel: False
+  NWorkers: 0  # 0 means use all available cores
+  Max_k: 4
+  Eval_perf_balance: perf_balance # Either 'perf' or 'perf_balance'
+  metrics: ['Agg_metric']
+  NCPs_to_analyse: ['HAB', 'CAR', 'FF', 'NDR', 'POL', 'REC', 'SDR', 'WY', 'ID', 'PC']
+  Pred_cols: ['Configuration', 'Establishment_date', 'Establishment_rate', 'Coverage', 'Effect']
+  Cluster_character: Good
+  NCP_analysis_strategy: individually
+  
+# Visualisations and outputs
+Visualisation:
+  InputDir:  F:/Future-EI/Future-EI_output/Results/NCP_summarisation # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
+  OutputDir: F:/Future-EI/Future-EI_output/Results/visualisations_outputs # keep empty to use FUTURE_EI_OUTPUT_DIR/VISUALISATION_OUTPUT_DIR
+  NCPs_to_visualise: [ 'HAB', 'CAR', 'FF', 'NDR', 'POL', 'REC', 'SDR', 'WY', 'ID', 'PC']
+  Scenarios_to_visualise: [ 'BAU', 'BAU-CC', 'EI-NAT', 'EI-SOC', 'EI-CUL']
+  NCP_summarisation_dir: F:/Future-EI/Future-EI_output/Results/NCP_summarisation
+  Change_raster_dir: F:/Future-EI/Future-EI_output/Results/NCP_summarisation/NCP_change/sum_change_rasters
+  Parallel: False
+  Summary_metrics: 
+  Spatial_summary_metrics: ['mean', 'stdev', 'undesirable_deviation']
+  Value_scaling: ['unscaled']
+  NCP_aggregation: ['Both'] # Whether or not to produce visualisations of individual and aggregated NCPs
+
+  
+
