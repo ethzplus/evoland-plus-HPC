@@ -85,8 +85,16 @@ CheckLULCC:
 
 # Summarisation
 Summarisation:
-  InputDir:  Y:/CH_Kanton_Bern/03_Workspaces/06_NCP/ncp_output # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
+  LULCCInputDir:  Y:/CH_Kanton_Bern/03_Workspaces/10_LULCC/lulcc_output # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
+  ESInputDir:  Y:/CH_Kanton_Bern/03_Workspaces/06_NCP/ncp_output # keep empty to use FUTURE_EI_OUTPUT_DIR/NCP_OUTPUT_BASE_DIR
   OutputDir: Y:/CH_Kanton_Bern/03_Workspaces/05_Web_platform # keep empty to use FUTURE_EI_OUTPUT_DIR/SUMMARISATION_OUTPUT_DIR
+  Masks: {
+    "canton" : "Y:/CH_Kanton_Bern/03_Workspaces/05_Web_platform/Masks/Bern_Canton_w_lakes.shp"
+  }
+  LULCRefRaster: Y:/CH_Kanton_Bern/03_Workspaces/10_LULCC/lulc_reference_raster.tif
+  LULCAggPath: Y:/CH_Kanton_Bern/03_Workspaces/10_LULCC/LULC_class_aggregation.xlsx
+  LULCPalettePath: steps/50_Analysis/Tools/lulc_palette.json
+  GlacierScenarioDir: Y:/CH_Kanton_Bern/03_Workspaces/10_LULCC/glacier_scenario_indices
   Parallel: False
   ProjCH: "EPSG:2056"
   NWorkers: 4  # 0 means use all available cores

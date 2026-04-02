@@ -1,0 +1,62 @@
+[
+  {
+    "raster_value": 10,
+    "lulc_name": "Urban/amenities",
+    "colour": "#a8aba5"
+  },
+  {
+    "raster_value": 11,
+    "lulc_name": "Static",
+    "colour": "#d1d3cf"
+  },
+  {
+    "raster_value": 12,
+    "lulc_name": "Open Forest",
+    "colour": "#97d1d5"
+  },
+  {
+    "raster_value": 13,
+    "lulc_name": "Closed forest",
+    "colour": "#29898f"
+  },
+  {
+    "raster_value": 14,
+    "lulc_name": "Overgrown/shrubland",
+    "colour": "#bb8a75"
+  },
+  {
+    "raster_value": 15,
+    "lulc_name": "Intensive agriculture",
+    "colour": "#f59f78"
+  },
+  {
+    "raster_value": 16,
+    "lulc_name": "Alpine pastures",
+    "colour": "#6ca147"
+  },
+  {
+    "raster_value": 17,
+    "lulc_name": "Grassland or meadows",
+    "colour": "#c4e0a1"
+  },
+  {
+    "raster_value": 18,
+    "lulc_name": "Permanent crops",
+    "colour": "#DDCC66"
+  },
+  {
+    "raster_value": 19,
+    "lulc_name": "Glacier",
+    "colour": "#d5f1ff"
+  },
+  {
+    "raster_value": 20,
+    "lulc_name": "Lake",
+    "colour": "#93d0ee"
+  },
+  {
+    "raster_value": 21,
+    "lulc_name": "River",
+    "colour": "#93d0ee"
+  }
+]
